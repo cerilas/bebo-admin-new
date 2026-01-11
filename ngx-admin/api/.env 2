@@ -1,0 +1,2 @@
+DATABASE_URL=postgresql://postgres:ptrzmLFbwlrQYpPJfeAofGqMkXFdSIhu@crossover.proxy.rlwy.net:37534/railway
+PORT=3000
