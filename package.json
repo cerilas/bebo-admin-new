@@ -7,7 +7,7 @@
     "start:api": "cd api && node server.js",
     "start:frontend": "cd ngx-admin && npm start",
     "dev": "./start.sh",
-    "build": "cd ngx-admin && npm install && npm run build:prod && mkdir -p ../api/dist && cp -rv dist/* ../api/dist/"
+    "build": "cd ngx-admin && npm install --legacy-peer-deps && npm run build:prod && mkdir -p ../api/dist && cp -rv dist/* ../api/dist/"
   },
   "author": "Birebiro Team",
   "license": "ISC"
