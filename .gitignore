@@ -5,3 +5,9 @@ dist
 /ngx-admin/dist
 /ngx-admin/node_modules
 /api/node_modules
+.angular
+.angular 2
+**/node_modules
+**/dist
+**/.angular
+**/.angular 2
