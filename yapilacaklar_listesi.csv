@@ -1,0 +1,53 @@
+No,Yapılacak İş,Kategori
+1,"Hakkımızda (About) site ayarları için yeni kullanıcı arayüzü eklenecek",Site Ayarları
+2,"Site ayarlarına görsel yükleme özelliği eklenecek",Site Ayarları
+3,"Ayarlar sayfasına yükleme sırasında spinner/loading göstergesi eklenecek",Site Ayarları
+4,"Ayarlar form alanları tam genişlik yapılacak",Site Ayarları
+5,"Kredi ayarları bölümü başlığı düzeltilecek",Site Ayarları
+6,"Hata mesajları iyileştirilecek ve daha açıklayıcı hale getirilecek",Site Ayarları
+7,"Yasal dokümanlar (KVKK, Kullanım Koşulları vb.) için tam sayfa modülü oluşturulacak",Yasal Dokümanlar
+8,"Yasal dokümanlar listesi sayfası eklenecek",Yasal Dokümanlar
+9,"Yasal doküman detay görüntüleme sayfası eklenecek",Yasal Dokümanlar
+10,"Yasal doküman ekleme özelliği eklenecek",Yasal Dokümanlar
+11,"Yasal doküman düzenleme özelliği eklenecek",Yasal Dokümanlar
+12,"Yasal doküman silme özelliği eklenecek",Yasal Dokümanlar
+13,"Ürünlere 2. kare görsel URL alanı eklenecek (image_square_url_2)",Ürün Görselleri
+14,"Ürünlere 3. kare görsel URL alanı eklenecek (image_square_url_3)",Ürün Görselleri
+15,"Ürün formunda çoklu görsel önizleme özelliği eklenecek",Ürün Görselleri
+16,"Backend API'sine ürün oluşturma sorgusuna (POST) yeni görsel alanları eklenecek",Ürün Görselleri
+17,"Backend API'sine ürün güncelleme sorgusuna (PUT) yeni görsel alanları eklenecek",Ürün Görselleri
+18,"Backend API'sine ürün detay sorgusuna (GET) yeni görsel alanları eklenecek",Ürün Görselleri
+19,"Frontend ürün modelinde yeni görsel alanları tanımlanacak",Ürün Görselleri
+20,"Sipariş görsel indirmede production_image_url (üretim görseli) öncelikli kullanılacak",Sipariş İndirme
+21,"Üretim görseli yoksa oluşturulan görsele (generatedImageUrl) fallback yapılacak",Sipariş İndirme
+22,"Sipariş detay sayfasında başarısız ödeme nedeni gösterilecek",Ödeme Hataları
+23,"failedReasonCode alanı frontend'e eklenecek",Ödeme Hataları
+24,"failedReasonMsg alanı frontend'e eklenecek",Ödeme Hataları
+25,"Başarısız ödemeler için kırmızı uyarı kutusu tasarlanacak",Ödeme Hataları
+26,"Order interface'ine eksik görsel URL alanları eklenecek",Model Güncellemeleri
+27,"Order interface'ine eksik hata mesajı alanları eklenecek",Model Güncellemeleri
+28,"Ayrı duran api klasörü ngx-admin içine tekrar birleştirilecek (Monorepo yapısı)",Repo Yapısı
+29,"Tek repo altında frontend + backend yönetimi sağlanacak",Repo Yapısı
+30,"GitHub push çakışması problemi çözülecek",Repo Yapısı
+31,"Force push ile repo durumu düzeltilecek",Repo Yapısı
+32,"Kredi siparişlerinde satın alınan kredi miktarı veritabanından çekilecek",Kredi Miktarı
+33,"Hatalı kredi hesaplama formülü kaldırılacak (1.5 TL'ye bölme mantığı)",Kredi Miktarı
+34,"Backend API'sine credit_amount alanı eklenecek",Kredi Miktarı
+35,"Order model interface'ine creditAmount alanı eklenecek",Kredi Miktarı
+36,"Kök dizindeki server.js dosyası Railway uyumluluğu için güncellenecek",Railway Desteği
+37,"Railway root dizin desteği için credit_amount kök dosyaya da eklenecek",Railway Desteği
+38,"Dashboard'da toplam gelir sadece başarılı ödemelerden hesaplanacak",Dashboard
+39,"Bekleyen/başarısız ödemeler toplam gelirden çıkarılacak",Dashboard
+40,"Backend'deki gereksiz /100 bölmesi kaldırılacak (frontend zaten dönüşüm yapıyor)",Dashboard
+41,"Sipariş detay popup'ı sabit 900px genişliğe ayarlanacak",Popup Tasarımı
+42,"Sipariş detay popup'ı sabit 85vh yüksekliğe ayarlanacak",Popup Tasarımı
+43,"Popup başlık alanına sol tarafta mavi accent bar eklenecek",Popup Tasarımı
+44,"Popup başlık fontu büyütülecek (18px, bold)",Popup Tasarımı
+45,"Popup içerik arka planı açık gri yapılacak",Popup Tasarımı
+46,"Popup içindeki kutular beyaz yapılacak",Popup Tasarımı
+47,"Kapatma butonuna hover'da 90° döndürme animasyonu eklenecek",Popup Tasarımı
+48,"Scrollbar tasarımı iyileştirilecek (kalınlaştırılacak, hover efekti eklenecek)",Popup Tasarımı
+49,"Mobil ekranlar için responsive düzenleme yapılacak (%95 genişlik)",Popup Tasarımı
+50,"GET /api/products/:id sorgusuna image_square_url_2 alanı eklenecek",Ürün Görselleri
+51,"GET /api/products/:id sorgusuna image_square_url_3 alanı eklenecek",Ürün Görselleri
+52,"Ürün düzenleme formunda mevcut görseller otomatik olarak yüklenecek",Ürün Görselleri
