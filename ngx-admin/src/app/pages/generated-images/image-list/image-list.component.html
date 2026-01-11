@@ -1,0 +1,315 @@
+<div class="images-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h4>Üretilen Görseller</h4>
+      <span class="subtitle">AI ile oluşturulan tüm görseller</span>
+    </div>
+    <div class="header-actions">
+      <button 
+        nbButton 
+        size="small" 
+        outline
+        *ngIf="searchQuery || selectedProductId || selectedFilter !== 'all'"
+        (click)="clearFilters()"
+      >
+        <nb-icon icon="close-outline"></nb-icon>
+        Filtreleri Temizle
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card total">
+      <div class="stat-icon">
+        <nb-icon icon="image-outline"></nb-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats.totalImages }}</span>
+        <span class="stat-label">Toplam Görsel</span>
+      </div>
+    </div>
+    
+    <div class="stat-card credits">
+      <div class="stat-icon">
+        <nb-icon icon="flash-outline"></nb-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats.totalCredits }}</span>
+        <span class="stat-label">Kullanılan Kredi</span>
+      </div>
+    </div>
+    
+    <div class="stat-card selected">
+      <div class="stat-icon">
+        <nb-icon icon="checkmark-circle-outline"></nb-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats.selectedImages }}</span>
+        <span class="stat-label">Seçilen</span>
+      </div>
+    </div>
+    
+    <div class="stat-card users">
+      <div class="stat-icon">
+        <nb-icon icon="people-outline"></nb-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats.uniqueUsers }}</span>
+        <span class="stat-label">Farklı Kullanıcı</span>
+      </div>
+    </div>
+    
+    <div class="stat-card today">
+      <div class="stat-icon">
+        <nb-icon icon="clock-outline"></nb-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats.today }}</span>
+        <span class="stat-label">Bugün</span>
+      </div>
+    </div>
+    
+    <div class="stat-card week">
+      <div class="stat-icon">
+        <nb-icon icon="calendar-outline"></nb-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats.thisWeek }}</span>
+        <span class="stat-label">Bu Hafta</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Bar -->
+  <div class="filters-bar">
+    <div class="filter-tabs">
+      <button 
+        class="filter-tab" 
+        [class.active]="selectedFilter === 'all'"
+        (click)="setFilter('all')"
+      >
+        Tümü
+      </button>
+      <button 
+        class="filter-tab" 
+        [class.active]="selectedFilter === 'selected'"
+        (click)="setFilter('selected')"
+      >
+        <nb-icon icon="checkmark-circle-outline"></nb-icon>
+        Siparişe Seçilen
+      </button>
+      <button 
+        class="filter-tab" 
+        [class.active]="selectedFilter === 'not-selected'"
+        (click)="setFilter('not-selected')"
+      >
+        Seçilmeyen
+      </button>
+    </div>
+    
+    <div class="filter-controls">
+      <nb-select 
+        placeholder="Ürün Filtrele" 
+        [(ngModel)]="selectedProductId"
+        (selectedChange)="onProductChange()"
+        size="small"
+      >
+        <nb-option [value]="null">Tüm Ürünler</nb-option>
+        <nb-option *ngFor="let product of products" [value]="product.id">
+          {{ product.name }}
+        </nb-option>
+      </nb-select>
+      
+      <div class="search-box">
+        <nb-icon icon="search-outline"></nb-icon>
+        <input 
+          type="text" 
+          nbInput 
+          placeholder="Prompt veya e-posta ara..."
+          [(ngModel)]="searchQuery"
+          (keyup.enter)="onSearch()"
+        >
+        <button 
+          *ngIf="searchQuery" 
+          class="clear-btn" 
+          (click)="clearSearch()"
+        >
+          <nb-icon icon="close-outline"></nb-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="skeleton-grid">
+      <div class="skeleton-item" *ngFor="let i of [1,2,3,4,5,6,7,8]"></div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && images.length === 0" class="empty-state">
+    <nb-icon icon="image-outline"></nb-icon>
+    <h5>Görsel Bulunamadı</h5>
+    <p *ngIf="searchQuery || selectedProductId || selectedFilter !== 'all'">
+      Filtrelere uygun görsel yok.
+    </p>
+    <p *ngIf="!searchQuery && !selectedProductId && selectedFilter === 'all'">
+      Henüz görsel üretilmemiş.
+    </p>
+  </div>
+
+  <!-- Images Grid -->
+  <div *ngIf="!loading && images.length > 0" class="images-grid">
+    <div 
+      *ngFor="let image of images"
+      class="image-card"
+      [class.selected]="image.isSelected"
+      (click)="openDetail(image)"
+    >
+      <div class="image-container">
+        <img [src]="image.thumbnailUrl || image.imageUrl" [alt]="image.prompt" loading="lazy">
+        <div class="image-overlay">
+          <button class="overlay-btn" nbTooltip="Detay">
+            <nb-icon icon="expand-outline"></nb-icon>
+          </button>
+        </div>
+        <span class="selected-badge" *ngIf="image.isSelected">
+          <nb-icon icon="checkmark-circle-2"></nb-icon>
+        </span>
+        <span class="credits-badge">
+          <nb-icon icon="flash-outline"></nb-icon>
+          {{ image.creditsUsed }}
+        </span>
+      </div>
+      <div class="image-info">
+        <p class="prompt">{{ image.prompt }}</p>
+        <div class="meta">
+          <span class="user" *ngIf="image.userEmail">
+            <nb-icon icon="person-outline"></nb-icon>
+            {{ getUserName(image) }}
+          </span>
+          <span class="time">{{ getTimeAgo(image.createdAt) }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load More -->
+  <div *ngIf="!loading && images.length > 0 && hasMore" class="load-more">
+    <button nbButton outline (click)="loadMore()">
+      <nb-icon icon="arrow-down-outline"></nb-icon>
+      Daha Fazla Yükle
+    </button>
+  </div>
+
+  <!-- Detail Modal -->
+  <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h5>Görsel Detayı</h5>
+        <button nbButton ghost size="small" (click)="closeModal()">
+          <nb-icon icon="close-outline"></nb-icon>
+        </button>
+      </div>
+      
+      <div class="modal-body" *ngIf="selectedImage">
+        <div class="image-preview">
+          <img [src]="selectedImage.imageUrl" [alt]="selectedImage.prompt">
+        </div>
+        
+        <div class="detail-sections">
+          <div class="detail-section">
+            <label>Prompt</label>
+            <div class="prompt-text">
+              {{ selectedImage.prompt }}
+              <button class="copy-btn" (click)="copyToClipboard(selectedImage.prompt)" nbTooltip="Kopyala">
+                <nb-icon icon="copy-outline"></nb-icon>
+              </button>
+            </div>
+          </div>
+          
+          <div class="detail-section" *ngIf="selectedImage.improvedPrompt">
+            <label>İyileştirilmiş Prompt</label>
+            <div class="prompt-text improved">{{ selectedImage.improvedPrompt }}</div>
+          </div>
+          
+          <div class="detail-row">
+            <div class="detail-section half">
+              <label>Kullanıcı</label>
+              <p>{{ getUserName(selectedImage) }}</p>
+              <span class="email" *ngIf="selectedImage.userEmail">{{ selectedImage.userEmail }}</span>
+            </div>
+            <div class="detail-section half">
+              <label>Ürün</label>
+              <p>{{ selectedImage.productName || 'Belirtilmemiş' }}</p>
+            </div>
+          </div>
+          
+          <div class="detail-row">
+            <div class="detail-section half">
+              <label>Kullanılan Kredi</label>
+              <p class="credits">
+                <nb-icon icon="flash-outline"></nb-icon>
+                {{ selectedImage.creditsUsed }}
+              </p>
+            </div>
+            <div class="detail-section half">
+              <label>Mod</label>
+              <p>
+                <span class="mode-badge" [class.generate]="selectedImage.isGenerateMode">
+                  {{ selectedImage.isGenerateMode ? 'Üretim' : 'İlham' }}
+                </span>
+              </p>
+            </div>
+          </div>
+          
+          <div class="detail-section">
+            <label>Durum</label>
+            <div class="status-badges">
+              <span class="badge" [class.success]="selectedImage.isSelected">
+                {{ selectedImage.isSelected ? 'Siparişe Seçildi' : 'Seçilmedi' }}
+              </span>
+            </div>
+          </div>
+          
+          <div class="detail-section">
+            <label>Tarih</label>
+            <p>{{ formatDate(selectedImage.createdAt) }}</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button 
+          nbButton 
+          status="danger" 
+          outline
+          (click)="deleteImage(selectedImage)"
+        >
+          <nb-icon icon="trash-2-outline"></nb-icon>
+          Sil
+        </button>
+        <div class="spacer"></div>
+        <button 
+          nbButton 
+          outline
+          (click)="downloadImage(selectedImage?.imageUrl)"
+        >
+          <nb-icon icon="download-outline"></nb-icon>
+          İndir
+        </button>
+        <button 
+          nbButton 
+          status="primary"
+          (click)="copyToClipboard(selectedImage?.imageUrl)"
+        >
+          <nb-icon icon="link-outline"></nb-icon>
+          URL Kopyala
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

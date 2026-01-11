@@ -1,0 +1,291 @@
+<div class="contact-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h4>İletişim Mesajları</h4>
+      <span class="subtitle">Kullanıcılardan gelen iletişim formları</span>
+    </div>
+    <div class="header-actions">
+      <button 
+        nbButton 
+        size="small" 
+        status="primary" 
+        outline
+        [disabled]="stats.unread === 0"
+        (click)="markAllAsRead()"
+      >
+        <nb-icon icon="checkmark-circle-2-outline"></nb-icon>
+        Tümünü Okundu İşaretle
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card total">
+      <div class="stat-icon">
+        <nb-icon icon="email-outline"></nb-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats.total }}</span>
+        <span class="stat-label">Toplam Mesaj</span>
+      </div>
+    </div>
+    
+    <div class="stat-card unread">
+      <div class="stat-icon">
+        <nb-icon icon="bell-outline"></nb-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats.unread }}</span>
+        <span class="stat-label">Okunmamış</span>
+      </div>
+    </div>
+    
+    <div class="stat-card replied">
+      <div class="stat-icon">
+        <nb-icon icon="checkmark-circle-outline"></nb-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats.replied }}</span>
+        <span class="stat-label">Yanıtlanan</span>
+      </div>
+    </div>
+    
+    <div class="stat-card today">
+      <div class="stat-icon">
+        <nb-icon icon="clock-outline"></nb-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats.today }}</span>
+        <span class="stat-label">Bugün</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters & Search -->
+  <div class="filters-bar">
+    <div class="filter-tabs">
+      <button 
+        class="filter-tab" 
+        [class.active]="activeFilter === 'all'"
+        (click)="setFilter('all')"
+      >
+        Tümü
+        <span class="count">{{ stats.total }}</span>
+      </button>
+      <button 
+        class="filter-tab" 
+        [class.active]="activeFilter === 'unread'"
+        (click)="setFilter('unread')"
+      >
+        Okunmamış
+        <span class="count warning">{{ stats.unread }}</span>
+      </button>
+      <button 
+        class="filter-tab" 
+        [class.active]="activeFilter === 'read'"
+        (click)="setFilter('read')"
+      >
+        Okunmuş
+        <span class="count">{{ stats.read }}</span>
+      </button>
+      <button 
+        class="filter-tab" 
+        [class.active]="activeFilter === 'replied'"
+        (click)="setFilter('replied')"
+      >
+        Yanıtlanan
+        <span class="count success">{{ stats.replied }}</span>
+      </button>
+      <button 
+        class="filter-tab" 
+        [class.active]="activeFilter === 'not-replied'"
+        (click)="setFilter('not-replied')"
+      >
+        Yanıtlanmayan
+        <span class="count">{{ stats.notReplied }}</span>
+      </button>
+    </div>
+    
+    <div class="search-box">
+      <nb-icon icon="search-outline"></nb-icon>
+      <input 
+        type="text" 
+        nbInput 
+        placeholder="İsim, e-posta veya mesaj ara..."
+        [(ngModel)]="searchQuery"
+        (keyup.enter)="onSearch()"
+      >
+      <button 
+        *ngIf="searchQuery" 
+        class="clear-btn" 
+        (click)="clearSearch()"
+      >
+        <nb-icon icon="close-outline"></nb-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="skeleton-item" *ngFor="let i of [1,2,3,4,5]"></div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && submissions.length === 0" class="empty-state">
+    <nb-icon icon="inbox-outline"></nb-icon>
+    <h5>Mesaj Bulunamadı</h5>
+    <p *ngIf="searchQuery">Arama kriterlerinize uygun mesaj yok.</p>
+    <p *ngIf="!searchQuery && activeFilter !== 'all'">Bu filtrede mesaj bulunmuyor.</p>
+    <p *ngIf="!searchQuery && activeFilter === 'all'">Henüz iletişim formu gönderilmemiş.</p>
+  </div>
+
+  <!-- Messages List -->
+  <div *ngIf="!loading && submissions.length > 0" class="messages-list">
+    <div 
+      *ngFor="let sub of submissions"
+      class="message-card"
+      [class.unread]="!sub.isRead"
+      [class.replied]="sub.isReplied"
+      (click)="openDetail(sub)"
+    >
+      <div class="message-status">
+        <span class="unread-dot" *ngIf="!sub.isRead"></span>
+        <nb-icon 
+          *ngIf="sub.isReplied" 
+          icon="checkmark-circle-2" 
+          class="replied-icon"
+          nbTooltip="Yanıtlandı"
+        ></nb-icon>
+      </div>
+      
+      <div class="message-avatar">
+        {{ sub.name?.charAt(0)?.toUpperCase() || '?' }}
+      </div>
+      
+      <div class="message-content">
+        <div class="message-header">
+          <span class="sender-name">{{ sub.name }}</span>
+          <span class="message-time">{{ getTimeAgo(sub.createdAt) }}</span>
+        </div>
+        <div class="message-subject" *ngIf="sub.subject">{{ sub.subject }}</div>
+        <div class="message-preview">{{ sub.message }}</div>
+        <div class="message-email">
+          <nb-icon icon="email-outline"></nb-icon>
+          {{ sub.email }}
+        </div>
+      </div>
+      
+      <div class="message-actions" (click)="$event.stopPropagation()">
+        <button 
+          nbButton 
+          ghost 
+          size="small"
+          *ngIf="!sub.isReplied"
+          (click)="markAsReplied(sub)"
+          nbTooltip="Yanıtlandı İşaretle"
+        >
+          <nb-icon icon="checkmark-outline"></nb-icon>
+        </button>
+        <button 
+          nbButton 
+          ghost 
+          size="small"
+          status="danger"
+          (click)="deleteSubmission(sub)"
+          nbTooltip="Sil"
+        >
+          <nb-icon icon="trash-2-outline"></nb-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h5>Mesaj Detayı</h5>
+        <button nbButton ghost size="small" (click)="closeModal()">
+          <nb-icon icon="close-outline"></nb-icon>
+        </button>
+      </div>
+      
+      <div class="modal-body" *ngIf="selectedSubmission">
+        <div class="detail-section">
+          <div class="sender-info">
+            <div class="avatar-large">
+              {{ selectedSubmission.name?.charAt(0)?.toUpperCase() || '?' }}
+            </div>
+            <div class="sender-details">
+              <h4>{{ selectedSubmission.name }}</h4>
+              <div class="contact-info">
+                <a [href]="'mailto:' + selectedSubmission.email" class="email-link">
+                  <nb-icon icon="email-outline"></nb-icon>
+                  {{ selectedSubmission.email }}
+                </a>
+                <span *ngIf="selectedSubmission.phone" class="phone">
+                  <nb-icon icon="phone-outline"></nb-icon>
+                  {{ selectedSubmission.phone }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <label>Konu</label>
+          <p class="subject">{{ selectedSubmission.subject || 'Belirtilmemiş' }}</p>
+        </div>
+
+        <div class="detail-section">
+          <label>Mesaj</label>
+          <div class="message-body">{{ selectedSubmission.message }}</div>
+        </div>
+
+        <div class="detail-section meta">
+          <div class="meta-item">
+            <nb-icon icon="calendar-outline"></nb-icon>
+            <span>{{ formatDate(selectedSubmission.createdAt) }}</span>
+          </div>
+          <div class="meta-item" *ngIf="selectedSubmission.ipAddress">
+            <nb-icon icon="globe-outline"></nb-icon>
+            <span>{{ selectedSubmission.ipAddress }}</span>
+          </div>
+        </div>
+
+        <div class="status-badges">
+          <span class="badge" [class.success]="selectedSubmission.isRead" [class.warning]="!selectedSubmission.isRead">
+            {{ selectedSubmission.isRead ? 'Okundu' : 'Okunmadı' }}
+          </span>
+          <span class="badge" [class.success]="selectedSubmission.isReplied" [class.basic]="!selectedSubmission.isReplied">
+            {{ selectedSubmission.isReplied ? 'Yanıtlandı' : 'Yanıt Bekleniyor' }}
+          </span>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button 
+          nbButton 
+          status="danger" 
+          outline
+          (click)="deleteSubmission(selectedSubmission)"
+        >
+          <nb-icon icon="trash-2-outline"></nb-icon>
+          Sil
+        </button>
+        <div class="spacer"></div>
+        <a 
+          nbButton 
+          status="primary"
+          [href]="'mailto:' + selectedSubmission?.email + '?subject=Re: ' + (selectedSubmission?.subject || 'İletişim Formunuz')"
+          (click)="markAsReplied(selectedSubmission)"
+        >
+          <nb-icon icon="paper-plane-outline"></nb-icon>
+          E-posta Gönder
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,634 @@
+<div class="product-form-container" *ngIf="!loading; else loadingTemplate">
+  <nb-card>
+    <nb-card-header>
+      <div class="header-content">
+        <h5>{{ isEditMode ? 'Ürün Düzenle' : 'Yeni Ürün' }}</h5>
+        <div class="header-actions">
+          <button nbButton status="basic" size="small" (click)="cancel()">
+            <nb-icon icon="arrow-back-outline"></nb-icon>
+            Geri
+          </button>
+        </div>
+      </div>
+    </nb-card-header>
+
+    <nb-card-body>
+      <nb-tabset>
+        <!-- Ürün Bilgileri Tab -->
+        <nb-tab tabTitle="Ürün Bilgileri" tabIcon="cube-outline">
+          <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
+            <div class="form-section">
+              <h6 class="section-title">Temel Bilgiler</h6>
+
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="label">Slug (URL) *</label>
+                    <input type="text" nbInput fullWidth formControlName="slug" placeholder="urun-adi">
+                    <small class="form-text text-muted">URL'de görünecek ad (örn: canvas-tablo)</small>
+                  </div>
+                </div>
+
+                <div class="col-md-3">
+                  <div class="form-group">
+                    <label class="label">Sıra</label>
+                    <input type="number" nbInput fullWidth formControlName="sortOrder">
+                  </div>
+                </div>
+
+                <div class="col-md-3">
+                  <div class="form-group">
+                    <label class="label">Durum</label>
+                    <nb-toggle formControlName="isActive">Aktif</nb-toggle>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label class="label">Kare Görsel 1 (1080x1080)</label>
+                    <div class="image-input-group">
+                      <div class="image-preview" *ngIf="productForm.get('imageSquareUrl')?.value">
+                        <img [src]="productForm.get('imageSquareUrl')?.value"
+                          (click)="openImage(productForm.get('imageSquareUrl')?.value)" alt="Kare Görsel 1"
+                          class="thumbnail">
+                      </div>
+                      <div class="input-with-upload">
+                        <input type="text" nbInput fullWidth formControlName="imageSquareUrl" placeholder="https://...">
+                        <div class="upload-button">
+                          <input type="file" #squareImageInput accept="image/*" (change)="onSquareImageSelect($event)"
+                            hidden>
+                          <button nbButton status="primary" size="small" type="button" [disabled]="uploadingSquareImage"
+                            (click)="squareImageInput.click()">
+                            <nb-icon *ngIf="!uploadingSquareImage" icon="cloud-upload-outline"></nb-icon>
+                            <nb-spinner *ngIf="uploadingSquareImage" size="tiny" status="control"></nb-spinner>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label class="label">Kare Görsel 2 (1080x1080)</label>
+                    <div class="image-input-group">
+                      <div class="image-preview" *ngIf="productForm.get('imageSquareUrl2')?.value">
+                        <img [src]="productForm.get('imageSquareUrl2')?.value"
+                          (click)="openImage(productForm.get('imageSquareUrl2')?.value)" alt="Kare Görsel 2"
+                          class="thumbnail">
+                      </div>
+                      <div class="input-with-upload">
+                        <input type="text" nbInput fullWidth formControlName="imageSquareUrl2"
+                          placeholder="https://...">
+                        <div class="upload-button">
+                          <input type="file" #squareImage2Input accept="image/*" (change)="onSquareImage2Select($event)"
+                            hidden>
+                          <button nbButton status="primary" size="small" type="button"
+                            [disabled]="uploadingSquareImage2" (click)="squareImage2Input.click()">
+                            <nb-icon *ngIf="!uploadingSquareImage2" icon="cloud-upload-outline"></nb-icon>
+                            <nb-spinner *ngIf="uploadingSquareImage2" size="tiny" status="control"></nb-spinner>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label class="label">Kare Görsel 3 (1080x1080)</label>
+                    <div class="image-input-group">
+                      <div class="image-preview" *ngIf="productForm.get('imageSquareUrl3')?.value">
+                        <img [src]="productForm.get('imageSquareUrl3')?.value"
+                          (click)="openImage(productForm.get('imageSquareUrl3')?.value)" alt="Kare Görsel 3"
+                          class="thumbnail">
+                      </div>
+                      <div class="input-with-upload">
+                        <input type="text" nbInput fullWidth formControlName="imageSquareUrl3"
+                          placeholder="https://...">
+                        <div class="upload-button">
+                          <input type="file" #squareImage3Input accept="image/*" (change)="onSquareImage3Select($event)"
+                            hidden>
+                          <button nbButton status="primary" size="small" type="button"
+                            [disabled]="uploadingSquareImage3" (click)="squareImage3Input.click()">
+                            <nb-icon *ngIf="!uploadingSquareImage3" icon="cloud-upload-outline"></nb-icon>
+                            <nb-spinner *ngIf="uploadingSquareImage3" size="tiny" status="control"></nb-spinner>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="label">Geniş Görsel URL (1920x1080)</label>
+                    <div class="image-input-group">
+                      <div class="image-preview" *ngIf="productForm.get('imageWideUrl')?.value">
+                        <img [src]="productForm.get('imageWideUrl')?.value"
+                          (click)="openImage(productForm.get('imageWideUrl')?.value)" alt="Geniş Görsel"
+                          class="thumbnail">
+                      </div>
+                      <div class="input-with-upload">
+                        <input type="text" nbInput fullWidth formControlName="imageWideUrl" placeholder="https://...">
+                        <div class="upload-button">
+                          <input type="file" #wideImageInput accept="image/*" (change)="onWideImageSelect($event)"
+                            hidden>
+                          <button nbButton status="primary" size="small" type="button" [disabled]="uploadingWideImage"
+                            (click)="wideImageInput.click()">
+                            <nb-icon *ngIf="!uploadingWideImage" icon="cloud-upload-outline"></nb-icon>
+                            <nb-spinner *ngIf="uploadingWideImage" size="tiny" status="control"></nb-spinner>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+
+              <div class="form-group">
+                <label class="label">Görsel Boyutları</label>
+                <input type="text" nbInput fullWidth formControlName="imageDimensions" placeholder="1920x1080">
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h6 class="section-title">🇹🇷 Türkçe</h6>
+
+              <div class="form-group">
+                <label class="label">Ürün Adı *</label>
+                <input type="text" nbInput fullWidth formControlName="name" placeholder="Ürün Adı">
+              </div>
+
+              <div class="form-group">
+                <label class="label">Açıklama *</label>
+                <textarea nbInput fullWidth formControlName="description" rows="3"
+                  placeholder="Ürün açıklaması..."></textarea>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="label">Boyut Etiketi</label>
+                    <input type="text" nbInput fullWidth formControlName="sizeLabel" placeholder="Boyut Seçin">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="label">Çerçeve Etiketi</label>
+                    <input type="text" nbInput fullWidth formControlName="frameLabel" placeholder="Çerçeve Seçin">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <nb-accordion>
+              <nb-accordion-item>
+                <nb-accordion-item-header>🇬🇧 English</nb-accordion-item-header>
+                <nb-accordion-item-body>
+                  <div class="form-group">
+                    <label class="label">Product Name</label>
+                    <input type="text" nbInput fullWidth formControlName="nameEn" placeholder="Product Name">
+                  </div>
+                  <div class="form-group">
+                    <label class="label">Description</label>
+                    <textarea nbInput fullWidth formControlName="descriptionEn" rows="3"
+                      placeholder="Product description..."></textarea>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label class="label">Size Label</label>
+                        <input type="text" nbInput fullWidth formControlName="sizeLabelEn" placeholder="Select Size">
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label class="label">Frame Label</label>
+                        <input type="text" nbInput fullWidth formControlName="frameLabelEn" placeholder="Select Frame">
+                      </div>
+                    </div>
+                  </div>
+                </nb-accordion-item-body>
+              </nb-accordion-item>
+
+              <nb-accordion-item>
+                <nb-accordion-item-header>🇫🇷 Français</nb-accordion-item-header>
+                <nb-accordion-item-body>
+                  <div class="form-group">
+                    <label class="label">Nom du produit</label>
+                    <input type="text" nbInput fullWidth formControlName="nameFr" placeholder="Nom du produit">
+                  </div>
+                  <div class="form-group">
+                    <label class="label">Description</label>
+                    <textarea nbInput fullWidth formControlName="descriptionFr" rows="3"
+                      placeholder="Description du produit..."></textarea>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label class="label">Étiquette de taille</label>
+                        <input type="text" nbInput fullWidth formControlName="sizeLabelFr"
+                          placeholder="Sélectionner la taille">
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label class="label">Étiquette de cadre</label>
+                        <input type="text" nbInput fullWidth formControlName="frameLabelFr"
+                          placeholder="Sélectionner le cadre">
+                      </div>
+                    </div>
+                  </div>
+                </nb-accordion-item-body>
+              </nb-accordion-item>
+            </nb-accordion>
+
+            <div class="form-actions">
+              <button nbButton status="primary" type="submit" [disabled]="submitting || productForm.invalid"
+                [nbSpinner]="submitting">
+                <nb-icon icon="save-outline"></nb-icon>
+                {{ isEditMode ? 'Güncelle' : 'Kaydet' }}
+              </button>
+              <button nbButton status="basic" type="button" (click)="cancel()">
+                İptal
+              </button>
+            </div>
+          </form>
+        </nb-tab>
+
+        <!-- Boyutlar Tab (sadece edit modunda) -->
+        <nb-tab tabTitle="Boyutlar ({{ sizes.length }})" tabIcon="expand-outline" *ngIf="isEditMode">
+          <div class="tab-header">
+            <h6>Ürün Boyutları</h6>
+            <button nbButton status="primary" size="small" (click)="addSize()">
+              <nb-icon icon="plus-outline"></nb-icon>
+              Yeni Boyut
+            </button>
+          </div>
+
+          <!-- Size Form -->
+          <nb-card class="inline-form" *ngIf="showSizeForm">
+            <nb-card-header>
+              {{ editingSizeId ? 'Boyut Düzenle' : 'Yeni Boyut Ekle' }}
+            </nb-card-header>
+            <nb-card-body>
+              <form [formGroup]="sizeForm">
+                <div class="row">
+                  <div class="col-md-4">
+                    <div class="form-group">
+                      <label class="label">Slug *</label>
+                      <input type="text" nbInput fullWidth formControlName="slug" placeholder="30x40">
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="form-group">
+                      <label class="label">Ad (TR) *</label>
+                      <input type="text" nbInput fullWidth formControlName="name" placeholder="30x40 cm">
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="form-group">
+                      <label class="label">Boyutlar *</label>
+                      <input type="text" nbInput fullWidth formControlName="dimensions" placeholder="30x40">
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-3">
+                    <div class="form-group">
+                      <label class="label">Ad (EN)</label>
+                      <input type="text" nbInput fullWidth formControlName="nameEn" placeholder="30x40 cm">
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-group">
+                      <label class="label">Ad (FR)</label>
+                      <input type="text" nbInput fullWidth formControlName="nameFr" placeholder="30x40 cm">
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-group">
+                      <label class="label">Fiyat (TL) *</label>
+                      <input type="number" nbInput fullWidth formControlName="priceAmount" placeholder="199.99"
+                        step="0.01">
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-group">
+                      <label class="label">Sıra</label>
+                      <input type="number" nbInput fullWidth formControlName="sortOrder">
+                    </div>
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button nbButton status="success" size="small" type="button" (click)="saveSize()"
+                    [disabled]="sizeForm.invalid || savingSize" [nbSpinner]="savingSize">
+                    {{ editingSizeId ? 'Güncelle' : 'Ekle' }}
+                  </button>
+                  <button nbButton status="basic" size="small" type="button" (click)="cancelSizeEdit()">
+                    İptal
+                  </button>
+                </div>
+              </form>
+            </nb-card-body>
+          </nb-card>
+
+          <!-- Sizes List -->
+          <div class="items-list">
+            <nb-card class="item-card" *ngFor="let size of sizes">
+              <nb-card-body>
+                <div class="item-info">
+                  <div class="item-main">
+                    <span class="item-name">{{ size.name }}</span>
+                    <span class="item-slug">{{ size.slug }}</span>
+                  </div>
+                  <div class="item-details">
+                    <span class="item-dimension">{{ size.dimensions }}</span>
+                    <span class="item-price">{{ formatPrice(size.priceAmount) }}</span>
+                  </div>
+                </div>
+                <div class="item-actions">
+                  <button nbButton status="primary" size="tiny" ghost (click)="editSize(size)">
+                    <nb-icon icon="edit-outline"></nb-icon>
+                  </button>
+                  <button nbButton status="danger" size="tiny" ghost (click)="deleteSize(size)">
+                    <nb-icon icon="trash-2-outline"></nb-icon>
+                  </button>
+                </div>
+              </nb-card-body>
+            </nb-card>
+
+            <div class="empty-state" *ngIf="sizes.length === 0">
+              <nb-icon icon="expand-outline"></nb-icon>
+              <p>Henüz boyut eklenmemiş</p>
+            </div>
+          </div>
+        </nb-tab>
+
+        <!-- Çerçeveler Tab (sadece edit modunda) -->
+        <nb-tab tabTitle="Çerçeveler ({{ frames.length }})" tabIcon="square-outline" *ngIf="isEditMode">
+          <div class="tab-header">
+            <h6>Ürün Çerçeveleri</h6>
+            <button nbButton status="primary" size="small" (click)="addFrame()">
+              <nb-icon icon="plus-outline"></nb-icon>
+              Yeni Çerçeve
+            </button>
+          </div>
+
+          <!-- Frame Form -->
+          <nb-card class="inline-form" *ngIf="showFrameForm">
+            <nb-card-header>
+              {{ editingFrameId ? 'Çerçeve Düzenle' : 'Yeni Çerçeve Ekle' }}
+            </nb-card-header>
+            <nb-card-body>
+              <form [formGroup]="frameForm">
+                <div class="row">
+                  <div class="col-md-4">
+                    <div class="form-group">
+                      <label class="label">Slug *</label>
+                      <input type="text" nbInput fullWidth formControlName="slug" placeholder="black">
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="form-group">
+                      <label class="label">Ad (TR) *</label>
+                      <input type="text" nbInput fullWidth formControlName="name" placeholder="Siyah Çerçeve">
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="form-group">
+                      <label class="label">Renk Kodu</label>
+                      <div class="color-input">
+                        <input type="color" formControlName="colorCode" class="color-picker">
+                        <input type="text" nbInput formControlName="colorCode" placeholder="#000000">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-3">
+                    <div class="form-group">
+                      <label class="label">Ad (EN)</label>
+                      <input type="text" nbInput fullWidth formControlName="nameEn" placeholder="Black Frame">
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-group">
+                      <label class="label">Ad (FR)</label>
+                      <input type="text" nbInput fullWidth formControlName="nameFr" placeholder="Cadre noir">
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-group">
+                      <label class="label">Fiyat (TL) *</label>
+                      <input type="number" nbInput fullWidth formControlName="priceAmount" placeholder="49.99"
+                        step="0.01">
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-group">
+                      <label class="label">Sıra</label>
+                      <input type="number" nbInput fullWidth formControlName="sortOrder">
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label class="label">Çerçeve Görsel URL</label>
+                      <div class="image-input-group">
+                        <div class="image-preview" *ngIf="frameForm.get('frameImage')?.value">
+                          <img [src]="frameForm.get('frameImage')?.value"
+                            (click)="openImage(frameForm.get('frameImage')?.value)" alt="Çerçeve Görsel"
+                            class="thumbnail">
+                        </div>
+                        <div class="input-with-upload">
+                          <input type="text" nbInput fullWidth formControlName="frameImage" placeholder="https://...">
+                          <div class="upload-button">
+                            <input type="file" #frameImageInput accept="image/*" (change)="onFrameImageSelect($event)"
+                              hidden>
+                            <button nbButton status="primary" size="small" type="button"
+                              [disabled]="uploadingFrameImage" (click)="frameImageInput.click()">
+                              <nb-icon *ngIf="!uploadingFrameImage" icon="cloud-upload-outline"></nb-icon>
+                              <nb-spinner *ngIf="uploadingFrameImage" size="tiny" status="control"></nb-spinner>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label class="label">Büyük Çerçeve Görsel URL</label>
+                      <div class="image-input-group">
+                        <div class="image-preview" *ngIf="frameForm.get('frameImageLarge')?.value">
+                          <img [src]="frameForm.get('frameImageLarge')?.value"
+                            (click)="openImage(frameForm.get('frameImageLarge')?.value)" alt="Büyük Çerçeve Görsel"
+                            class="thumbnail">
+                        </div>
+                        <div class="input-with-upload">
+                          <input type="text" nbInput fullWidth formControlName="frameImageLarge"
+                            placeholder="https://...">
+                          <div class="upload-button">
+                            <input type="file" #frameImageLargeInput accept="image/*"
+                              (change)="onFrameImageLargeSelect($event)" hidden>
+                            <button nbButton status="primary" size="small" type="button"
+                              [disabled]="uploadingFrameImageLarge" (click)="frameImageLargeInput.click()">
+                              <nb-icon *ngIf="!uploadingFrameImageLarge" icon="cloud-upload-outline"></nb-icon>
+                              <nb-spinner *ngIf="uploadingFrameImageLarge" size="tiny" status="control"></nb-spinner>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Mockup Template Section -->
+                <div class="mockup-section">
+                  <h6 class="section-subtitle">
+                    <nb-icon icon="image-outline"></nb-icon>
+                    Mockup Ön İzleme Ayarları
+                  </h6>
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <label class="label">Mockup Template URL</label>
+                        <div class="image-input-group">
+                          <div class="image-preview mockup-preview" *ngIf="frameForm.get('mockupTemplate')?.value">
+                            <img [src]="frameForm.get('mockupTemplate')?.value"
+                              (click)="openImage(frameForm.get('mockupTemplate')?.value)" alt="Mockup Template"
+                              class="thumbnail">
+                          </div>
+                          <div class="input-with-upload">
+                            <input type="text" nbInput fullWidth formControlName="mockupTemplate"
+                              placeholder="https://cdn.example.com/mockups/siyah-cerceve.png">
+                            <div class="upload-button">
+                              <input type="file" #mockupTemplateInput accept="image/*"
+                                (change)="onMockupTemplateSelect($event)" hidden>
+                              <button nbButton status="primary" size="small" type="button"
+                                [disabled]="uploadingMockupTemplate" (click)="mockupTemplateInput.click()">
+                                <nb-icon *ngIf="!uploadingMockupTemplate" icon="cloud-upload-outline"></nb-icon>
+                                <nb-spinner *ngIf="uploadingMockupTemplate" size="tiny" status="control"></nb-spinner>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                        <small class="form-text text-muted">Çerçevenin mockup önizleme görseli (üretilen görsel bu
+                          template üzerine yerleştirilir)</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-4">
+                      <div class="form-group">
+                        <label class="label">Config Tipi</label>
+                        <input type="text" nbInput fullWidth formControlName="mockupConfigType" placeholder="frame">
+                        <small class="form-text text-muted">Örn: frame, canvas, poster</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-3">
+                      <div class="form-group">
+                        <label class="label">X Pozisyonu (%)</label>
+                        <input type="number" nbInput fullWidth formControlName="mockupConfigX" placeholder="12" min="0"
+                          max="100" step="1">
+                        <small class="form-text text-muted">Sol kenardan uzaklık</small>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-group">
+                        <label class="label">Y Pozisyonu (%)</label>
+                        <input type="number" nbInput fullWidth formControlName="mockupConfigY" placeholder="15" min="0"
+                          max="100" step="1">
+                        <small class="form-text text-muted">Üst kenardan uzaklık</small>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-group">
+                        <label class="label">Genişlik (%)</label>
+                        <input type="number" nbInput fullWidth formControlName="mockupConfigWidth" placeholder="76"
+                          min="1" max="100" step="1">
+                        <small class="form-text text-muted">Görsel genişliği</small>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-group">
+                        <label class="label">Yükseklik (%)</label>
+                        <input type="number" nbInput fullWidth formControlName="mockupConfigHeight" placeholder="70"
+                          min="1" max="100" step="1">
+                        <small class="form-text text-muted">Görsel yüksekliği</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button nbButton status="success" size="small" type="button" (click)="saveFrame()"
+                    [disabled]="frameForm.invalid || savingFrame" [nbSpinner]="savingFrame">
+                    {{ editingFrameId ? 'Güncelle' : 'Ekle' }}
+                  </button>
+                  <button nbButton status="basic" size="small" type="button" (click)="cancelFrameEdit()">
+                    İptal
+                  </button>
+                </div>
+              </form>
+            </nb-card-body>
+          </nb-card>
+
+          <!-- Frames List -->
+          <div class="items-list">
+            <nb-card class="item-card" *ngFor="let frame of frames">
+              <nb-card-body>
+                <div class="item-info">
+                  <div class="item-main">
+                    <div class="frame-color" [style.background-color]="frame.colorCode || '#000'"></div>
+                    <span class="item-name">{{ frame.name }}</span>
+                    <span class="item-slug">{{ frame.slug }}</span>
+                  </div>
+                  <div class="item-details">
+                    <span class="item-color-code">{{ frame.colorCode }}</span>
+                    <span class="item-price">{{ formatPrice(frame.priceAmount) }}</span>
+                  </div>
+                </div>
+                <div class="item-actions">
+                  <button nbButton status="primary" size="tiny" ghost (click)="editFrame(frame)">
+                    <nb-icon icon="edit-outline"></nb-icon>
+                  </button>
+                  <button nbButton status="danger" size="tiny" ghost (click)="deleteFrame(frame)">
+                    <nb-icon icon="trash-2-outline"></nb-icon>
+                  </button>
+                </div>
+              </nb-card-body>
+            </nb-card>
+
+            <div class="empty-state" *ngIf="frames.length === 0">
+              <nb-icon icon="square-outline"></nb-icon>
+              <p>Henüz çerçeve eklenmemiş</p>
+            </div>
+          </div>
+        </nb-tab>
+      </nb-tabset>
+    </nb-card-body>
+  </nb-card>
+
+  <!-- Yeni ürün için bilgi -->
+  <nb-alert status="info" *ngIf="!isEditMode" class="mt-3">
+    <nb-icon icon="info-outline"></nb-icon>
+    Ürünü kaydettikten sonra boyut ve çerçeve ekleyebilirsiniz.
+  </nb-alert>
+</div>
+
+<ng-template #loadingTemplate>
+  <div class="loading-container">
+    <nb-spinner status="primary" size="large"></nb-spinner>
+    <p>Ürün yükleniyor...</p>
+  </div>
+</ng-template>

@@ -1,0 +1,83 @@
+<nb-card>
+  <nb-card-header>
+    <h5>Hakkında Sayfası İçeriği</h5>
+  </nb-card-header>
+  <nb-card-body>
+    <div *ngIf="loading" class="text-center">
+      <p>Yükleniyor...</p>
+    </div>
+    <div *ngIf="!loading && aboutContent">
+      <nb-tabset>
+        <nb-tab tabTitle="Türkçe">
+          <div class="content-section">
+            <h6>Bölüm 1</h6>
+            <p><strong>Başlık:</strong> {{ aboutContent.section1TitleTr }}</p>
+            <p><strong>İçerik:</strong> {{ aboutContent.section1BodyTr }}</p>
+          </div>
+          <div class="content-section">
+            <h6>Bölüm 2</h6>
+            <p><strong>Başlık:</strong> {{ aboutContent.section2TitleTr }}</p>
+            <p><strong>İçerik:</strong> {{ aboutContent.section2BodyTr }}</p>
+          </div>
+          <div class="content-section">
+            <h6>Bölüm 3</h6>
+            <p><strong>Başlık:</strong> {{ aboutContent.section3TitleTr }}</p>
+            <p><strong>İçerik:</strong> {{ aboutContent.section3BodyTr }}</p>
+          </div>
+          <div class="content-section">
+            <h6>Misyon & Vizyon</h6>
+            <p><strong>Misyon:</strong> {{ aboutContent.missionTr }}</p>
+            <p><strong>Vizyon:</strong> {{ aboutContent.visionTr }}</p>
+          </div>
+        </nb-tab>
+        <nb-tab tabTitle="English">
+          <div class="content-section">
+            <h6>Section 1</h6>
+            <p><strong>Title:</strong> {{ aboutContent.section1TitleEn }}</p>
+            <p><strong>Content:</strong> {{ aboutContent.section1BodyEn }}</p>
+          </div>
+          <div class="content-section">
+            <h6>Section 2</h6>
+            <p><strong>Title:</strong> {{ aboutContent.section2TitleEn }}</p>
+            <p><strong>Content:</strong> {{ aboutContent.section2BodyEn }}</p>
+          </div>
+          <div class="content-section">
+            <h6>Section 3</h6>
+            <p><strong>Title:</strong> {{ aboutContent.section3TitleEn }}</p>
+            <p><strong>Content:</strong> {{ aboutContent.section3BodyEn }}</p>
+          </div>
+          <div class="content-section">
+            <h6>Mission & Vision</h6>
+            <p><strong>Mission:</strong> {{ aboutContent.missionEn }}</p>
+            <p><strong>Vision:</strong> {{ aboutContent.visionEn }}</p>
+          </div>
+        </nb-tab>
+        <nb-tab tabTitle="Français">
+          <div class="content-section">
+            <h6>Section 1</h6>
+            <p><strong>Titre:</strong> {{ aboutContent.section1TitleFr }}</p>
+            <p><strong>Contenu:</strong> {{ aboutContent.section1BodyFr }}</p>
+          </div>
+          <div class="content-section">
+            <h6>Section 2</h6>
+            <p><strong>Titre:</strong> {{ aboutContent.section2TitleFr }}</p>
+            <p><strong>Contenu:</strong> {{ aboutContent.section2BodyFr }}</p>
+          </div>
+          <div class="content-section">
+            <h6>Section 3</h6>
+            <p><strong>Titre:</strong> {{ aboutContent.section3TitleFr }}</p>
+            <p><strong>Contenu:</strong> {{ aboutContent.section3BodyFr }}</p>
+          </div>
+          <div class="content-section">
+            <h6>Mission & Vision</h6>
+            <p><strong>Mission:</strong> {{ aboutContent.missionFr }}</p>
+            <p><strong>Vision:</strong> {{ aboutContent.visionFr }}</p>
+          </div>
+        </nb-tab>
+      </nb-tabset>
+    </div>
+    <div *ngIf="!loading && !aboutContent" class="text-center">
+      <p>İçerik bulunamadı.</p>
+    </div>
+  </nb-card-body>
+</nb-card>

@@ -1,0 +1,408 @@
+@import '../../@theme/styles/themes';
+
+@include nb-install-component() {
+  .login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1a1f36 0%, #0d1117 50%, #161b22 100%);
+    position: relative;
+    overflow: hidden;
+    padding: 2rem;
+  }
+
+  .login-container {
+    width: 100%;
+    max-width: 420px;
+    z-index: 10;
+  }
+
+  // Header
+  .login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+
+      .logo-text {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #3366ff 0%, #00d68f 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: -1px;
+      }
+
+      .logo-badge {
+        background: linear-gradient(135deg, #3366ff 0%, #598bff 100%);
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    }
+
+    .title {
+      color: white;
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 0 0 0.5rem;
+    }
+
+    .subtitle {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.9375rem;
+      margin: 0;
+    }
+  }
+
+  // Login Card
+  .login-card {
+    border-radius: 1rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(30, 35, 50, 0.95);
+    backdrop-filter: blur(20px);
+
+    nb-card-body {
+      padding: 2rem;
+    }
+  }
+
+  // Alert
+  nb-alert {
+    margin-bottom: 1.5rem;
+    border-radius: 0.5rem;
+    background: rgba(255, 61, 113, 0.15) !important;
+    border: 1px solid rgba(255, 61, 113, 0.3) !important;
+    color: #ff6b8a !important;
+    display: flex;
+    align-items: center;
+    padding: 1rem !important;
+    
+    nb-icon {
+      font-size: 1.25rem !important;
+      width: 20px !important;
+      height: 20px !important;
+      min-width: 20px;
+      margin-right: 0.75rem;
+      flex-shrink: 0;
+      
+      svg {
+        width: 20px !important;
+        height: 20px !important;
+      }
+    }
+  }
+
+  ::ng-deep nb-alert {
+    .alert-message-wrapper {
+      display: flex;
+      align-items: center;
+    }
+    
+    .close {
+      color: #ff6b8a !important;
+      opacity: 0.7;
+      
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
+
+  // Custom Error Alert
+  .error-alert {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    background: rgba(255, 61, 113, 0.12);
+    border: 1px solid rgba(255, 61, 113, 0.25);
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+    
+    svg {
+      color: #ff6b8a;
+      flex-shrink: 0;
+    }
+    
+    .error-message {
+      flex: 1;
+      color: #ff8fa3;
+      font-size: 0.875rem;
+      line-height: 1.4;
+    }
+    
+    .close-btn {
+      background: none;
+      border: none;
+      padding: 0.25rem;
+      cursor: pointer;
+      color: rgba(255, 107, 138, 0.6);
+      transition: color 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      &:hover {
+        color: #ff6b8a;
+      }
+    }
+  }
+
+  // Form
+  .form-group {
+    margin-bottom: 1.25rem;
+
+    .label {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+
+      .shield-icon {
+        color: rgba(255, 255, 255, 0.4);
+        cursor: help;
+        width: 14px;
+        height: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+
+      .input-icon {
+        position: absolute;
+        left: 0.875rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: rgba(255, 255, 255, 0.4);
+        z-index: 1;
+        pointer-events: none;
+        width: 18px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      input {
+        padding-left: 2.75rem;
+        padding-right: 2.75rem;
+        height: 48px;
+        font-size: 0.9375rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 0.5rem;
+        color: white;
+        transition: all 0.2s ease;
+
+        &::placeholder {
+          color: rgba(255, 255, 255, 0.3);
+        }
+
+        &:focus {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: #3366ff;
+          box-shadow: 0 0 0 3px rgba(51, 102, 255, 0.2);
+        }
+
+        &[status="danger"] {
+          border-color: #ff3d71;
+          
+          &:focus {
+            box-shadow: 0 0 0 3px rgba(255, 61, 113, 0.2);
+          }
+        }
+      }
+
+      .toggle-btn {
+        position: absolute;
+        right: 0.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        padding: 0.5rem;
+        cursor: pointer;
+        color: rgba(255, 255, 255, 0.4);
+        transition: color 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+
+        &:hover {
+          color: rgba(255, 255, 255, 0.8);
+        }
+      }
+    }
+
+    .error-text {
+      display: block;
+      color: #ff3d71;
+      font-size: 0.75rem;
+      margin-top: 0.375rem;
+    }
+  }
+
+  // Submit Button
+  button[type="submit"] {
+    height: 52px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    margin-top: 0.5rem;
+    background: linear-gradient(135deg, #3366ff 0%, #598bff 100%);
+    border: none;
+    transition: all 0.3s ease;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(51, 102, 255, 0.4);
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    &:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+  }
+
+  // Footer
+  .login-footer {
+    text-align: center;
+    margin-top: 2rem;
+
+    .security-note {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.8125rem;
+      margin: 0 0 0.5rem;
+
+      svg {
+        color: #00d68f;
+      }
+    }
+
+    .copyright {
+      color: rgba(255, 255, 255, 0.3);
+      font-size: 0.75rem;
+      margin: 0;
+    }
+  }
+
+  // Background Pattern
+  .background-pattern {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    overflow: hidden;
+
+    .pattern-circle {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.1;
+    }
+
+    .circle-1 {
+      width: 600px;
+      height: 600px;
+      background: linear-gradient(135deg, #3366ff 0%, #00d68f 100%);
+      top: -200px;
+      right: -200px;
+    }
+
+    .circle-2 {
+      width: 400px;
+      height: 400px;
+      background: linear-gradient(135deg, #8950fc 0%, #ff3d71 100%);
+      bottom: -100px;
+      left: -100px;
+    }
+
+    .circle-3 {
+      width: 300px;
+      height: 300px;
+      background: linear-gradient(135deg, #ffaa00 0%, #ff3d71 100%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+  }
+
+  // Responsive
+  @media (max-width: 480px) {
+    .login-page {
+      padding: 1rem;
+    }
+
+    .login-header {
+      .logo .logo-text {
+        font-size: 2rem;
+      }
+
+      .title {
+        font-size: 1.25rem;
+      }
+    }
+
+    .login-card nb-card-body {
+      padding: 1.5rem;
+    }
+  }
+
+  // Global nb-icon size overrides for login page
+  .input-icon,
+  .toggle-btn,
+  .shield-icon {
+    nb-icon {
+      font-size: 1rem !important;
+      width: 18px !important;
+      height: 18px !important;
+      
+      svg {
+        width: 18px !important;
+        height: 18px !important;
+      }
+    }
+  }
+
+  .shield-icon nb-icon {
+    font-size: 0.75rem !important;
+    width: 14px !important;
+    height: 14px !important;
+    
+    svg {
+      width: 14px !important;
+      height: 14px !important;
+    }
+  }
+}

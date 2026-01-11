@@ -1,0 +1,179 @@
+<nb-card>
+  <nb-card-header>
+    <div class="header-content">
+      <h5>
+        <nb-icon icon="settings-2-outline"></nb-icon>
+        Site Ayarları
+      </h5>
+      <button nbButton status="primary" (click)="saveAllSettings()" [disabled]="saving" [nbSpinner]="saving">
+        <nb-icon icon="save-outline"></nb-icon>
+        Tümünü Kaydet
+      </button>
+    </div>
+  </nb-card-header>
+  
+  <nb-card-body>
+    <!-- Loading -->
+    <div *ngIf="loading" class="loading-container">
+      <nb-spinner size="large" status="primary"></nb-spinner>
+      <p>Ayarlar yükleniyor...</p>
+    </div>
+
+    <!-- Content -->
+    <div *ngIf="!loading" class="settings-content">
+      
+      <!-- Genel Ayarlar -->
+      <div class="settings-section">
+        <div class="section-header">
+          <h6>
+            <nb-icon icon="globe-outline"></nb-icon>
+            Genel Ayarlar
+          </h6>
+          <button nbButton size="small" status="success" (click)="saveGeneralSettings()" [disabled]="saving">
+            Kaydet
+          </button>
+        </div>
+        
+        <form [formGroup]="generalForm" class="settings-form">
+          <div class="row">
+            <div *ngFor="let field of generalFields" 
+                 [class]="field.valueType === 'textarea' ? 'col-12' : 'col-md-6'">
+              <div class="form-group">
+                <label class="label">
+                  <nb-icon [icon]="field.icon"></nb-icon>
+                  {{ field.label }}
+                </label>
+                <span class="field-description" *ngIf="field.description">{{ field.description }}</span>
+                <textarea *ngIf="field.valueType === 'textarea'"
+                          nbInput
+                          fullWidth
+                          [formControlName]="field.key"
+                          [placeholder]="field.placeholder"
+                          rows="3"></textarea>
+                <input *ngIf="field.valueType !== 'textarea'"
+                       nbInput
+                       fullWidth
+                       [type]="field.valueType === 'email' ? 'email' : 'text'"
+                       [formControlName]="field.key"
+                       [placeholder]="field.placeholder">
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Şirket Bilgileri -->
+      <div class="settings-section">
+        <div class="section-header">
+          <h6>
+            <nb-icon icon="briefcase-outline"></nb-icon>
+            Şirket Bilgileri
+          </h6>
+          <button nbButton size="small" status="success" (click)="saveCompanySettings()" [disabled]="saving">
+            Kaydet
+          </button>
+        </div>
+        
+        <form [formGroup]="companyForm" class="settings-form">
+          <div class="row">
+            <div *ngFor="let field of companyFields" 
+                 [class]="field.valueType === 'textarea' ? 'col-12' : 'col-md-6'">
+              <div class="form-group">
+                <label class="label">
+                  <nb-icon [icon]="field.icon"></nb-icon>
+                  {{ field.label }}
+                  <nb-icon *ngIf="!field.isPublic" icon="lock-outline" class="private-icon" nbTooltip="Bu bilgi sadece yönetim panelinde görünür"></nb-icon>
+                </label>
+                <span class="field-description" *ngIf="field.description">{{ field.description }}</span>
+                <textarea *ngIf="field.valueType === 'textarea'"
+                          nbInput
+                          fullWidth
+                          [formControlName]="field.key"
+                          [placeholder]="field.placeholder"
+                          rows="3"></textarea>
+                <input *ngIf="field.valueType !== 'textarea'"
+                       nbInput
+                       fullWidth
+                       [type]="field.valueType === 'email' ? 'email' : 'text'"
+                       [formControlName]="field.key"
+                       [placeholder]="field.placeholder">
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- İletişim Bilgileri -->
+      <div class="settings-section">
+        <div class="section-header">
+          <h6>
+            <nb-icon icon="phone-outline"></nb-icon>
+            İletişim Bilgileri
+          </h6>
+          <button nbButton size="small" status="success" (click)="saveContactSettings()" [disabled]="saving">
+            Kaydet
+          </button>
+        </div>
+        
+        <form [formGroup]="contactForm" class="settings-form">
+          <div class="row">
+            <div *ngFor="let field of contactFields" 
+                 [class]="field.valueType === 'textarea' ? 'col-12' : 'col-md-6'">
+              <div class="form-group">
+                <label class="label">
+                  <nb-icon [icon]="field.icon"></nb-icon>
+                  {{ field.label }}
+                </label>
+                <span class="field-description" *ngIf="field.description">{{ field.description }}</span>
+                <textarea *ngIf="field.valueType === 'textarea'"
+                          nbInput
+                          fullWidth
+                          [formControlName]="field.key"
+                          [placeholder]="field.placeholder"
+                          rows="3"></textarea>
+                <input *ngIf="field.valueType !== 'textarea'"
+                       nbInput
+                       fullWidth
+                       [type]="field.valueType === 'email' ? 'email' : 'text'"
+                       [formControlName]="field.key"
+                       [placeholder]="field.placeholder">
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Sosyal Medya Hesapları -->
+      <div class="settings-section">
+        <div class="section-header">
+          <h6>
+            <nb-icon icon="share-outline"></nb-icon>
+            Sosyal Medya Hesapları
+          </h6>
+          <button nbButton size="small" status="success" (click)="saveSocialSettings()" [disabled]="saving">
+            Kaydet
+          </button>
+        </div>
+        
+        <form [formGroup]="socialForm" class="settings-form">
+          <div class="row">
+            <div *ngFor="let field of socialFields" class="col-md-6">
+              <div class="form-group">
+                <label class="label">
+                  <nb-icon [icon]="field.icon"></nb-icon>
+                  {{ field.label }}
+                </label>
+                <input nbInput
+                       fullWidth
+                       type="url"
+                       [formControlName]="field.key"
+                       [placeholder]="field.placeholder">
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </nb-card-body>
+</nb-card>

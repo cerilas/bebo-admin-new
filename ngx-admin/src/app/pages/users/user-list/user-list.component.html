@@ -1,0 +1,166 @@
+<div class="users-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h4>Kullanıcılar</h4>
+      <span class="user-count">{{ filteredUsers.length }} kullanıcı</span>
+    </div>
+    <button nbButton status="primary" size="small" (click)="loadUsers()">
+      <nb-icon icon="refresh-outline"></nb-icon>
+      Yenile
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <div class="search-box">
+      <nb-icon icon="search-outline" class="search-icon"></nb-icon>
+      <input nbInput placeholder="İsim, email veya telefon ara..." [(ngModel)]="searchTerm" (input)="onSearchChange()">
+    </div>
+
+    <div class="filter-group">
+      <nb-select [(ngModel)]="pageSize" (selectedChange)="onPageSizeChange()" size="small">
+        <nb-option [value]="10">10 / sayfa</nb-option>
+        <nb-option [value]="25">25 / sayfa</nb-option>
+        <nb-option [value]="50">50 / sayfa</nb-option>
+        <nb-option [value]="100">100 / sayfa</nb-option>
+      </nb-select>
+
+      <button nbButton ghost status="basic" size="small" (click)="resetFilters()" *ngIf="searchTerm">
+        <nb-icon icon="close-outline"></nb-icon>
+        Temizle
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="skeleton-row" *ngFor="let i of [1,2,3,4,5]">
+      <div class="skeleton-cell avatar"></div>
+      <div class="skeleton-cell name"></div>
+      <div class="skeleton-cell email"></div>
+      <div class="skeleton-cell stat"></div>
+      <div class="skeleton-cell stat"></div>
+      <div class="skeleton-cell stat"></div>
+      <div class="skeleton-cell date"></div>
+      <div class="skeleton-cell action"></div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-container" *ngIf="!loading">
+    <table class="users-table">
+      <thead>
+        <tr>
+          <th>Kullanıcı</th>
+          <th>İletişim</th>
+          <th class="sortable" (click)="sortBy('artCredits')">
+            <span>Kredi</span>
+            <nb-icon [icon]="getSortIcon('artCredits')"></nb-icon>
+          </th>
+          <th class="sortable" (click)="sortBy('totalOrders')">
+            <span>Sipariş</span>
+            <nb-icon [icon]="getSortIcon('totalOrders')"></nb-icon>
+          </th>
+          <th class="sortable" (click)="sortBy('totalSpent')">
+            <span>Harcama</span>
+            <nb-icon [icon]="getSortIcon('totalSpent')"></nb-icon>
+          </th>
+          <th class="sortable" (click)="sortBy('createdAt')">
+            <span>Kayıt / Güncelleme</span>
+            <nb-icon [icon]="getSortIcon('createdAt')"></nb-icon>
+          </th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let user of paginatedUsers" (click)="openUserDetail(user.id)">
+          <td class="user-cell">
+            <div class="user-avatar" [style.background-image]="user.imageUrl ? 'url(' + user.imageUrl + ')' : ''"
+              [class.has-image]="!!user.imageUrl">
+              <nb-icon icon="person-outline" *ngIf="!user.imageUrl"></nb-icon>
+            </div>
+            <div class="user-info">
+              <span class="user-name">
+                <ng-container *ngIf="user.firstName || user.lastName; else fallbackName">
+                  {{ user.firstName }} {{ user.lastName }}
+                </ng-container>
+                <ng-template #fallbackName>
+                  {{ user.customerName || 'İsimsiz Kullanıcı' }}
+                </ng-template>
+              </span>
+              <span class="user-sub-info" style="font-size: 0.8em; color: #8f9bb3;">ID: {{ user.clerkUserId || user.id |
+                slice:0:8 }}...</span>
+            </div>
+          </td>
+          <td class="contact-cell">
+            <div class="contact-info">
+              <span class="user-email" *ngIf="user.email || user.customerEmail">
+                <nb-icon icon="email-outline" pack="eva" style="margin-right: 4px; font-size: 12px;"></nb-icon>
+                {{ user.email || user.customerEmail }}
+              </span>
+              <span class="user-phone" *ngIf="user.phone || user.customerPhone"
+                style="display: block; font-size: 0.9em; color: #8f9bb3; margin-top: 2px;">
+                <nb-icon icon="phone-outline" pack="eva" style="margin-right: 4px; font-size: 12px;"></nb-icon>
+                {{ user.phone || user.customerPhone }}
+              </span>
+            </div>
+          </td>
+          <td class="credits">
+            <nb-icon icon="flash-outline"></nb-icon>
+            {{ user.artCredits || 0 }}
+          </td>
+          <td class="orders">{{ user.totalOrders || 0 }}</td>
+          <td class="spent">{{ (user.totalSpent || 0) / 100 | number:'1.2-2' }} ₺</td>
+          <td class="date">
+            <div style="display: flex; flex-direction: column;">
+              <span>K: {{ user.createdAt | date:'dd MMM yy' }}</span>
+              <span style="font-size: 0.85em; color: #8f9bb3;" *ngIf="user.updatedAt">G: {{ user.updatedAt | date:'dd
+                MMM yy' }}</span>
+            </div>
+          </td>
+          <td class="action">
+            <nb-icon icon="chevron-right-outline"></nb-icon>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Empty State -->
+    <div *ngIf="filteredUsers.length === 0" class="empty-state">
+      <nb-icon icon="people-outline"></nb-icon>
+      <p>Kullanıcı bulunamadı</p>
+      <span>Arama kriterlerini değiştirmeyi deneyin</span>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div *ngIf="!loading && filteredUsers.length > 0" class="pagination">
+    <span class="pagination-info">
+      {{ (currentPage - 1) * pageSize + 1 }}-{{ Math.min(currentPage * pageSize, filteredUsers.length) }} / {{
+      filteredUsers.length }}
+    </span>
+
+    <div class="pagination-controls">
+      <button nbButton ghost size="tiny" [disabled]="currentPage === 1" (click)="goToPage(1)">
+        <nb-icon icon="arrowhead-left-outline"></nb-icon>
+      </button>
+      <button nbButton ghost size="tiny" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+        <nb-icon icon="chevron-left-outline"></nb-icon>
+      </button>
+
+      <span class="page-numbers">
+        <button *ngFor="let page of visiblePages" nbButton [status]="page === currentPage ? 'primary' : 'basic'"
+          [appearance]="page === currentPage ? 'filled' : 'ghost'" size="tiny"
+          (click)="goToPage(page); $event.stopPropagation()">{{ page }}</button>
+      </span>
+
+      <button nbButton ghost size="tiny" [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
+        <nb-icon icon="chevron-right-outline"></nb-icon>
+      </button>
+      <button nbButton ghost size="tiny" [disabled]="currentPage === totalPages" (click)="goToPage(totalPages)">
+        <nb-icon icon="arrowhead-right-outline"></nb-icon>
+      </button>
+    </div>
+  </div>
+</div>

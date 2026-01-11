@@ -1,0 +1,189 @@
+<div class="orders-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h4>Siparişler</h4>
+      <span class="order-count">{{ filteredOrders.length }} sipariş</span>
+    </div>
+    <button nbButton status="primary" size="small" (click)="loadOrders()">
+      <nb-icon icon="refresh-outline"></nb-icon>
+      Yenile
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <div class="search-box">
+      <nb-icon icon="search-outline" class="search-icon"></nb-icon>
+      <input 
+        nbInput 
+        placeholder="Sipariş no, müşteri adı veya email ara..." 
+        [(ngModel)]="searchTerm"
+        (input)="onSearchChange()"
+      >
+    </div>
+    
+    <div class="filter-group">
+      <nb-select 
+        placeholder="Ödeme" 
+        [(ngModel)]="paymentStatusFilter"
+        (selectedChange)="onFilterChange()"
+        size="small"
+      >
+        <nb-option [value]="''">Tüm Ödemeler</nb-option>
+        <nb-option value="pending">Bekliyor</nb-option>
+        <nb-option value="success">Başarılı</nb-option>
+        <nb-option value="failed">Başarısız</nb-option>
+        <nb-option value="refunded">İade</nb-option>
+      </nb-select>
+
+      <nb-select 
+        placeholder="Kargo" 
+        [(ngModel)]="shippingStatusFilter"
+        (selectedChange)="onFilterChange()"
+        size="small"
+      >
+        <nb-option [value]="''">Tüm Kargolar</nb-option>
+        <nb-option value="pending">Bekliyor</nb-option>
+        <nb-option value="preparing">Hazırlanıyor</nb-option>
+        <nb-option value="shipped">Kargoda</nb-option>
+        <nb-option value="delivered">Teslim Edildi</nb-option>
+        <nb-option value="cancelled">İptal</nb-option>
+      </nb-select>
+
+      <nb-select 
+        [(ngModel)]="pageSize"
+        (selectedChange)="onPageSizeChange()"
+        size="small"
+      >
+        <nb-option [value]="10">10 / sayfa</nb-option>
+        <nb-option [value]="25">25 / sayfa</nb-option>
+        <nb-option [value]="50">50 / sayfa</nb-option>
+        <nb-option [value]="100">100 / sayfa</nb-option>
+      </nb-select>
+
+      <button nbButton ghost status="basic" size="small" (click)="resetFilters()" *ngIf="searchTerm || paymentStatusFilter || shippingStatusFilter">
+        <nb-icon icon="close-outline"></nb-icon>
+        Temizle
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="skeleton-row" *ngFor="let i of [1,2,3,4,5]">
+      <div class="skeleton-cell id"></div>
+      <div class="skeleton-cell name"></div>
+      <div class="skeleton-cell product"></div>
+      <div class="skeleton-cell amount"></div>
+      <div class="skeleton-cell badge"></div>
+      <div class="skeleton-cell badge"></div>
+      <div class="skeleton-cell date"></div>
+      <div class="skeleton-cell action"></div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-container" *ngIf="!loading">
+    <table class="orders-table">
+      <thead>
+        <tr>
+          <th class="sortable" (click)="sortBy('id')">
+            <span>No</span>
+            <nb-icon [icon]="getSortIcon('id')"></nb-icon>
+          </th>
+          <th>Müşteri</th>
+          <th>Ürün</th>
+          <th class="sortable" (click)="sortBy('totalAmount')">
+            <span>Tutar</span>
+            <nb-icon [icon]="getSortIcon('totalAmount')"></nb-icon>
+          </th>
+          <th>Ödeme</th>
+          <th>Kargo</th>
+          <th class="sortable" (click)="sortBy('createdAt')">
+            <span>Tarih</span>
+            <nb-icon [icon]="getSortIcon('createdAt')"></nb-icon>
+          </th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let order of paginatedOrders" (click)="openOrderDetail(order.id)">
+          <td class="order-id">#{{ order.id }}</td>
+          <td class="customer">
+            <span class="customer-name">{{ order.customerName || '-' }}</span>
+            <span class="customer-email">{{ order.customerEmail || '' }}</span>
+            <span class="customer-address" *ngIf="order.customerCity">{{ order.customerDistrict ? order.customerDistrict + ', ' : '' }}{{ order.customerCity }}</span>
+          </td>
+          <td class="product">
+            <span *ngIf="order.orderType === 'credit'" class="credit-badge">
+              <nb-icon icon="flash-outline"></nb-icon> Kredi Alımı
+            </span>
+            <span *ngIf="order.orderType !== 'credit'">{{ order.productName || '-' }}</span>
+          </td>
+          <td class="amount">
+            <!-- Fiziksel ürün siparişi ise paymentAmount, değilse totalAmount -->
+            <span *ngIf="order.orderType === 'product' && order.generationId">{{ order.paymentAmount | kurusToTl }} ₺</span>
+            <span *ngIf="order.orderType !== 'product' || !order.generationId">{{ order.totalAmount | kurusToTl }} ₺</span>
+          </td>
+          <td>
+            <span class="status-badge" [class]="'payment-' + order.paymentStatus">
+              {{ getPaymentStatusText(order.paymentStatus) }}
+            </span>
+          </td>
+          <td>
+            <span class="status-badge" [class]="'shipping-' + order.shippingStatus" *ngIf="order.shippingStatus && order.orderType === 'product'">
+              {{ getShippingStatusText(order.shippingStatus) }}
+            </span>
+            <span *ngIf="!order.shippingStatus || order.orderType === 'credit'" class="no-shipping">-</span>
+          </td>
+          <td class="date">{{ order.createdAt | date:'dd MMM yy, HH:mm' }}</td>
+          <td class="action">
+            <nb-icon icon="chevron-right-outline"></nb-icon>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Empty State -->
+    <div *ngIf="filteredOrders.length === 0" class="empty-state">
+      <nb-icon icon="inbox-outline"></nb-icon>
+      <p>Sipariş bulunamadı</p>
+      <span>Filtreleri değiştirmeyi deneyin</span>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div *ngIf="!loading && filteredOrders.length > 0" class="pagination">
+    <span class="pagination-info">
+      {{ (currentPage - 1) * pageSize + 1 }}-{{ Math.min(currentPage * pageSize, filteredOrders.length) }} / {{ filteredOrders.length }}
+    </span>
+    
+    <div class="pagination-controls">
+      <button nbButton ghost size="tiny" [disabled]="currentPage === 1" (click)="goToPage(1)">
+        <nb-icon icon="arrowhead-left-outline"></nb-icon>
+      </button>
+      <button nbButton ghost size="tiny" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+        <nb-icon icon="chevron-left-outline"></nb-icon>
+      </button>
+      
+      <span class="page-numbers">
+        <button 
+          *ngFor="let page of visiblePages"
+          nbButton 
+          [status]="page === currentPage ? 'primary' : 'basic'"
+          [appearance]="page === currentPage ? 'filled' : 'ghost'"
+          size="tiny"
+          (click)="goToPage(page); $event.stopPropagation()"
+        >{{ page }}</button>
+      </span>
+
+      <button nbButton ghost size="tiny" [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
+        <nb-icon icon="chevron-right-outline"></nb-icon>
+      </button>
+      <button nbButton ghost size="tiny" [disabled]="currentPage === totalPages" (click)="goToPage(totalPages)">
+        <nb-icon icon="arrowhead-right-outline"></nb-icon>
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,401 @@
+.product-form-container {
+  max-width: 1200px;
+}
+
+// Header
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h5 {
+    margin: 0;
+  }
+}
+
+// Form Sections
+.form-section {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+
+  &:last-child {
+    border-bottom: none;
+    margin-bottom: 1rem;
+  }
+}
+
+.section-title {
+  margin: 0 0 1rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+}
+
+// Form Elements
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.form-text {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+// Image Upload
+.image-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.image-preview {
+  .thumbnail {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      border-color: var(--primary-500, #3366ff);
+      transform: scale(1.05);
+    }
+  }
+}
+
+.input-with-upload {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+
+  input {
+    flex: 1;
+  }
+
+  .upload-button {
+    button {
+      min-width: 38px;
+      height: 38px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      nb-icon {
+        font-size: 1.25rem;
+      }
+    }
+  }
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  margin-top: 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+// Tabs
+:host ::ng-deep {
+  nb-tabset {
+    .tabset {
+      margin-bottom: 1.5rem;
+    }
+  }
+
+  nb-accordion {
+    margin-top: 1rem;
+
+    nb-accordion-item-header {
+      font-weight: 600;
+    }
+  }
+}
+
+// Tab Header
+.tab-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+
+  h6 {
+    margin: 0;
+    font-weight: 600;
+  }
+}
+
+// Inline Form (for sizes and frames)
+.inline-form {
+  margin-bottom: 1.5rem;
+  background: rgba(0, 0, 0, 0.02);
+
+  nb-card-header {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  nb-card-body {
+    padding: 1rem;
+  }
+
+  .form-group {
+    margin-bottom: 0.75rem;
+  }
+
+  .form-actions {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+  }
+}
+
+// Color Input
+.color-input {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+
+  .color-picker {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 0;
+
+    &::-webkit-color-swatch-wrapper {
+      padding: 2px;
+    }
+
+    &::-webkit-color-swatch {
+      border-radius: 6px;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  input[type="text"] {
+    flex: 1;
+  }
+}
+
+// Items List (sizes and frames)
+.items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.item-card {
+  margin: 0;
+  
+  nb-card-body {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+  }
+}
+
+.item-info {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  flex: 1;
+}
+
+.item-main {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 200px;
+}
+
+.item-name {
+  font-weight: 600;
+}
+
+.item-slug {
+  font-size: 0.75rem;
+  opacity: 0.5;
+  padding: 2px 8px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.item-details {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.item-dimension,
+.item-color-code {
+  font-size: 0.875rem;
+  opacity: 0.7;
+}
+
+.item-price {
+  font-weight: 600;
+  color: #3366ff;
+}
+
+.item-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+// Frame Color Preview
+.frame-color {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+// Empty State
+.empty-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  opacity: 0.5;
+
+  nb-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.875rem;
+  }
+}
+
+// Loading
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  gap: 1rem;
+
+  p {
+    margin: 0;
+    opacity: 0.7;
+  }
+}
+
+// Mockup Section
+.mockup-section {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px dashed rgba(0, 0, 0, 0.1);
+
+  .mockup-section-title {
+    margin: 0 0 1rem 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.6;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    nb-icon {
+      font-size: 1rem;
+    }
+  }
+
+  .mockup-preview {
+    margin-top: 0.75rem;
+
+    .mockup-thumbnail {
+      max-width: 200px;
+      max-height: 150px;
+      object-fit: contain;
+      border-radius: 8px;
+      border: 2px solid rgba(0, 0, 0, 0.1);
+      background: #f8f9fa;
+      padding: 4px;
+
+      &:hover {
+        border-color: var(--primary-500, #3366ff);
+      }
+    }
+  }
+
+  .mockup-config-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+
+    .config-input {
+      flex: 1;
+      min-width: 0;
+
+      .label {
+        display: block;
+        margin-bottom: 0.35rem;
+        font-weight: 500;
+        font-size: 0.75rem;
+        opacity: 0.7;
+      }
+    }
+  }
+
+  .mockup-help-text {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 6px;
+    font-size: 0.75rem;
+    opacity: 0.7;
+    line-height: 1.5;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .item-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .item-details {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .tab-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .mockup-section {
+    .mockup-config-row {
+      flex-wrap: wrap;
+
+      .config-input {
+        flex: 1 1 45%;
+      }
+    }
+  }
+}

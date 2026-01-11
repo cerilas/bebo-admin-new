@@ -1,0 +1,270 @@
+<!-- Genel Bakış Header with Time Filter -->
+<div class="dashboard-header">
+  <div class="header-title">
+    <h4>Genel Bakış</h4>
+    <span class="subtitle">Platform istatistiklerine genel bakış</span>
+  </div>
+  <div class="time-filter">
+    <nb-button-group>
+      <button *ngFor="let period of periods" 
+              nbButton 
+              [status]="selectedPeriod === period.value ? 'primary' : 'basic'"
+              size="small"
+              (click)="onPeriodChange(period.value)">
+        {{ period.label }}
+      </button>
+    </nb-button-group>
+  </div>
+</div>
+
+<!-- Stats Cards Row -->
+<div class="row stats-row" *ngIf="stats">
+  <div class="col-xl-3 col-lg-6 col-md-6">
+    <nb-card class="stat-card orders">
+      <nb-card-body>
+        <div class="stat-icon">
+          <nb-icon icon="shopping-cart-outline"></nb-icon>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Toplam Sipariş</span>
+          <span class="stat-value">{{ formatNumber(stats.totalOrders) }}</span>
+          <span class="stat-change positive">
+            <nb-icon icon="trending-up-outline"></nb-icon>
+            {{ stats.pendingOrders }} beklemede
+          </span>
+        </div>
+      </nb-card-body>
+    </nb-card>
+  </div>
+  
+  <div class="col-xl-3 col-lg-6 col-md-6">
+    <nb-card class="stat-card revenue">
+      <nb-card-body>
+        <div class="stat-icon">
+          <nb-icon icon="credit-card-outline"></nb-icon>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Toplam Gelir</span>
+          <span class="stat-value">{{ formatCurrency(stats.totalRevenue) }}</span>
+          <span class="stat-change">
+            <nb-icon icon="pie-chart-outline"></nb-icon>
+            {{ stats.completedOrders }} tamamlanan
+          </span>
+        </div>
+      </nb-card-body>
+    </nb-card>
+  </div>
+  
+  <div class="col-xl-3 col-lg-6 col-md-6">
+    <nb-card class="stat-card users">
+      <nb-card-body>
+        <div class="stat-icon">
+          <nb-icon icon="people-outline"></nb-icon>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Kullanıcılar</span>
+          <span class="stat-value">{{ formatNumber(stats.totalUsers) }}</span>
+          <span class="stat-change positive">
+            <nb-icon icon="person-add-outline"></nb-icon>
+            +{{ stats.newUsersLast30Days }} yeni
+          </span>
+        </div>
+      </nb-card-body>
+    </nb-card>
+  </div>
+  
+  <div class="col-xl-3 col-lg-6 col-md-6">
+    <nb-card class="stat-card images">
+      <nb-card-body>
+        <div class="stat-icon">
+          <nb-icon icon="image-outline"></nb-icon>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Üretilen Görsel</span>
+          <span class="stat-value">{{ formatNumber(stats.totalGeneratedImages) }}</span>
+          <span class="stat-change positive">
+            <nb-icon icon="flash-outline"></nb-icon>
+            +{{ stats.imagesLast30Days }} son 30 gün
+          </span>
+        </div>
+      </nb-card-body>
+    </nb-card>
+  </div>
+</div>
+
+<!-- Quick Stats Row -->
+<div class="row quick-stats-row" *ngIf="stats">
+  <div class="col-md-3 col-sm-6">
+    <div class="quick-stat clickable" routerLink="/pages/products/list">
+      <nb-icon icon="cube-outline" status="warning"></nb-icon>
+      <div class="quick-stat-content">
+        <span class="value">{{ stats.activeProducts }}</span>
+        <span class="label">Aktif Ürün</span>
+      </div>
+      <nb-icon icon="arrow-forward-outline" class="quick-stat-arrow"></nb-icon>
+    </div>
+  </div>
+  <div class="col-md-3 col-sm-6">
+    <div class="quick-stat clickable" routerLink="/pages/newsletter">
+      <nb-icon icon="email-outline" status="info"></nb-icon>
+      <div class="quick-stat-content">
+        <span class="value">{{ stats.activeSubscribers }}</span>
+        <span class="label">Bülten Abonesi</span>
+      </div>
+      <nb-icon icon="arrow-forward-outline" class="quick-stat-arrow"></nb-icon>
+    </div>
+  </div>
+  <div class="col-md-3 col-sm-6">
+    <div class="quick-stat clickable" routerLink="/pages/contact-submissions">
+      <nb-icon icon="message-circle-outline" status="danger"></nb-icon>
+      <div class="quick-stat-content">
+        <span class="value">{{ stats.unreadContacts }}</span>
+        <span class="label">Okunmamış Mesaj</span>
+      </div>
+      <nb-icon icon="arrow-forward-outline" class="quick-stat-arrow"></nb-icon>
+    </div>
+  </div>
+  <div class="col-md-3 col-sm-6">
+    <div class="quick-stat clickable" routerLink="/pages/orders">
+      <nb-icon icon="checkmark-circle-outline" status="success"></nb-icon>
+      <div class="quick-stat-content">
+        <span class="value">{{ stats.completedOrders }}</span>
+        <span class="label">Tamamlanan Sipariş</span>
+      </div>
+      <nb-icon icon="arrow-forward-outline" class="quick-stat-arrow"></nb-icon>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row charts-row">
+  <div class="col-xl-8 col-lg-7">
+    <nb-card class="chart-card">
+      <nb-card-header>
+        <span class="card-title">Sipariş Trendi</span>
+      </nb-card-header>
+      <nb-card-body>
+        <div echarts [options]="ordersChartOptions" class="chart"></div>
+      </nb-card-body>
+    </nb-card>
+  </div>
+  
+  <div class="col-xl-4 col-lg-5">
+    <nb-card class="chart-card">
+      <nb-card-header>
+        <span class="card-title">Sipariş Durumları</span>
+      </nb-card-header>
+      <nb-card-body>
+        <div echarts [options]="statusPieOptions" class="pie-chart"></div>
+      </nb-card-body>
+    </nb-card>
+  </div>
+</div>
+
+<!-- Revenue Chart -->
+<div class="row">
+  <div class="col-12">
+    <nb-card class="chart-card">
+      <nb-card-header>
+        <span class="card-title">Gelir Grafiği</span>
+      </nb-card-header>
+      <nb-card-body>
+        <div echarts [options]="revenueChartOptions" class="chart"></div>
+      </nb-card-body>
+    </nb-card>
+  </div>
+</div>
+
+<!-- Recent Data Row -->
+<div class="row data-row">
+  <div class="col-xl-6">
+    <nb-card class="data-card">
+      <nb-card-header>
+        <span class="card-title">Son Siparişler</span>
+        <a routerLink="/pages/orders" class="view-all-btn">
+          Tümünü Gör <nb-icon icon="arrow-forward-outline"></nb-icon>
+        </a>
+      </nb-card-header>
+      <nb-card-body class="p-0">
+        <div class="order-list">
+          <div *ngFor="let order of recentOrders" class="order-item">
+            <div class="order-avatar">
+              <nb-icon icon="shopping-bag-outline"></nb-icon>
+            </div>
+            <div class="order-info">
+              <span class="order-id">#{{ order.orderNumber }}</span>
+              <span class="order-customer">{{ order.userName || order.userEmail || 'Misafir' }}</span>
+            </div>
+            <div class="order-amount">{{ formatCurrency(order.totalAmount) }}</div>
+          </div>
+          <div *ngIf="recentOrders.length === 0" class="empty-state">
+            <nb-icon icon="inbox-outline"></nb-icon>
+            <span>Henüz sipariş yok</span>
+          </div>
+        </div>
+      </nb-card-body>
+    </nb-card>
+  </div>
+  
+  <div class="col-xl-6">
+    <nb-card class="data-card">
+      <nb-card-header>
+        <span class="card-title">Yeni Kullanıcılar</span>
+        <a routerLink="/pages/users" class="view-all-btn">
+          Tümünü Gör <nb-icon icon="arrow-forward-outline"></nb-icon>
+        </a>
+      </nb-card-header>
+      <nb-card-body class="p-0">
+        <div class="user-list">
+          <div *ngFor="let user of recentUsers" class="user-item">
+            <div class="user-avatar">
+              <img *ngIf="user.profilePictureUrl" [src]="user.profilePictureUrl" alt="">
+              <nb-icon *ngIf="!user.profilePictureUrl" icon="person-outline"></nb-icon>
+            </div>
+            <div class="user-info">
+              <span class="user-name">{{ user.firstName || 'Kullanıcı' }}</span>
+              <span class="user-email">{{ user.email || 'Email yok' }}</span>
+            </div>
+            <div class="user-date">{{ formatDate(user.createdAt) }}</div>
+          </div>
+          <div *ngIf="recentUsers.length === 0" class="empty-state">
+            <nb-icon icon="people-outline"></nb-icon>
+            <span>Henüz kullanıcı yok</span>
+          </div>
+        </div>
+      </nb-card-body>
+    </nb-card>
+  </div>
+</div>
+
+<!-- Top Products -->
+<div class="row" *ngIf="topProducts.length > 0">
+  <div class="col-12">
+    <nb-card class="data-card">
+      <nb-card-header>
+        <span class="card-title">En Çok Satılan Ürünler</span>
+        <a routerLink="/pages/products" class="view-all-btn">
+          Tümünü Gör <nb-icon icon="arrow-forward-outline"></nb-icon>
+        </a>
+      </nb-card-header>
+      <nb-card-body class="p-0">
+        <div class="products-table">
+          <div class="table-header">
+            <span class="col-product">Ürün</span>
+            <span class="col-orders">Sipariş</span>
+            <span class="col-revenue">Gelir</span>
+          </div>
+          <div *ngFor="let product of topProducts; let i = index" class="table-row">
+            <div class="col-product">
+              <span class="rank">#{{ i + 1 }}</span>
+              <img *ngIf="product.imageUrl" [src]="product.imageUrl" [alt]="product.name" class="product-img">
+              <span class="product-name">{{ product.name }}</span>
+            </div>
+            <div class="col-orders">{{ product.orderCount }}</div>
+            <div class="col-revenue">{{ formatCurrency(product.totalRevenue) }}</div>
+          </div>
+        </div>
+      </nb-card-body>
+    </nb-card>
+  </div>
+</div>
