@@ -1,0 +1,363 @@
+<nb-card class="detail-card">
+  <nb-card-header>
+    <span class="title">Sipariş #{{ orderId }}</span>
+    <button nbButton ghost size="small" (click)="close()">
+      <nb-icon icon="close-outline"></nb-icon>
+    </button>
+  </nb-card-header>
+
+  <nb-card-body>
+    <!-- Loading Skeleton -->
+    <div *ngIf="loading" class="loading-skeleton">
+      <!-- Status Bar Skeleton -->
+      <div class="skeleton-status-bar">
+        <div class="skeleton-item"></div>
+        <div class="skeleton-item"></div>
+        <div class="skeleton-item"></div>
+        <div class="skeleton-item"></div>
+      </div>
+
+      <!-- Main Grid Skeleton -->
+      <div class="skeleton-main-grid">
+        <!-- Left Column -->
+        <div class="skeleton-left">
+          <div class="skeleton-box">
+            <div class="skeleton-title"></div>
+            <div class="skeleton-product">
+              <div class="skeleton-image"></div>
+              <div class="skeleton-details">
+                <div class="skeleton-line w-60"></div>
+                <div class="skeleton-line w-100"></div>
+                <div class="skeleton-line w-40"></div>
+                <div class="skeleton-line w-50"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="skeleton-right">
+          <div class="skeleton-box">
+            <div class="skeleton-title"></div>
+            <div class="skeleton-line w-80"></div>
+            <div class="skeleton-line w-60"></div>
+            <div class="skeleton-line w-70"></div>
+          </div>
+          <div class="skeleton-box">
+            <div class="skeleton-title"></div>
+            <div class="skeleton-line w-90"></div>
+            <div class="skeleton-line w-70"></div>
+            <div class="skeleton-line w-100"></div>
+            <div class="skeleton-line w-50"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions Skeleton -->
+      <div class="skeleton-actions">
+        <div class="skeleton-box">
+          <div class="skeleton-title"></div>
+          <div class="skeleton-line w-100"></div>
+          <div class="skeleton-line w-60"></div>
+        </div>
+        <div class="skeleton-box">
+          <div class="skeleton-title"></div>
+          <div class="skeleton-line w-100"></div>
+          <div class="skeleton-line w-40"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="error && !loading" class="error">
+      <nb-icon icon="alert-triangle-outline"></nb-icon>
+      <span>{{ error }}</span>
+    </div>
+
+    <!-- Content -->
+    <div *ngIf="!loading && order" class="content">
+
+      <!-- Status Bar -->
+      <div class="status-bar">
+        <div class="status-item">
+          <span class="label">Ödeme</span>
+          <nb-badge [status]="getStatusBadge(order.paymentStatus)"
+            [text]="getStatusText(order.paymentStatus)"></nb-badge>
+        </div>
+        <div class="status-item" *ngIf="order.orderType === 'product'">
+          <span class="label">Kargo</span>
+          <nb-badge [status]="getStatusBadge(order.shippingStatus)"
+            [text]="getStatusText(order.shippingStatus)"></nb-badge>
+        </div>
+        <div class="status-item">
+          <span class="label">Tutar</span>
+          <strong class="amount">{{ getOrderTotal(order) }} TL</strong>
+        </div>
+        <div class="status-item">
+          <span class="label">Tip</span>
+          <nb-badge [status]="order.orderType === 'credit' ? 'warning' : 'info'"
+            [text]="order.orderType === 'credit' ? 'Kredi' : 'Ürün'"></nb-badge>
+        </div>
+        <!-- İade Butonu - Sadece başarılı ödemelerde göster -->
+        <div class="status-item refund-action" *ngIf="order.paymentStatus === 'success'">
+          <button nbButton status="danger" size="small" outline (click)="showRefundDialog()" [disabled]="refunding">
+            <nb-icon icon="undo-outline"></nb-icon>
+            İade Et
+          </button>
+        </div>
+      </div>
+
+      <!-- Failed Payment Alert -->
+      <div *ngIf="order.paymentStatus === 'failed'" class="failed-alert">
+        <nb-icon icon="alert-triangle-outline" status="danger"></nb-icon>
+        <div class="failed-content">
+          <strong>Ödeme Başarısız</strong>
+          <span *ngIf="order.failedReasonMsg">{{ order.failedReasonMsg }}</span>
+          <span *ngIf="order.failedReasonCode" class="failed-code">(Kod: {{ order.failedReasonCode }})</span>
+        </div>
+      </div>
+
+      <!-- Main Grid -->
+      <div class="main-grid" [class.credit-layout]="order.orderType === 'credit'">
+
+        <!-- Left: Product/Credit -->
+        <div class="left-col">
+
+          <!-- Product Order -->
+          <div *ngIf="order.orderType === 'product' && order.generationId" class="product-box">
+            <div class="box-title">
+              Ürün Bilgisi
+              <button *ngIf="order.generatedImageUrl" nbButton ghost size="tiny" status="primary"
+                (click)="downloadGeneratedImage()" class="download-btn" title="Üretim Görselini İndir">
+                <nb-icon icon="download-outline"></nb-icon>
+              </button>
+            </div>
+            <div class="product-content">
+              <div class="product-img-container">
+                <!-- Image Skeleton Loader -->
+                <div *ngIf="imageLoading && order.generatedImageUrl" class="image-skeleton">
+                  <div class="skeleton-shimmer"></div>
+                  <div class="skeleton-icon">
+                    <nb-icon icon="image-outline"></nb-icon>
+                  </div>
+                </div>
+                <!-- Actual Image -->
+                <img *ngIf="order.generatedImageUrl" [src]="order.generatedImageUrl" class="product-img"
+                  [class.image-loaded]="!imageLoading" alt="Ürün" (click)="downloadGeneratedImage()"
+                  (load)="imageLoading = false" (error)="imageLoading = false">
+              </div>
+              <div class="product-details">
+                <div class="product-name">{{ order.productName }}</div>
+                <div class="prompt" *ngIf="order.imagePrompt">"{{ order.imagePrompt }}"</div>
+                <div class="specs">
+                  <div class="spec"><span>Boyut:</span> {{ order.sizeName }} ({{ order.sizeDimensions }})</div>
+                  <div class="spec"><span>Çerçeve:</span> {{ order.frameName }} <i *ngIf="order.frameColorCode"
+                      class="color-dot" [style.background]="order.frameColorCode"></i></div>
+                </div>
+                <div class="prices">
+                  <div class="price-row"><span>Boyut:</span><span>{{ kurusToTl(order.sizePrice) }} TL</span></div>
+                  <div class="price-row"><span>Çerçeve:</span><span>{{ kurusToTl(order.framePrice) }} TL</span></div>
+                  <div class="price-row total"><span>Toplam:</span><span>{{ getOrderTotal(order) }} TL</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Credit Order -->
+          <div *ngIf="order.orderType === 'credit'" class="credit-box">
+            <div class="box-title">Kredi Satın Alma</div>
+            <div class="credit-content">
+              <div class="credit-visual">
+                <nb-icon icon="flash-outline" class="credit-icon"></nb-icon>
+              </div>
+              <div class="credit-info">
+                <div class="credit-amount">{{ order.creditAmount }}</div>
+                <div class="credit-label">Kredi</div>
+              </div>
+              <div class="credit-divider"></div>
+              <div class="credit-price-info">
+                <div class="credit-price">{{ getOrderTotal(order) }} TL</div>
+                <div class="credit-price-label">Ödenen Tutar</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right: Info -->
+        <div class="right-col">
+
+          <!-- Order Info -->
+          <div class="info-box">
+            <div class="box-title">Sipariş</div>
+            <div class="info-row"><span>No:</span><span>{{ order.id }}</span></div>
+            <div class="info-row"><span>Tarih:</span><span>{{ order.createdAt | date:'dd.MM.yy HH:mm' }}</span></div>
+            <div class="info-row" *ngIf="order.trackingNumber">
+              <span>Takip:</span>
+              <span class="copyable">
+                {{ order.trackingNumber }}
+                <nb-icon icon="copy-outline" class="copy-icon" (click)="copyToClipboard(order.trackingNumber)"
+                  title="Kopyala"></nb-icon>
+              </span>
+            </div>
+          </div>
+
+          <!-- Invoice Info -->
+          <div class="info-box invoice-box">
+            <div class="box-title">Fatura Bilgileri</div>
+            <div class="info-row">
+              <span>Fatura Tipi:</span>
+              <nb-badge [status]="order.isCorporateInvoice ? 'warning' : 'info'"
+                [text]="order.isCorporateInvoice ? 'Kurumsal' : 'Bireysel'"></nb-badge>
+            </div>
+            <!-- Kurumsal fatura ise ek bilgiler -->
+            <ng-container *ngIf="order.isCorporateInvoice">
+              <div class="info-row" *ngIf="order.companyName">
+                <span>Şirket:</span>
+                <span class="copyable">
+                  {{ order.companyName }}
+                  <nb-icon icon="copy-outline" class="copy-icon" (click)="copyToClipboard(order.companyName)"
+                    title="Kopyala"></nb-icon>
+                </span>
+              </div>
+              <div class="info-row" *ngIf="order.taxNumber">
+                <span>Vergi No:</span>
+                <span class="copyable">
+                  {{ order.taxNumber }}
+                  <nb-icon icon="copy-outline" class="copy-icon" (click)="copyToClipboard(order.taxNumber)"
+                    title="Kopyala"></nb-icon>
+                </span>
+              </div>
+              <div class="info-row" *ngIf="order.taxOffice">
+                <span>Vergi Dairesi:</span>
+                <span class="copyable">
+                  {{ order.taxOffice }}
+                  <nb-icon icon="copy-outline" class="copy-icon" (click)="copyToClipboard(order.taxOffice)"
+                    title="Kopyala"></nb-icon>
+                </span>
+              </div>
+              <div class="info-row" *ngIf="order.companyAddress">
+                <span>Fatura Adresi:</span>
+                <span class="address copyable">
+                  {{ order.companyAddress }}
+                  <nb-icon icon="copy-outline" class="copy-icon" (click)="copyToClipboard(order.companyAddress)"
+                    title="Kopyala"></nb-icon>
+                </span>
+              </div>
+            </ng-container>
+          </div>
+
+          <!-- Customer Info -->
+          <div class="info-box">
+            <div class="box-title">Müşteri</div>
+            <div class="info-row">
+              <span>Ad:</span>
+              <span class="copyable">
+                {{ order.customerName }}
+                <nb-icon icon="copy-outline" class="copy-icon" (click)="copyToClipboard(order.customerName)"
+                  title="Kopyala"></nb-icon>
+              </span>
+            </div>
+            <div class="info-row">
+              <span>Tel:</span>
+              <span class="copyable">
+                {{ order.customerPhone }}
+                <nb-icon icon="copy-outline" class="copy-icon" (click)="copyToClipboard(order.customerPhone)"
+                  title="Kopyala"></nb-icon>
+              </span>
+            </div>
+            <div class="info-row">
+              <span>E-posta:</span>
+              <span class="email copyable">
+                {{ order.customerEmail }}
+                <nb-icon icon="copy-outline" class="copy-icon" (click)="copyToClipboard(order.customerEmail)"
+                  title="Kopyala"></nb-icon>
+              </span>
+            </div>
+            <div class="info-row" *ngIf="order.orderType === 'product' && order.customerAddress">
+              <span>Adres:</span>
+              <span class="address copyable">
+                {{ order.customerAddress }}
+                <nb-icon icon="copy-outline" class="copy-icon" (click)="copyToClipboard(order.customerAddress)"
+                  title="Kopyala"></nb-icon>
+              </span>
+            </div>
+            <div class="info-row"
+              *ngIf="order.orderType === 'product' && (order.customerDistrict || order.customerCity)">
+              <span>İlçe/Şehir:</span>
+              <span class="copyable">
+                {{ order.customerDistrict ? order.customerDistrict + ', ' : '' }}{{ order.customerCity }}
+                <nb-icon icon="copy-outline" class="copy-icon"
+                  (click)="copyToClipboard((order.customerDistrict ? order.customerDistrict + ', ' : '') + order.customerCity)"
+                  title="Kopyala"></nb-icon>
+              </span>
+            </div>
+            <div class="info-row"><span>Kredi:</span><span>{{ order.userArtCredits || 0 }}</span></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="actions-grid">
+
+        <!-- Shipping (product only) -->
+        <div *ngIf="order.orderType === 'product'" class="action-box">
+          <div class="box-title">Kargo Güncelle</div>
+          <div class="action-form">
+            <nb-select [(ngModel)]="shippingStatus" placeholder="Durum" size="small" fullWidth>
+              <nb-option *ngFor="let s of shippingStatuses" [value]="s.value">{{ s.label }}</nb-option>
+            </nb-select>
+            <input nbInput [(ngModel)]="trackingNumber" placeholder="Takip No" fullWidth fieldSize="small">
+            <button nbButton status="primary" size="small" (click)="updateShipping()"
+              [disabled]="saving">Güncelle</button>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="action-box">
+          <div class="box-title">Notlar</div>
+          <div class="action-form">
+            <textarea nbInput [(ngModel)]="notes" placeholder="Not ekle..." fullWidth rows="2"></textarea>
+            <button nbButton status="info" size="small" (click)="updateNotes()" [disabled]="saving">Kaydet</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Refund Dialog -->
+      <div *ngIf="showRefundConfirm" class="refund-dialog-overlay" (click)="cancelRefund()">
+        <div class="refund-dialog" (click)="$event.stopPropagation()">
+          <div class="refund-dialog-header">
+            <nb-icon icon="alert-triangle-outline" status="danger"></nb-icon>
+            <h6>İade Onayı</h6>
+          </div>
+          <div class="refund-dialog-body">
+            <p>
+              <strong>Sipariş #{{ order.id }}</strong> için
+              <strong>{{ getOrderTotal(order) }} TL</strong> tutarında
+              PayTR üzerinden iade işlemi yapılacak.
+            </p>
+            <p class="warning-text">
+              <nb-icon icon="alert-circle-outline"></nb-icon>
+              Bu işlem geri alınamaz!
+            </p>
+            <div class="refund-reason">
+              <label>İade Nedeni (opsiyonel)</label>
+              <textarea nbInput [(ngModel)]="refundReason" placeholder="İade nedenini girin..." fullWidth
+                rows="2"></textarea>
+            </div>
+          </div>
+          <div class="refund-dialog-actions">
+            <button nbButton status="basic" (click)="cancelRefund()" [disabled]="refunding">İptal</button>
+            <button nbButton status="danger" (click)="confirmRefund()" [disabled]="refunding" [nbSpinner]="refunding">
+              <nb-icon icon="undo-outline"></nb-icon>
+              İade Et
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </nb-card-body>
+</nb-card>

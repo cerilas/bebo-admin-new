@@ -1,0 +1,242 @@
+<nb-card class="detail-card">
+  <nb-card-header>
+    <span class="title">Kullanıcı Detayı</span>
+    <button nbButton ghost size="small" (click)="close()">
+      <nb-icon icon="close-outline"></nb-icon>
+    </button>
+  </nb-card-header>
+
+  <nb-card-body>
+    <!-- Loading Skeleton -->
+    <div *ngIf="loading" class="loading-skeleton">
+      <div class="skeleton-header">
+        <div class="skeleton-avatar"></div>
+        <div class="skeleton-info">
+          <div class="skeleton-line w-60"></div>
+          <div class="skeleton-line w-40"></div>
+        </div>
+      </div>
+      <div class="skeleton-stats">
+        <div class="skeleton-stat" *ngFor="let i of [1,2,3,4]"></div>
+      </div>
+      <div class="skeleton-table">
+        <div class="skeleton-row" *ngFor="let i of [1,2,3]"></div>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="error && !loading" class="error">
+      <nb-icon icon="alert-triangle-outline"></nb-icon>
+      <span>{{ error }}</span>
+    </div>
+
+    <!-- Content -->
+    <div *ngIf="!loading && user" class="content">
+
+      <!-- User Header -->
+      <div class="user-header">
+        <div class="user-avatar" [style.background-image]="user.imageUrl ? 'url(' + user.imageUrl + ')' : ''"
+          [class.has-image]="!!user.imageUrl">
+          <nb-icon icon="person-outline" *ngIf="!user.imageUrl"></nb-icon>
+        </div>
+        <div class="user-info">
+          <h3 class="user-name">
+            <ng-container *ngIf="user.firstName || user.lastName; else fallbackDetailName">
+              {{ user.firstName }} {{ user.lastName }}
+            </ng-container>
+            <ng-template #fallbackDetailName>
+              {{ user.customerName || 'İsimsiz Kullanıcı' }}
+            </ng-template>
+          </h3>
+          <span class="user-email">{{ user.email || user.customerEmail || user.id }}</span>
+          <span class="user-phone" *ngIf="user.phone || user.customerPhone">{{ user.phone || user.customerPhone
+            }}</span>
+        </div>
+        <div class="user-id">
+          <span class="label">Kullanıcı ID</span>
+          <code>{{ user.id }}</code>
+        </div>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="stats-grid">
+        <div class="stat-card credits">
+          <div class="stat-icon">
+            <nb-icon icon="flash-outline"></nb-icon>
+          </div>
+          <div class="stat-content">
+            <span class="stat-label">Kredi</span>
+            <div class="stat-value" *ngIf="!editingCredits">
+              {{ user.artCredits || 0 }}
+              <button nbButton ghost size="tiny" (click)="startEditCredits()">
+                <nb-icon icon="edit-outline"></nb-icon>
+              </button>
+            </div>
+            <div class="credit-edit" *ngIf="editingCredits">
+              <input nbInput type="number" [(ngModel)]="newCredits" fieldSize="small" min="0">
+              <button nbButton status="success" size="tiny" (click)="saveCredits()" [disabled]="saving">
+                <nb-icon icon="checkmark-outline"></nb-icon>
+              </button>
+              <button nbButton status="basic" size="tiny" (click)="cancelEditCredits()">
+                <nb-icon icon="close-outline"></nb-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card orders">
+          <div class="stat-icon">
+            <nb-icon icon="shopping-cart-outline"></nb-icon>
+          </div>
+          <div class="stat-content">
+            <span class="stat-label">Toplam Sipariş</span>
+            <span class="stat-value">{{ user.totalOrders || 0 }}</span>
+          </div>
+        </div>
+
+        <div class="stat-card spent">
+          <div class="stat-icon">
+            <nb-icon icon="credit-card-outline"></nb-icon>
+          </div>
+          <div class="stat-content">
+            <span class="stat-label">Toplam Harcama</span>
+            <span class="stat-value">{{ (user.totalSpent || 0) / 100 | number:'1.2-2' }} ₺</span>
+          </div>
+        </div>
+
+        <div class="stat-card generations">
+          <div class="stat-icon">
+            <nb-icon icon="image-outline"></nb-icon>
+          </div>
+          <div class="stat-content">
+            <span class="stat-label">Görsel Üretimi</span>
+            <span class="stat-value">{{ user.totalGenerations || 0 }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Additional Info -->
+      <div class="info-row" *ngIf="user.customerCity || user.customerAddress">
+        <div class="info-item" *ngIf="user.customerCity">
+          <nb-icon icon="pin-outline"></nb-icon>
+          <span>{{ user.customerCity }}</span>
+        </div>
+        <div class="info-item date">
+          <nb-icon icon="calendar-outline"></nb-icon>
+          <span>Kayıt: {{ user.createdAt | date:'dd MMM yyyy' }}</span>
+        </div>
+      </div>
+
+      <!-- Orders Section -->
+      <div class="section">
+        <h4 class="section-title">
+          <nb-icon icon="shopping-bag-outline"></nb-icon>
+          Sipariş Geçmişi
+          <span class="count">({{ user.orders?.length || 0 }})</span>
+        </h4>
+
+        <div class="orders-table" *ngIf="user.orders?.length > 0">
+          <table>
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Tip</th>
+                <th>Ürün</th>
+                <th>Tutar</th>
+                <th>Ödeme</th>
+                <th>Kargo</th>
+                <th>Tarih</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let order of user.orders">
+                <td class="order-id">#{{ order.id }}</td>
+                <td>
+                  <span class="type-badge" [class.credit]="order.orderType === 'credit'">
+                    {{ order.orderType === 'credit' ? 'Kredi' : 'Ürün' }}
+                  </span>
+                </td>
+                <td class="product">{{ order.productName || '-' }}</td>
+                <td class="amount">{{ (order.totalAmount || 0) / 100 | number:'1.2-2' }} ₺</td>
+                <td>
+                  <span class="status-badge" [class]="'payment-' + order.paymentStatus">
+                    {{ getPaymentStatusText(order.paymentStatus) }}
+                  </span>
+                </td>
+                <td>
+                  <span *ngIf="order.shippingStatus && order.orderType !== 'credit'" class="status-badge"
+                    [class]="'shipping-' + order.shippingStatus">
+                    {{ getShippingStatusText(order.shippingStatus) }}
+                  </span>
+                  <span *ngIf="!order.shippingStatus || order.orderType === 'credit'" class="no-data">-</span>
+                </td>
+                <td class="date">{{ order.createdAt | date:'dd.MM.yy HH:mm' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="empty-state" *ngIf="!user.orders || user.orders.length === 0">
+          <nb-icon icon="inbox-outline"></nb-icon>
+          <p>Henüz sipariş yok</p>
+        </div>
+      </div>
+
+      <!-- Generated Images Section -->
+      <div class="section" *ngIf="user.generatedImages?.length > 0">
+        <div class="section-header">
+          <h4 class="section-title">
+            <nb-icon icon="image-outline"></nb-icon>
+            Son Üretilen Görseller
+            <span class="count">({{ user.generatedImages?.length || 0 }})</span>
+          </h4>
+
+          <!-- Images Pagination -->
+          <div class="images-pagination" *ngIf="totalImagesPages > 1">
+            <button nbButton ghost size="tiny" [disabled]="imagesPage === 1" (click)="goToImagesPage(imagesPage - 1)">
+              <nb-icon icon="chevron-left-outline"></nb-icon>
+            </button>
+            <span class="page-info">{{ imagesPage }} / {{ totalImagesPages }}</span>
+            <button nbButton ghost size="tiny" [disabled]="imagesPage === totalImagesPages"
+              (click)="goToImagesPage(imagesPage + 1)">
+              <nb-icon icon="chevron-right-outline"></nb-icon>
+            </button>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          <div class="image-card" *ngFor="let img of paginatedImages" (click)="openLightbox(img)">
+            <div class="image-wrapper">
+              <img [src]="img.thumbnailUrl || img.imageUrl" [alt]="img.prompt">
+              <div class="image-overlay">
+                <nb-icon icon="expand-outline"></nb-icon>
+              </div>
+            </div>
+            <div class="image-info">
+              <span class="prompt" [title]="img.prompt">"{{ img.prompt }}"</span>
+              <span class="meta">{{ img.createdAt | date:'dd.MM.yy' }} • {{ img.creditsUsed }} kredi</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </nb-card-body>
+</nb-card>
+
+<!-- Lightbox -->
+<div class="lightbox" *ngIf="showLightbox && selectedImage" (click)="closeLightbox()">
+  <div class="lightbox-content" (click)="$event.stopPropagation()">
+    <button class="lightbox-close" (click)="closeLightbox()">
+      <nb-icon icon="close-outline"></nb-icon>
+    </button>
+    <img [src]="selectedImage.imageUrl" [alt]="selectedImage.prompt">
+    <div class="lightbox-info">
+      <p class="lightbox-prompt">"{{ selectedImage.prompt }}"</p>
+      <span class="lightbox-meta">
+        {{ selectedImage.createdAt | date:'dd MMMM yyyy, HH:mm' }} • {{ selectedImage.creditsUsed }} kredi kullanıldı
+        <span *ngIf="selectedImage.productName"> • {{ selectedImage.productName }}</span>
+      </span>
+    </div>
+  </div>
+</div>

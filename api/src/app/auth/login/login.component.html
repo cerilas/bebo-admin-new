@@ -1,0 +1,136 @@
+<div class="login-page">
+  <div class="login-container">
+    <!-- Logo & Branding -->
+    <div class="login-header">
+      <div class="logo">
+        <span class="logo-text">Birebiro</span>
+        <span class="logo-badge">Admin</span>
+      </div>
+      <h1 class="title">Yönetim Paneli</h1>
+      <p class="subtitle">Devam etmek için giriş yapın</p>
+    </div>
+
+    <!-- Login Card -->
+    <nb-card class="login-card">
+      <nb-card-body>
+        <!-- Error Alert -->
+        <div class="error-alert" *ngIf="error">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          <span class="error-message">{{ error }}</span>
+          <button type="button" class="close-btn" (click)="error = ''">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Login Form -->
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+          <!-- Username -->
+          <div class="form-group">
+            <label class="label">Kullanıcı Adı</label>
+            <div class="input-wrapper">
+              <span class="input-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              </span>
+              <input nbInput
+                     fullWidth
+                     formControlName="username"
+                     placeholder="Kullanıcı adınızı girin"
+                     [status]="loginForm.get('username')?.touched && loginForm.get('username')?.invalid ? 'danger' : 'basic'"
+                     autocomplete="username">
+            </div>
+            <span class="error-text" *ngIf="loginForm.get('username')?.touched && loginForm.get('username')?.invalid">
+              {{ getFieldError('username') }}
+            </span>
+          </div>
+
+          <!-- Password -->
+          <div class="form-group">
+            <label class="label">Şifre</label>
+            <div class="input-wrapper">
+              <span class="input-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              </span>
+              <input nbInput
+                     fullWidth
+                     [type]="showPassword ? 'text' : 'password'"
+                     formControlName="password"
+                     placeholder="Şifrenizi girin"
+                     [status]="loginForm.get('password')?.touched && loginForm.get('password')?.invalid ? 'danger' : 'basic'"
+                     autocomplete="current-password">
+              <button type="button" class="toggle-btn" (click)="togglePassword()">
+                <svg *ngIf="!showPassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                <svg *ngIf="showPassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+              </button>
+            </div>
+            <span class="error-text" *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.invalid">
+              {{ getFieldError('password') }}
+            </span>
+          </div>
+
+          <!-- Access Key -->
+          <div class="form-group">
+            <label class="label">
+              Erişim Anahtarı
+              <span class="shield-icon" title="Güvenlik için ek doğrulama anahtarı">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              </span>
+            </label>
+            <div class="input-wrapper">
+              <span class="input-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+              </span>
+              <input nbInput
+                     fullWidth
+                     [type]="showAccessKey ? 'text' : 'password'"
+                     formControlName="accessKey"
+                     placeholder="Erişim anahtarınızı girin"
+                     [status]="loginForm.get('accessKey')?.touched && loginForm.get('accessKey')?.invalid ? 'danger' : 'basic'"
+                     autocomplete="off">
+              <button type="button" class="toggle-btn" (click)="toggleAccessKey()">
+                <svg *ngIf="!showAccessKey" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                <svg *ngIf="showAccessKey" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+              </button>
+            </div>
+            <span class="error-text" *ngIf="loginForm.get('accessKey')?.touched && loginForm.get('accessKey')?.invalid">
+              {{ getFieldError('accessKey') }}
+            </span>
+          </div>
+
+          <!-- Submit Button -->
+          <button nbButton
+                  fullWidth
+                  status="primary"
+                  size="large"
+                  type="submit"
+                  class="submit-btn"
+                  [disabled]="loading">
+            {{ loading ? 'Giriş yapılıyor...' : 'Giriş Yap' }}
+          </button>
+        </form>
+      </nb-card-body>
+    </nb-card>
+
+    <!-- Footer -->
+    <div class="login-footer">
+      <p class="security-note">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        Güvenli bağlantı ile korunmaktadır
+      </p>
+      <p class="copyright">© 2024 Birebiro. Tüm hakları saklıdır.</p>
+    </div>
+  </div>
+
+  <!-- Background Pattern -->
+  <div class="background-pattern">
+    <div class="pattern-circle circle-1"></div>
+    <div class="pattern-circle circle-2"></div>
+    <div class="pattern-circle circle-3"></div>
+  </div>
+</div>

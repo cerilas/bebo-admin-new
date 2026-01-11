@@ -1,0 +1,162 @@
+<div class="newsletter-page">
+  <!-- Header -->
+  <div class="page-header">
+    <h4>
+      <nb-icon icon="email-outline"></nb-icon>
+      Bülten Aboneleri
+    </h4>
+    <button nbButton status="primary" size="small" (click)="exportCSV()">
+      <nb-icon icon="download-outline"></nb-icon>
+      CSV İndir
+    </button>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-row">
+    <div class="stat-card total">
+      <div class="stat-icon">
+        <nb-icon icon="people-outline"></nb-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats.total }}</span>
+        <span class="stat-label">Toplam Abone</span>
+      </div>
+    </div>
+    <div class="stat-card active">
+      <div class="stat-icon">
+        <nb-icon icon="checkmark-circle-2-outline"></nb-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats.active }}</span>
+        <span class="stat-label">Aktif</span>
+      </div>
+    </div>
+    <div class="stat-card unsubscribed">
+      <div class="stat-icon">
+        <nb-icon icon="close-circle-outline"></nb-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats.unsubscribed }}</span>
+        <span class="stat-label">Abonelikten Çıkan</span>
+      </div>
+    </div>
+    <div class="stat-card recent">
+      <div class="stat-icon">
+        <nb-icon icon="trending-up-outline"></nb-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats.lastWeek }}</span>
+        <span class="stat-label">Son 7 Gün</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <nb-card class="filters-card">
+    <nb-card-body>
+      <div class="filters-row">
+        <div class="filter-group">
+          <label>Durum Filtresi</label>
+          <nb-select [(ngModel)]="statusFilter" (ngModelChange)="onStatusFilterChange()" size="small">
+            <nb-option value="all">Tümü</nb-option>
+            <nb-option value="active">Aktif</nb-option>
+            <nb-option value="unsubscribed">Abonelikten Çıkan</nb-option>
+            <nb-option value="bounced">Geri Dönen</nb-option>
+          </nb-select>
+        </div>
+        <div class="filter-group search-group">
+          <label>Ara</label>
+          <div class="search-input">
+            <input 
+              nbInput 
+              [(ngModel)]="searchQuery" 
+              placeholder="E-posta veya isim ara..."
+              (keyup.enter)="onSearch()"
+            >
+            <button nbButton ghost size="small" *ngIf="searchQuery" (click)="clearSearch()">
+              <nb-icon icon="close-outline"></nb-icon>
+            </button>
+            <button nbButton status="primary" size="small" (click)="onSearch()">
+              <nb-icon icon="search-outline"></nb-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </nb-card-body>
+  </nb-card>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="error-state">
+    <nb-icon icon="alert-triangle-outline"></nb-icon>
+    <span>{{ error }}</span>
+    <button nbButton ghost size="small" (click)="loadData()">Tekrar Dene</button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-state">
+    <nb-spinner status="primary"></nb-spinner>
+    <p>Yükleniyor...</p>
+  </div>
+
+  <!-- Subscribers Table -->
+  <nb-card *ngIf="!loading && !error">
+    <nb-card-body class="table-container">
+      <table class="subscribers-table" *ngIf="subscribers.length > 0">
+        <thead>
+          <tr>
+            <th>E-posta</th>
+            <th>İsim</th>
+            <th>Durum</th>
+            <th>Kaynak</th>
+            <th>Abone Tarihi</th>
+            <th class="actions-col">İşlemler</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let subscriber of subscribers" [class.deleting]="deletingId === subscriber.id">
+            <td class="email-cell">
+              <nb-icon icon="email-outline"></nb-icon>
+              {{ subscriber.email }}
+            </td>
+            <td>{{ subscriber.name || '-' }}</td>
+            <td>
+              <nb-select 
+                [ngModel]="subscriber.status" 
+                (ngModelChange)="updateStatus(subscriber, $event)"
+                size="tiny"
+                [status]="getStatusBadgeClass(subscriber.status)"
+                [disabled]="updatingId === subscriber.id"
+              >
+                <nb-option value="active">Aktif</nb-option>
+                <nb-option value="unsubscribed">Abonelikten Çıktı</nb-option>
+                <nb-option value="bounced">Geri Döndü</nb-option>
+              </nb-select>
+            </td>
+            <td>
+              <span class="source-badge">{{ subscriber.subscriptionSource || 'website' }}</span>
+            </td>
+            <td>{{ subscriber.subscribedAt | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td class="actions-col">
+              <button 
+                nbButton 
+                ghost 
+                size="tiny" 
+                status="danger"
+                (click)="deleteSubscriber(subscriber)"
+                [disabled]="deletingId === subscriber.id"
+              >
+                <nb-icon icon="trash-2-outline"></nb-icon>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Empty State -->
+      <div *ngIf="subscribers.length === 0" class="empty-state">
+        <nb-icon icon="inbox-outline"></nb-icon>
+        <p>Henüz abone bulunmuyor.</p>
+      </div>
+    </nb-card-body>
+  </nb-card>
+</div>

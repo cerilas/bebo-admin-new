@@ -1,0 +1,336 @@
+<nb-card class="full-width-card">
+  <nb-card-header>
+    <h5 class="mb-0">Hakkımızda Ayarları</h5>
+  </nb-card-header>
+  <nb-card-body>
+    <!-- Dil Seçimi -->
+    <div class="language-selector mb-3">
+      <label class="form-label"><strong>Dil Seçimi:</strong></label>
+      <div class="btn-group" role="group">
+        <button
+          *ngFor="let lang of languages"
+          type="button"
+          class="btn"
+          [ngClass]="{ 'btn-primary': selectedLanguage === lang.code, 'btn-outline-primary': selectedLanguage !== lang.code }"
+          (click)="onLanguageChange(lang.code)"
+          [disabled]="loading">
+          {{ lang.label }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div *ngIf="loading" class="text-center py-5">
+      <nb-spinner></nb-spinner>
+      <p class="mt-2">İçerik yükleniyor...</p>
+    </div>
+
+    <!-- Form -->
+    <form [formGroup]="aboutForm" (ngSubmit)="saveAboutContent()" *ngIf="!loading" class="full-width-form">
+      <!-- Bölüm 1 -->
+      <div class="section mb-4">
+        <h6 class="section-title">Bölüm 1</h6>
+
+        <div class="form-group mb-3">
+          <label for="image1" class="form-label">Görsel 1</label>
+          <div class="image-upload-wrapper">
+            <div class="image-input-group">
+              <input
+                type="text"
+                id="image1"
+                class="form-control"
+                formControlName="image1"
+                placeholder="Görsel URL'si"
+                nbInput />
+              <button
+                type="button"
+                class="btn btn-upload"
+                (click)="fileInput1.click()"
+                [disabled]="uploading['image1']"
+                nbButton>
+                <span *ngIf="!uploading['image1']">
+                  <nb-icon icon="cloud-upload-outline"></nb-icon>
+                  Yükle
+                </span>
+                <span *ngIf="uploading['image1']" class="upload-loading">
+                  <span class="small-spinner" aria-hidden="true"></span>
+                  Yükleniyor...
+                </span>
+              </button>
+              <input
+                #fileInput1
+                type="file"
+                accept="image/*"
+                (change)="onImageSelected($event, 'image1')"
+                style="display: none" />
+            </div>
+
+            <!-- Image Preview -->
+            <div *ngIf="imagePreview['image1']" class="image-preview mb-3">
+              <img [src]="imagePreview['image1']" alt="Görsel 1 Önizlemesi" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group mb-3">
+          <label for="title1" class="form-label">
+            Başlık 1 <span class="text-danger">*</span>
+          </label>
+          <input
+            type="text"
+            id="title1"
+            class="form-control"
+            formControlName="title1"
+            placeholder="Başlık girin"
+            nbInput
+            fullWidth
+            [class.is-invalid]="aboutForm.get('title1')?.invalid && aboutForm.get('title1')?.touched" />
+          <small class="form-text text-muted" *ngIf="aboutForm.get('title1')?.invalid && aboutForm.get('title1')?.touched">
+            Başlık zorunludur
+          </small>
+        </div>
+
+        <div class="form-group mb-3">
+          <label for="body1" class="form-label">
+            İçerik 1 <span class="text-danger">*</span>
+          </label>
+          <textarea
+            id="body1"
+            class="form-control"
+            formControlName="body1"
+            placeholder="İçerik girin"
+            nbInput
+            fullWidth
+            rows="4"
+            [class.is-invalid]="aboutForm.get('body1')?.invalid && aboutForm.get('body1')?.touched"></textarea>
+          <small class="form-text text-muted" *ngIf="aboutForm.get('body1')?.invalid && aboutForm.get('body1')?.touched">
+            İçerik zorunludur
+          </small>
+        </div>
+      </div>
+
+      <!-- Bölüm 2 -->
+      <div class="section mb-4">
+        <h6 class="section-title">Bölüm 2</h6>
+
+        <div class="form-group mb-3">
+          <label for="image2" class="form-label">Görsel 2</label>
+          <div class="image-upload-wrapper">
+            <div class="image-input-group">
+              <input
+                type="text"
+                id="image2"
+                class="form-control"
+                formControlName="image2"
+                placeholder="Görsel URL'si"
+                nbInput />
+              <button
+                type="button"
+                class="btn btn-upload"
+                (click)="fileInput2.click()"
+                [disabled]="uploading['image2']"
+                nbButton>
+                <span *ngIf="!uploading['image2']">
+                  <nb-icon icon="cloud-upload-outline"></nb-icon>
+                  Yükle
+                </span>
+                <span *ngIf="uploading['image2']" class="upload-loading">
+                  <span class="small-spinner" aria-hidden="true"></span>
+                  Yükleniyor...
+                </span>
+              </button>
+              <input
+                #fileInput2
+                type="file"
+                accept="image/*"
+                (change)="onImageSelected($event, 'image2')"
+                style="display: none" />
+            </div>
+
+            <!-- Image Preview -->
+            <div *ngIf="imagePreview['image2']" class="image-preview mb-3">
+              <img [src]="imagePreview['image2']" alt="Görsel 2 Önizlemesi" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group mb-3">
+          <label for="title2" class="form-label">
+            Başlık 2 <span class="text-danger">*</span>
+          </label>
+          <input
+            type="text"
+            id="title2"
+            class="form-control"
+            formControlName="title2"
+            placeholder="Başlık girin"
+            nbInput
+            fullWidth
+            [class.is-invalid]="aboutForm.get('title2')?.invalid && aboutForm.get('title2')?.touched" />
+          <small class="form-text text-muted" *ngIf="aboutForm.get('title2')?.invalid && aboutForm.get('title2')?.touched">
+            Başlık zorunludur
+          </small>
+        </div>
+
+        <div class="form-group mb-3">
+          <label for="body2" class="form-label">
+            İçerik 2 <span class="text-danger">*</span>
+          </label>
+          <textarea
+            id="body2"
+            class="form-control"
+            formControlName="body2"
+            placeholder="İçerik girin"
+            nbInput
+            fullWidth
+            rows="4"
+            [class.is-invalid]="aboutForm.get('body2')?.invalid && aboutForm.get('body2')?.touched"></textarea>
+          <small class="form-text text-muted" *ngIf="aboutForm.get('body2')?.invalid && aboutForm.get('body2')?.touched">
+            İçerik zorunludur
+          </small>
+        </div>
+      </div>
+
+      <!-- Bölüm 3 -->
+      <div class="section mb-4">
+        <h6 class="section-title">Bölüm 3</h6>
+
+        <div class="form-group mb-3">
+          <label for="image3" class="form-label">Görsel 3</label>
+          <div class="image-upload-wrapper">
+            <div class="image-input-group">
+              <input
+                type="text"
+                id="image3"
+                class="form-control"
+                formControlName="image3"
+                placeholder="Görsel URL'si"
+                nbInput />
+              <button
+                type="button"
+                class="btn btn-upload"
+                (click)="fileInput3.click()"
+                [disabled]="uploading['image3']"
+                nbButton>
+                <span *ngIf="!uploading['image3']">
+                  <nb-icon icon="cloud-upload-outline"></nb-icon>
+                  Yükle
+                </span>
+                <span *ngIf="uploading['image3']" class="upload-loading">
+                  <span class="small-spinner" aria-hidden="true"></span>
+                  Yükleniyor...
+                </span>
+              </button>
+              <input
+                #fileInput3
+                type="file"
+                accept="image/*"
+                (change)="onImageSelected($event, 'image3')"
+                style="display: none" />
+            </div>
+
+            <!-- Image Preview -->
+            <div *ngIf="imagePreview['image3']" class="image-preview mb-3">
+              <img [src]="imagePreview['image3']" alt="Görsel 3 Önizlemesi" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group mb-3">
+          <label for="title3" class="form-label">
+            Başlık 3 <span class="text-danger">*</span>
+          </label>
+          <input
+            type="text"
+            id="title3"
+            class="form-control"
+            formControlName="title3"
+            placeholder="Başlık girin"
+            nbInput
+            fullWidth
+            [class.is-invalid]="aboutForm.get('title3')?.invalid && aboutForm.get('title3')?.touched" />
+          <small class="form-text text-muted" *ngIf="aboutForm.get('title3')?.invalid && aboutForm.get('title3')?.touched">
+            Başlık zorunludur
+          </small>
+        </div>
+
+        <div class="form-group mb-3">
+          <label for="body3" class="form-label">
+            İçerik 3 <span class="text-danger">*</span>
+          </label>
+          <textarea
+            id="body3"
+            class="form-control"
+            formControlName="body3"
+            placeholder="İçerik girin"
+            nbInput
+            fullWidth
+            rows="4"
+            [class.is-invalid]="aboutForm.get('body3')?.invalid && aboutForm.get('body3')?.touched"></textarea>
+          <small class="form-text text-muted" *ngIf="aboutForm.get('body3')?.invalid && aboutForm.get('body3')?.touched">
+            İçerik zorunludur
+          </small>
+        </div>
+      </div>
+
+      <!-- Misyon & Vizyon -->
+      <div class="section mb-4">
+        <h6 class="section-title">Misyon & Vizyon</h6>
+
+        <div class="form-group mb-3">
+          <label for="mission" class="form-label">
+            Misyon <span class="text-danger">*</span>
+          </label>
+          <textarea
+            id="mission"
+            class="form-control"
+            formControlName="mission"
+            placeholder="Misyon metni girin"
+            nbInput
+            fullWidth
+            rows="3"
+            [class.is-invalid]="aboutForm.get('mission')?.invalid && aboutForm.get('mission')?.touched"></textarea>
+          <small class="form-text text-muted" *ngIf="aboutForm.get('mission')?.invalid && aboutForm.get('mission')?.touched">
+            Misyon zorunludur
+          </small>
+        </div>
+
+        <div class="form-group mb-3">
+          <label for="vision" class="form-label">
+            Vizyon <span class="text-danger">*</span>
+          </label>
+          <textarea
+            id="vision"
+            class="form-control"
+            formControlName="vision"
+            placeholder="Vizyon metni girin"
+            nbInput
+            fullWidth
+            rows="3"
+            [class.is-invalid]="aboutForm.get('vision')?.invalid && aboutForm.get('vision')?.touched"></textarea>
+          <small class="form-text text-muted" *ngIf="aboutForm.get('vision')?.invalid && aboutForm.get('vision')?.touched">
+            Vizyon zorunludur
+          </small>
+        </div>
+      </div>
+
+      <!-- Save Button -->
+      <div class="form-actions">
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="saving || aboutForm.invalid"
+          nbButton>
+          <span *ngIf="!saving">
+            <nb-icon icon="checkmark-outline"></nb-icon>
+            Kaydet
+          </span>
+          <span *ngIf="saving" class="upload-loading">
+            <span class="btn-spinner" aria-hidden="true"></span>
+            Kaydediliyor...
+          </span>
+        </button>
+      </div>
+    </form>
+  </nb-card-body>
+</nb-card>

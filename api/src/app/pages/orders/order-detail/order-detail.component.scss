@@ -1,0 +1,872 @@
+// Sabit değerler
+$border: #e4e9f2;
+$bg-light: #f7f9fc;
+$text-dark: #222b45;
+$text-muted: #8f9bb3;
+$primary: #3366ff;
+$success: #00d68f;
+$radius: 8px;
+$gap: 12px;
+
+// Ana kart
+.detail-card {
+  margin: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+
+  nb-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-bottom: 1px solid $border;
+    flex-shrink: 0;
+    background: white;
+
+    .title {
+      font-size: 18px;
+      font-weight: 700;
+      color: $text-dark;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      &::before {
+        content: '';
+        width: 4px;
+        height: 20px;
+        background: $primary;
+        border-radius: 2px;
+      }
+    }
+
+    button {
+      opacity: 0.7;
+      transition: all 0.2s ease;
+
+      &:hover {
+        opacity: 1;
+        transform: rotate(90deg);
+      }
+    }
+  }
+
+  nb-card-body {
+    padding: 20px 24px;
+    overflow-y: auto;
+    flex: 1;
+    background: $bg-light;
+  }
+}
+
+// Skeleton Animation
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+// Skeleton Base
+.skeleton-base {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+// Loading Skeleton Container
+.loading-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: $gap;
+}
+
+// Status Bar Skeleton
+.skeleton-status-bar {
+  display: flex;
+  gap: $gap;
+  padding: 12px;
+  background: $bg-light;
+  border-radius: $radius;
+
+  .skeleton-item {
+    @extend .skeleton-base;
+    width: 80px;
+    height: 24px;
+  }
+}
+
+// Main Grid Skeleton
+.skeleton-main-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: $gap;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.skeleton-left,
+.skeleton-right {
+  display: flex;
+  flex-direction: column;
+  gap: $gap;
+}
+
+.skeleton-box {
+  background: white;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 12px;
+}
+
+.skeleton-title {
+  @extend .skeleton-base;
+  width: 100px;
+  height: 16px;
+  margin-bottom: 12px;
+}
+
+.skeleton-product {
+  display: flex;
+  gap: 12px;
+}
+
+.skeleton-image {
+  @extend .skeleton-base;
+  width: 140px;
+  height: 140px;
+  flex-shrink: 0;
+  border-radius: 6px;
+}
+
+.skeleton-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton-line {
+  @extend .skeleton-base;
+  height: 14px;
+
+  &.w-40 {
+    width: 40%;
+  }
+
+  &.w-50 {
+    width: 50%;
+  }
+
+  &.w-60 {
+    width: 60%;
+  }
+
+  &.w-70 {
+    width: 70%;
+  }
+
+  &.w-80 {
+    width: 80%;
+  }
+
+  &.w-90 {
+    width: 90%;
+  }
+
+  &.w-100 {
+    width: 100%;
+  }
+}
+
+// Actions Skeleton
+.skeleton-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $gap;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Error
+.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #ff3d71;
+  color: white;
+  padding: 16px;
+  border-radius: $radius;
+
+  nb-icon {
+    font-size: 20px;
+  }
+}
+
+// İçerik
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: $gap;
+}
+
+// Status Bar
+.status-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $gap;
+  padding: 12px;
+  background: $bg-light;
+  border-radius: $radius;
+  align-items: center;
+
+  .status-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .label {
+      font-size: 12px;
+      color: $text-muted;
+    }
+
+    .amount {
+      color: $success;
+      font-size: 14px;
+    }
+
+    nb-badge {
+      position: static !important;
+    }
+
+    &.refund-action {
+      margin-left: auto;
+
+      button {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+
+        nb-icon {
+          font-size: 16px;
+        }
+      }
+    }
+  }
+}
+
+// Failed Payment Alert
+.failed-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255, 61, 113, 0.08);
+  border: 1px solid rgba(255, 61, 113, 0.3);
+  border-radius: $radius;
+
+  nb-icon {
+    font-size: 20px;
+    color: #ff3d71;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .failed-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    strong {
+      color: #ff3d71;
+      font-size: 14px;
+    }
+
+    span {
+      font-size: 13px;
+      color: $text-dark;
+      line-height: 1.4;
+    }
+
+    .failed-code {
+      font-size: 11px;
+      color: $text-muted;
+    }
+  }
+}
+
+// Ana Grid
+.main-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: $gap;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+
+  // Kredi siparişi için eşit kolonlar
+  &.credit-layout {
+    grid-template-columns: 1fr 1fr;
+
+    @media (max-width: 700px) {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+// Box ortak stil
+.box-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: $text-dark;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid $border;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .download-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+
+    nb-icon {
+      font-size: 16px;
+    }
+  }
+}
+
+// Sol kolon - Ürün
+.left-col {
+
+  .product-box,
+  .credit-box {
+    background: white;
+    border: 1px solid $border;
+    border-radius: $radius;
+    padding: 12px;
+  }
+
+  .product-content {
+    display: flex;
+    gap: 12px;
+
+    @media (max-width: 600px) {
+      flex-direction: column;
+    }
+  }
+
+  .product-img-container {
+    position: relative;
+    width: 140px;
+    min-height: 140px;
+    flex-shrink: 0;
+
+    @media (max-width: 600px) {
+      width: 100%;
+      max-width: 200px;
+    }
+  }
+
+  .image-skeleton {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 140px;
+    background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+
+    .skeleton-shimmer {
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg,
+          transparent 0%,
+          rgba(255, 255, 255, 0.5) 50%,
+          transparent 100%);
+      animation: shimmer 1.5s infinite;
+    }
+
+    .skeleton-icon {
+      color: #ccc;
+      font-size: 2.5rem;
+      z-index: 1;
+      animation: pulse 2s ease-in-out infinite;
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      left: -100%;
+    }
+
+    100% {
+      left: 100%;
+    }
+  }
+
+  @keyframes pulse {
+
+    0%,
+    100% {
+      opacity: 0.4;
+      transform: scale(1);
+    }
+
+    50% {
+      opacity: 0.7;
+      transform: scale(1.05);
+    }
+  }
+
+  .product-img {
+    width: 140px;
+    height: auto;
+    border-radius: 8px;
+    flex-shrink: 0;
+    object-fit: cover;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.2s ease;
+
+    &.image-loaded {
+      opacity: 1;
+    }
+
+    &:hover {
+      transform: scale(1.02);
+    }
+
+    @media (max-width: 600px) {
+      width: 100%;
+      max-width: 200px;
+    }
+  }
+
+  .product-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .product-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: $text-dark;
+  }
+
+  .prompt {
+    font-size: 12px;
+    font-style: italic;
+    color: $text-muted;
+    padding: 8px;
+    background: $bg-light;
+    border-radius: 4px;
+    border-left: 2px solid $primary;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+
+  .specs {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .spec {
+      font-size: 12px;
+      color: $text-dark;
+
+      span {
+        color: $text-muted;
+        margin-right: 4px;
+      }
+
+      .color-dot {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        vertical-align: middle;
+        margin-left: 4px;
+        border: 1px solid $border;
+      }
+    }
+  }
+
+  .prices {
+    margin-top: auto;
+    padding-top: 8px;
+    border-top: 1px solid $border;
+
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      padding: 2px 0;
+
+      &.total {
+        font-weight: 600;
+        color: $success;
+        padding-top: 6px;
+        margin-top: 4px;
+        border-top: 1px solid $border;
+      }
+    }
+  }
+
+  // Kredi box
+  .credit-box {
+    height: 100%;
+  }
+
+  .credit-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 24px 16px;
+    background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
+    border-radius: 8px;
+
+    @media (max-width: 500px) {
+      flex-direction: column;
+      gap: 16px;
+    }
+  }
+
+  .credit-visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #ffc107 0%, #f0ad4e 100%);
+    border-radius: 50%;
+    flex-shrink: 0;
+
+    .credit-icon {
+      font-size: 32px;
+      color: white;
+    }
+  }
+
+  .credit-info {
+    text-align: center;
+
+    .credit-amount {
+      font-size: 36px;
+      font-weight: 700;
+      color: #856404;
+      line-height: 1;
+    }
+
+    .credit-label {
+      font-size: 14px;
+      color: #997a00;
+      font-weight: 500;
+      margin-top: 4px;
+    }
+  }
+
+  .credit-divider {
+    width: 1px;
+    height: 50px;
+    background: #e0c67a;
+
+    @media (max-width: 500px) {
+      width: 80px;
+      height: 1px;
+    }
+  }
+
+  .credit-price-info {
+    text-align: center;
+
+    .credit-price {
+      font-size: 24px;
+      font-weight: 600;
+      color: $success;
+      line-height: 1;
+    }
+
+    .credit-price-label {
+      font-size: 12px;
+      color: $text-muted;
+      margin-top: 4px;
+    }
+  }
+}
+
+// Sağ kolon - Bilgiler
+.right-col {
+  display: flex;
+  flex-direction: column;
+  gap: $gap;
+
+  .info-box {
+    background: white;
+    border: 1px solid $border;
+    border-radius: $radius;
+    padding: 12px;
+  }
+
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    padding: 4px 0;
+    gap: 8px;
+
+    &:not(:last-child) {
+      border-bottom: 1px solid $bg-light;
+    }
+
+    span:first-child {
+      color: $text-muted;
+      flex-shrink: 0;
+    }
+
+    span:last-child {
+      color: $text-dark;
+      text-align: right;
+
+      &.email {
+        font-size: 11px;
+        word-break: break-all;
+      }
+
+      &.address {
+        font-size: 11px;
+        line-height: 1.4;
+        word-break: break-word;
+        max-width: 200px;
+      }
+
+      &.copyable {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+
+        .copy-icon {
+          font-size: 12px;
+          color: $text-muted;
+          cursor: pointer;
+          opacity: 0.5;
+          transition: all 0.2s ease;
+          flex-shrink: 0;
+
+          &:hover {
+            opacity: 1;
+            color: $primary;
+          }
+
+          &:active {
+            transform: scale(0.9);
+          }
+        }
+      }
+    }
+  }
+}
+
+// Aksiyonlar
+.actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $gap;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+
+  .action-box {
+    background: white;
+    border: 1px solid $border;
+    border-radius: $radius;
+    padding: 12px;
+  }
+
+  .action-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    textarea {
+      resize: none;
+      font-size: 12px;
+    }
+
+    button {
+      align-self: flex-end;
+    }
+  }
+}
+
+// Global badge fix
+::ng-deep nb-badge {
+  position: static !important;
+}
+
+// Invoice box özel stilleri
+.invoice-box {
+  background: linear-gradient(135deg, rgba(51, 102, 255, 0.03) 0%, rgba(0, 214, 143, 0.03) 100%) !important;
+  border-color: rgba(51, 102, 255, 0.15) !important;
+
+  .box-title {
+    color: $primary;
+  }
+
+  .info-row {
+    nb-badge {
+      font-size: 11px;
+    }
+  }
+}
+
+// ==================== REFUND DIALOG ====================
+.refund-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.refund-dialog {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  animation: dialogSlideIn 0.2s ease-out;
+
+  @keyframes dialogSlideIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(-10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  .refund-dialog-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid $border;
+
+    nb-icon {
+      font-size: 24px;
+      color: #ff3d71;
+    }
+
+    h6 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: $text-dark;
+    }
+  }
+
+  .refund-dialog-body {
+    padding: 20px;
+
+    p {
+      margin: 0 0 12px;
+      font-size: 14px;
+      line-height: 1.5;
+      color: $text-dark;
+
+      strong {
+        color: $primary;
+      }
+
+      &.warning-text {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        background: rgba(255, 61, 113, 0.08);
+        border-radius: 8px;
+        color: #ff3d71;
+        font-size: 13px;
+        margin-top: 16px;
+
+        nb-icon {
+          font-size: 18px;
+        }
+      }
+    }
+
+    .refund-reason {
+      margin-top: 16px;
+
+      label {
+        display: block;
+        font-size: 12px;
+        font-weight: 500;
+        color: $text-muted;
+        margin-bottom: 6px;
+      }
+
+      textarea {
+        font-size: 13px;
+        resize: none;
+      }
+    }
+  }
+
+  .refund-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 20px;
+    border-top: 1px solid $border;
+    background: $bg-light;
+    border-radius: 0 0 12px 12px;
+
+    button {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      nb-icon {
+        font-size: 16px;
+      }
+    }
+  }
+}

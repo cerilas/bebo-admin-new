@@ -1,0 +1,36 @@
+@import './themes';
+
+@mixin nb-overrides() {
+  nb-select.size-medium button {
+    padding: 0.4375rem 2.2rem 0.4375rem 1.125rem !important;
+
+    nb-icon {
+      right: 0.41rem !important;
+    }
+  }
+
+  // ng2-smart-table action column fix
+  .ng2-smart-table {
+    tbody {
+      tr {
+        td.ng2-smart-actions {
+          vertical-align: middle !important;
+          
+          ng2-st-tbody-custom {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            min-height: 50px !important;
+            
+            a {
+              display: inline-flex !important;
+              align-items: center !important;
+              justify-content: center !important;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

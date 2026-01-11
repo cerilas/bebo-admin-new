@@ -1,0 +1,214 @@
+<div class="products-container">
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <nb-card class="stat-card">
+      <nb-card-body>
+        <div class="stat-content">
+          <div class="stat-icon primary">
+            <nb-icon icon="cube-outline"></nb-icon>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ stats.totalProducts }}</span>
+            <span class="stat-label">Toplam Ürün</span>
+          </div>
+        </div>
+      </nb-card-body>
+    </nb-card>
+
+    <nb-card class="stat-card">
+      <nb-card-body>
+        <div class="stat-content">
+          <div class="stat-icon success">
+            <nb-icon icon="checkmark-circle-outline"></nb-icon>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ stats.activeProducts }}</span>
+            <span class="stat-label">Aktif Ürün</span>
+          </div>
+        </div>
+      </nb-card-body>
+    </nb-card>
+
+    <nb-card class="stat-card">
+      <nb-card-body>
+        <div class="stat-content">
+          <div class="stat-icon warning">
+            <nb-icon icon="close-circle-outline"></nb-icon>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ stats.inactiveProducts }}</span>
+            <span class="stat-label">Pasif Ürün</span>
+          </div>
+        </div>
+      </nb-card-body>
+    </nb-card>
+
+    <nb-card class="stat-card">
+      <nb-card-body>
+        <div class="stat-content">
+          <div class="stat-icon info">
+            <nb-icon icon="expand-outline"></nb-icon>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ stats.totalSizes }}</span>
+            <span class="stat-label">Toplam Boyut</span>
+          </div>
+        </div>
+      </nb-card-body>
+    </nb-card>
+
+    <nb-card class="stat-card">
+      <nb-card-body>
+        <div class="stat-content">
+          <div class="stat-icon danger">
+            <nb-icon icon="square-outline"></nb-icon>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ stats.totalFrames }}</span>
+            <span class="stat-label">Toplam Çerçeve</span>
+          </div>
+        </div>
+      </nb-card-body>
+    </nb-card>
+  </div>
+
+  <!-- Filters -->
+  <nb-card class="filter-card">
+    <nb-card-body>
+      <div class="filter-bar">
+        <div class="filter-tabs">
+          <button nbButton 
+                  [status]="statusFilter === 'all' ? 'primary' : 'basic'" 
+                  size="small"
+                  (click)="setStatusFilter('all')">
+            Tümü ({{ products.length }})
+          </button>
+          <button nbButton 
+                  [status]="statusFilter === 'active' ? 'success' : 'basic'" 
+                  size="small"
+                  (click)="setStatusFilter('active')">
+            Aktif ({{ stats.activeProducts }})
+          </button>
+          <button nbButton 
+                  [status]="statusFilter === 'inactive' ? 'warning' : 'basic'" 
+                  size="small"
+                  (click)="setStatusFilter('inactive')">
+            Pasif ({{ stats.inactiveProducts }})
+          </button>
+        </div>
+
+        <div class="filter-actions">
+          <input nbInput 
+                 type="text" 
+                 placeholder="Ürün ara..." 
+                 [(ngModel)]="searchQuery"
+                 (input)="onSearch()"
+                 class="search-input">
+          
+          <button nbButton status="primary" (click)="createProduct()">
+            <nb-icon icon="plus-outline"></nb-icon>
+            Yeni Ürün
+          </button>
+        </div>
+      </div>
+    </nb-card-body>
+  </nb-card>
+
+  <!-- Products Grid -->
+  <div class="products-grid" *ngIf="!loading; else loadingTemplate">
+    <nb-card class="product-card" *ngFor="let product of filteredProducts">
+      <div class="product-image">
+        <img [src]="product.imageSquareUrl || 'assets/images/placeholder.png'" 
+             [alt]="product.name"
+             (error)="$event.target.src='assets/images/placeholder.png'">
+        <div class="product-status" [class.active]="product.isActive" [class.inactive]="!product.isActive">
+          {{ product.isActive ? 'Aktif' : 'Pasif' }}
+        </div>
+        <div class="product-overlay">
+          <button nbButton status="primary" size="small" (click)="editProduct(product)">
+            <nb-icon icon="edit-outline"></nb-icon>
+            Düzenle
+          </button>
+        </div>
+      </div>
+      
+      <nb-card-body>
+        <div class="product-info">
+          <h6 class="product-name">{{ product.name }}</h6>
+          <p class="product-slug">{{ product.slug }}</p>
+          
+          <div class="product-meta">
+            <div class="meta-item">
+              <nb-icon icon="expand-outline"></nb-icon>
+              <span>{{ product.sizesCount || 0 }} Boyut</span>
+            </div>
+            <div class="meta-item">
+              <nb-icon icon="square-outline"></nb-icon>
+              <span>{{ product.framesCount || 0 }} Çerçeve</span>
+            </div>
+          </div>
+          
+          <div class="product-price">
+            {{ getPriceRange(product) }}
+          </div>
+        </div>
+        
+        <div class="product-actions">
+          <button nbButton 
+                  [status]="product.isActive ? 'warning' : 'success'" 
+                  size="small" 
+                  ghost
+                  (click)="toggleStatus(product)"
+                  [nbTooltip]="product.isActive ? 'Pasif Yap' : 'Aktif Yap'">
+            <nb-icon [icon]="product.isActive ? 'eye-off-outline' : 'eye-outline'"></nb-icon>
+          </button>
+          <button nbButton status="primary" size="small" ghost (click)="editProduct(product)" nbTooltip="Düzenle">
+            <nb-icon icon="edit-outline"></nb-icon>
+          </button>
+          <button nbButton status="danger" size="small" ghost (click)="confirmDelete(product)" nbTooltip="Sil">
+            <nb-icon icon="trash-2-outline"></nb-icon>
+          </button>
+        </div>
+      </nb-card-body>
+    </nb-card>
+    
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="filteredProducts.length === 0">
+      <nb-icon icon="cube-outline"></nb-icon>
+      <h5>Ürün Bulunamadı</h5>
+      <p>Arama kriterlerinize uygun ürün bulunamadı.</p>
+      <button nbButton status="primary" (click)="createProduct()">
+        <nb-icon icon="plus-outline"></nb-icon>
+        İlk Ürünü Ekle
+      </button>
+    </div>
+  </div>
+
+  <ng-template #loadingTemplate>
+    <div class="loading-container">
+      <nb-spinner status="primary" size="large"></nb-spinner>
+      <p>Ürünler yükleniyor...</p>
+    </div>
+  </ng-template>
+
+  <!-- Delete Modal -->
+  <div class="modal-overlay" *ngIf="showDeleteModal" (click)="cancelDelete()">
+    <nb-card class="delete-modal" (click)="$event.stopPropagation()">
+      <nb-card-header>
+        <h5>Ürünü Sil</h5>
+      </nb-card-header>
+      <nb-card-body>
+        <p>
+          <strong>{{ productToDelete?.name }}</strong> ürününü silmek istediğinize emin misiniz?
+        </p>
+        <p class="text-danger">
+          <small>Bu işlem geri alınamaz ve ürüne ait tüm boyut ve çerçeve bilgileri de silinecektir.</small>
+        </p>
+      </nb-card-body>
+      <nb-card-footer>
+        <button nbButton status="basic" (click)="cancelDelete()">İptal</button>
+        <button nbButton status="danger" (click)="deleteProduct()">Sil</button>
+      </nb-card-footer>
+    </nb-card>
+  </div>
+</div>
