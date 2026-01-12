@@ -509,6 +509,8 @@ const PARASUT_CONFIG = {
   clientId: process.env.PARASUT_CLIENT_ID,
   clientSecret: process.env.PARASUT_CLIENT_SECRET,
   companyId: process.env.PARASUT_COMPANY_ID,
+  username: process.env.PARASUT_USERNAME,
+  password: process.env.PARASUT_PASSWORD,
   baseUrl: 'https://api.parasut.com/v4'
 };
 
@@ -517,6 +519,8 @@ console.log('--- Paraşüt Config Diagnostic ---');
 console.log(`PARASUT_CLIENT_ID: ${PARASUT_CONFIG.clientId ? 'SET (ends with ' + PARASUT_CONFIG.clientId.slice(-4) + ')' : 'MISSING'}`);
 console.log(`PARASUT_CLIENT_SECRET: ${PARASUT_CONFIG.clientSecret ? 'SET' : 'MISSING'}`);
 console.log(`PARASUT_COMPANY_ID: ${PARASUT_CONFIG.companyId ? 'SET (' + PARASUT_CONFIG.companyId + ')' : 'MISSING'}`);
+console.log(`PARASUT_USERNAME: ${PARASUT_CONFIG.username ? 'SET' : 'MISSING'}`);
+console.log(`PARASUT_PASSWORD: ${PARASUT_CONFIG.password ? 'SET' : 'MISSING'}`);
 console.log('---------------------------------');
 
 // Token cache
@@ -525,11 +529,13 @@ let tokenExpiresAt = null;
 
 // Get Paraşüt OAuth Token
 async function getParasutToken() {
-  if (!PARASUT_CONFIG.clientId || !PARASUT_CONFIG.clientSecret || !PARASUT_CONFIG.companyId) {
+  if (!PARASUT_CONFIG.clientId || !PARASUT_CONFIG.clientSecret || !PARASUT_CONFIG.companyId || !PARASUT_CONFIG.username || !PARASUT_CONFIG.password) {
     const missing = [];
     if (!PARASUT_CONFIG.clientId) missing.push('PARASUT_CLIENT_ID');
     if (!PARASUT_CONFIG.clientSecret) missing.push('PARASUT_CLIENT_SECRET');
     if (!PARASUT_CONFIG.companyId) missing.push('PARASUT_COMPANY_ID');
+    if (!PARASUT_CONFIG.username) missing.push('PARASUT_USERNAME');
+    if (!PARASUT_CONFIG.password) missing.push('PARASUT_PASSWORD');
     throw new Error(`Paraşüt API kimlik bilgileri eksik: ${missing.join(', ')}`);
   }
 
@@ -540,9 +546,12 @@ async function getParasutToken() {
 
   const tokenUrl = 'https://api.parasut.com/oauth/token';
   const params = new URLSearchParams({
-    grant_type: 'client_credentials',
+    grant_type: 'password',
     client_id: PARASUT_CONFIG.clientId,
-    client_secret: PARASUT_CONFIG.clientSecret
+    client_secret: PARASUT_CONFIG.clientSecret,
+    username: PARASUT_CONFIG.username,
+    password: PARASUT_CONFIG.password,
+    redirect_uri: 'urn:ietf:wg:oauth:2.0:oob'
   });
 
   const response = await fetch(tokenUrl, {
@@ -679,17 +688,48 @@ async function findOrCreateParasutContact(order) {
   return result.data.id;
 }
 
-// Create Sales Invoice in Paraşüt
-async function createParasutInvoice(order, contactId) {
-  // Calculate prices (assuming totalAmount is in kuruş, convert to TL)
-  const totalTL = (order.totalAmount / 100).toFixed(2);
-
-  // Determine product description
-  const productDesc = [
+// Find or Create Product in Paraşüt
+async function findOrCreateParasutProduct(order) {
+  const productName = [
     order.productName,
     order.sizeName ? `- ${order.sizeName}` : '',
     order.frameName ? `${order.frameName} Çerçeve` : ''
   ].filter(Boolean).join(' ');
+
+  // First try to find by name
+  try {
+    const searchResult = await parasutRequest('GET', `/products?filter[name]=${encodeURIComponent(productName)}`);
+    if (searchResult.data && searchResult.data.length > 0) {
+      console.log('✅ Mevcut ürün bulundu:', searchResult.data[0].id);
+      return searchResult.data[0].id;
+    }
+  } catch (e) {
+    console.log('Ürün araması başarısız, yeni oluşturulacak');
+  }
+
+  // Create new product
+  const productData = {
+    data: {
+      type: 'products',
+      attributes: {
+        name: productName,
+        code: `PRD-${order.productId}-${order.productSizeId}-${order.productFrameId}`,
+        vat_rate: 20,
+        currency: 'TRY',
+        unit: 'Adet'
+      }
+    }
+  };
+
+  const result = await parasutRequest('POST', '/products', productData);
+  console.log('✅ Yeni ürün oluşturuldu:', result.data.id);
+  return result.data.id;
+}
+
+// Create Sales Invoice in Paraşüt
+async function createParasutInvoice(order, contactId, productId) {
+  // Calculate prices (assuming totalAmount is in kuruş, convert to TL)
+  const totalTL = (order.totalAmount / 100).toFixed(2);
 
   const invoiceData = {
     data: {
@@ -716,7 +756,19 @@ async function createParasutInvoice(order, contactId) {
                 quantity: 1,
                 unit_price: totalTL,
                 vat_rate: 20,
-                description: productDesc
+                description: [
+                  order.productName,
+                  order.sizeName ? `- ${order.sizeName}` : '',
+                  order.frameName ? `${order.frameName} Çerçeve` : ''
+                ].filter(Boolean).join(' ')
+              },
+              relationships: {
+                product: {
+                  data: {
+                    id: productId,
+                    type: 'products'
+                  }
+                }
               }
             }
           ]
@@ -809,8 +861,12 @@ app.post('/api/orders/:id/create-invoice', async (req, res) => {
     const contactId = await findOrCreateParasutContact(order);
     console.log(`DEBUG: Resolved Contact ID: ${contactId}`);
 
+    // Find or create product
+    const productId = await findOrCreateParasutProduct(order);
+    console.log(`DEBUG: Resolved Product ID: ${productId}`);
+
     // Create invoice
-    const invoiceData = await createParasutInvoice(order, contactId);
+    const invoiceData = await createParasutInvoice(order, contactId, productId);
     const invoiceId = invoiceData.data.id;
     console.log(`DEBUG: Created Invoice ID: ${invoiceId}`);
 
