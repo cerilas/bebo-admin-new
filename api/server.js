@@ -731,6 +731,27 @@ async function createParasutInvoice(order, contactId) {
 }
 
 // Create Invoice Endpoint
+app.get('/api/parasut/debug', async (req, res) => {
+  try {
+    const firms = await listParasutFirms();
+    res.json({
+      config: {
+        clientId: PARASUT_CONFIG.clientId ? `SET (ends with ${PARASUT_CONFIG.clientId.slice(-4)})` : 'MISSING',
+        companyId: PARASUT_CONFIG.companyId || 'MISSING',
+        baseUrl: PARASUT_CONFIG.baseUrl
+      },
+      accessibleFirms: firms,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+// Create Invoice Endpoint
 app.post('/api/orders/:id/create-invoice', async (req, res) => {
   try {
     const { id } = req.params;
