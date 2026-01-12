@@ -518,8 +518,12 @@ let tokenExpiresAt = null;
 
 // Get Paraşüt OAuth Token
 async function getParasutToken() {
-  if (!PARASUT_CONFIG.clientId || !PARASUT_CONFIG.clientSecret) {
-    throw new Error('Paraşüt API kimlik bilgileri eksik (PARASUT_CLIENT_ID, PARASUT_CLIENT_SECRET)');
+  if (!PARASUT_CONFIG.clientId || !PARASUT_CONFIG.clientSecret || !PARASUT_CONFIG.companyId) {
+    const missing = [];
+    if (!PARASUT_CONFIG.clientId) missing.push('PARASUT_CLIENT_ID');
+    if (!PARASUT_CONFIG.clientSecret) missing.push('PARASUT_CLIENT_SECRET');
+    if (!PARASUT_CONFIG.companyId) missing.push('PARASUT_COMPANY_ID');
+    throw new Error(`Paraşüt API kimlik bilgileri eksik: ${missing.join(', ')}`);
   }
 
   // Return cached token if still valid
@@ -558,6 +562,8 @@ async function parasutRequest(method, endpoint, body = null) {
   const token = await getParasutToken();
   const url = `${PARASUT_CONFIG.baseUrl}/${PARASUT_CONFIG.companyId}${endpoint}`;
 
+  console.log(`DEBUG: Paraşüt Request [${method}] ${url}`);
+
   const options = {
     method,
     headers: {
@@ -571,11 +577,21 @@ async function parasutRequest(method, endpoint, body = null) {
   }
 
   const response = await fetch(url, options);
-  const data = await response.json();
+
+  // Parse response cautiously
+  let data;
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    data = await response.json();
+  } else {
+    const text = await response.text();
+    console.log(`DEBUG: Non-JSON Paraşüt Response: ${text}`);
+    data = { errors: [{ detail: text || `HTTP ${response.status} ${response.statusText}` }] };
+  }
 
   if (!response.ok) {
-    console.error('Paraşüt API Error:', data);
-    throw new Error(data.errors?.[0]?.detail || 'Paraşüt API hatası');
+    console.error('Paraşüt API Error Detail:', JSON.stringify(data, null, 2));
+    throw new Error(data.errors?.[0]?.detail || data.message || `Paraşüt API hatası (${response.status})`);
   }
 
   return data;
@@ -720,14 +736,20 @@ app.post('/api/orders/:id/create-invoice', async (req, res) => {
 
     // Check payment status
     if (order.paymentStatus !== 'success') {
+      console.log(`DEBUG: Invoice skip - Payment status: ${order.paymentStatus}`);
       return res.status(400).json({ error: 'Sadece ödemesi tamamlanmış siparişler için fatura kesilebilir' });
     }
 
+    console.log(`DEBUG: Creating invoice for order #${id}, customer: ${order.customerEmail}`);
+
     // Find or create contact
     const contactId = await findOrCreateParasutContact(order);
+    console.log(`DEBUG: Resolved Contact ID: ${contactId}`);
 
     // Create invoice
-    const invoice = await createParasutInvoice(order, contactId);
+    const invoiceData = await createParasutInvoice(order, contactId);
+    const invoiceId = invoiceData.data.id;
+    console.log(`DEBUG: Created Invoice ID: ${invoiceId}`);
 
     // Save invoice ID to order
     await pool.query(`
@@ -737,18 +759,22 @@ app.post('/api/orders/:id/create-invoice', async (req, res) => {
         invoice_created_at = NOW(),
         updated_at = NOW()
       WHERE id = $2
-    `, [invoice.id, id]);
+    `, [invoiceId, id]);
 
     res.json({
       success: true,
       message: 'Fatura başarıyla oluşturuldu',
-      invoiceId: invoice.id,
-      invoiceUrl: `https://uygulama.parasut.com/${PARASUT_CONFIG.companyId}/satislar/${invoice.id}`
+      invoiceId: invoiceId,
+      invoiceUrl: `https://uygulama.parasut.com/${PARASUT_CONFIG.companyId}/satislar/${invoiceId}`
     });
 
   } catch (error) {
-    console.error('Fatura oluşturma hatası:', error);
-    res.status(500).json({ error: error.message || 'Fatura oluşturulamadı' });
+    console.error('Fatura oluşturma hatası [ENDPOINT]:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Fatura oluşturulamadı',
+      detail: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
