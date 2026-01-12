@@ -512,6 +512,13 @@ const PARASUT_CONFIG = {
   baseUrl: 'https://api.parasut.com/v4'
 };
 
+// Diagnostic logging for Paraşüt config
+console.log('--- Paraşüt Config Diagnostic ---');
+console.log(`PARASUT_CLIENT_ID: ${PARASUT_CONFIG.clientId ? 'SET (ends with ' + PARASUT_CONFIG.clientId.slice(-4) + ')' : 'MISSING'}`);
+console.log(`PARASUT_CLIENT_SECRET: ${PARASUT_CONFIG.clientSecret ? 'SET' : 'MISSING'}`);
+console.log(`PARASUT_COMPANY_ID: ${PARASUT_CONFIG.companyId ? 'SET (' + PARASUT_CONFIG.companyId + ')' : 'MISSING'}`);
+console.log('---------------------------------');
+
 // Token cache
 let parasutToken = null;
 let tokenExpiresAt = null;
@@ -590,6 +597,7 @@ async function parasutRequest(method, endpoint, body = null) {
   }
 
   if (!response.ok) {
+    console.error(`❌ Paraşüt API Error [${response.status}] ${method} ${url}`);
     console.error('Paraşüt API Error Detail:', JSON.stringify(data, null, 2));
     throw new Error(data.errors?.[0]?.detail || data.message || `Paraşüt API hatası (${response.status})`);
   }
