@@ -564,6 +564,33 @@ async function getParasutToken() {
   return parasutToken;
 }
 
+// Diagnostic: List Accessible Firms
+async function listParasutFirms() {
+  const token = await getParasutToken();
+  const url = 'https://api.parasut.com/v4/me';
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const firms = data.included?.filter(item => item.type === 'companies').map(c => `ID: ${c.id} (${c.attributes.name})`) || [];
+      console.log('--- Accessible Paraşüt Firms ---');
+      console.log(firms.length > 0 ? firms.join('\n') : 'No firms found in token scope.');
+      console.log('--------------------------------');
+      return firms;
+    } else {
+      console.log(`DEBUG: Could not list firms. Status: ${response.status}`);
+    }
+  } catch (e) {
+    console.error('DEBUG: Error listing firms:', e.message);
+  }
+  return [];
+}
+
 // Paraşüt API Request Helper
 async function parasutRequest(method, endpoint, body = null) {
   const token = await getParasutToken();
@@ -599,6 +626,13 @@ async function parasutRequest(method, endpoint, body = null) {
   if (!response.ok) {
     console.error(`❌ Paraşüt API Error [${response.status}] ${method} ${url}`);
     console.error('Paraşüt API Error Detail:', JSON.stringify(data, null, 2));
+
+    // Diagnostic for Record Not Found / User
+    if (response.status === 404 && JSON.stringify(data).includes('User')) {
+      console.log('DEBUG: "User not found" detected. Attempting to list accessible firms...');
+      await listParasutFirms();
+    }
+
     throw new Error(data.errors?.[0]?.detail || data.message || `Paraşüt API hatası (${response.status})`);
   }
 
