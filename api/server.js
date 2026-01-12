@@ -509,8 +509,6 @@ const PARASUT_CONFIG = {
   clientId: process.env.PARASUT_CLIENT_ID,
   clientSecret: process.env.PARASUT_CLIENT_SECRET,
   companyId: process.env.PARASUT_COMPANY_ID,
-  username: process.env.PARASUT_USERNAME,
-  password: process.env.PARASUT_PASSWORD,
   baseUrl: 'https://api.parasut.com/v4'
 };
 
@@ -519,8 +517,6 @@ console.log('--- Paraşüt Config Diagnostic ---');
 console.log(`PARASUT_CLIENT_ID: ${PARASUT_CONFIG.clientId ? 'SET (ends with ' + PARASUT_CONFIG.clientId.slice(-4) + ')' : 'MISSING'}`);
 console.log(`PARASUT_CLIENT_SECRET: ${PARASUT_CONFIG.clientSecret ? 'SET' : 'MISSING'}`);
 console.log(`PARASUT_COMPANY_ID: ${PARASUT_CONFIG.companyId ? 'SET (' + PARASUT_CONFIG.companyId + ')' : 'MISSING'}`);
-console.log(`PARASUT_USERNAME: ${PARASUT_CONFIG.username ? 'SET' : 'MISSING'}`);
-console.log(`PARASUT_PASSWORD: ${PARASUT_CONFIG.password ? 'SET' : 'MISSING'}`);
 console.log('---------------------------------');
 
 // Token cache
@@ -529,13 +525,11 @@ let tokenExpiresAt = null;
 
 // Get Paraşüt OAuth Token
 async function getParasutToken() {
-  if (!PARASUT_CONFIG.clientId || !PARASUT_CONFIG.clientSecret || !PARASUT_CONFIG.companyId || !PARASUT_CONFIG.username || !PARASUT_CONFIG.password) {
+  if (!PARASUT_CONFIG.clientId || !PARASUT_CONFIG.clientSecret || !PARASUT_CONFIG.companyId) {
     const missing = [];
     if (!PARASUT_CONFIG.clientId) missing.push('PARASUT_CLIENT_ID');
     if (!PARASUT_CONFIG.clientSecret) missing.push('PARASUT_CLIENT_SECRET');
     if (!PARASUT_CONFIG.companyId) missing.push('PARASUT_COMPANY_ID');
-    if (!PARASUT_CONFIG.username) missing.push('PARASUT_USERNAME');
-    if (!PARASUT_CONFIG.password) missing.push('PARASUT_PASSWORD');
     throw new Error(`Paraşüt API kimlik bilgileri eksik: ${missing.join(', ')}`);
   }
 
@@ -546,12 +540,9 @@ async function getParasutToken() {
 
   const tokenUrl = 'https://api.parasut.com/oauth/token';
   const params = new URLSearchParams({
-    grant_type: 'password',
+    grant_type: 'client_credentials',
     client_id: PARASUT_CONFIG.clientId,
-    client_secret: PARASUT_CONFIG.clientSecret,
-    username: PARASUT_CONFIG.username,
-    password: PARASUT_CONFIG.password,
-    redirect_uri: 'urn:ietf:wg:oauth:2.0:oob'
+    client_secret: PARASUT_CONFIG.clientSecret
   });
 
   const response = await fetch(tokenUrl, {
@@ -798,7 +789,11 @@ app.get('/api/parasut/debug', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      config_status: {
+        hasClientId: !!PARASUT_CONFIG.clientId,
+        hasClientSecret: !!PARASUT_CONFIG.clientSecret,
+        hasCompanyId: !!PARASUT_CONFIG.companyId
+      }
     });
   }
 });
