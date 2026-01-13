@@ -733,7 +733,7 @@ async function findOrCreateParasutProduct(order) {
         name: productName,
         code: `PRD-${order.productId}-${order.productSizeId}-${order.productFrameId}`,
         vat_rate: 20,
-        currency: 'TRY',
+        currency: 'TRL',
         unit: 'Adet'
       }
     }
@@ -757,7 +757,7 @@ async function createParasutInvoice(order, contactId, productId) {
         description: `Birebiro Sipariş #${order.id}`,
         issue_date: new Date().toISOString().split('T')[0],
         due_date: new Date().toISOString().split('T')[0],
-        currency: 'TRY'
+        currency: 'TRL'
       },
       relationships: {
         contact: {
