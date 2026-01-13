@@ -509,7 +509,10 @@ const PARASUT_CONFIG = {
   clientId: process.env.PARASUT_CLIENT_ID,
   clientSecret: process.env.PARASUT_CLIENT_SECRET,
   companyId: process.env.PARASUT_COMPANY_ID,
-  baseUrl: 'https://api.parasut.com/v4'
+  username: process.env.PARASUT_USERNAME,
+  password: process.env.PARASUT_PASSWORD,
+  baseUrl: 'https://api.parasut.com/v4',
+  redirectUri: 'urn:ietf:wg:oauth:2.0:oob'
 };
 
 // Diagnostic logging for Paraşüt config
@@ -517,11 +520,16 @@ console.log('--- Paraşüt Config Diagnostic ---');
 console.log(`PARASUT_CLIENT_ID: ${PARASUT_CONFIG.clientId ? 'SET (ends with ' + PARASUT_CONFIG.clientId.slice(-4) + ')' : 'MISSING'}`);
 console.log(`PARASUT_CLIENT_SECRET: ${PARASUT_CONFIG.clientSecret ? 'SET' : 'MISSING'}`);
 console.log(`PARASUT_COMPANY_ID: ${PARASUT_CONFIG.companyId ? 'SET (' + PARASUT_CONFIG.companyId + ')' : 'MISSING'}`);
+console.log(`PARASUT_USERNAME: ${PARASUT_CONFIG.username ? 'SET' : 'MISSING'}`);
+console.log(`PARASUT_PASSWORD: ${PARASUT_CONFIG.password ? 'SET' : 'MISSING'}`);
 console.log('---------------------------------');
 
 // Token cache
 let parasutToken = null;
+
 let tokenExpiresAt = null;
+
+
 
 // Get Paraşüt OAuth Token
 async function getParasutToken() {
@@ -530,7 +538,12 @@ async function getParasutToken() {
     if (!PARASUT_CONFIG.clientId) missing.push('PARASUT_CLIENT_ID');
     if (!PARASUT_CONFIG.clientSecret) missing.push('PARASUT_CLIENT_SECRET');
     if (!PARASUT_CONFIG.companyId) missing.push('PARASUT_COMPANY_ID');
-    throw new Error(`Paraşüt API kimlik bilgileri eksik: ${missing.join(', ')}`);
+    throw new Error(`Paraşüt API kimlik bilgileri eksik (Temel): ${missing.join(', ')}`);
+  }
+
+  // Password Flow Check
+  if (!PARASUT_CONFIG.username || !PARASUT_CONFIG.password) {
+    console.warn('⚠️ PARASUT_USERNAME or PARASUT_PASSWORD missing. Falling back to client_credentials (may cause "User not found").');
   }
 
   // Return cached token if still valid
@@ -539,11 +552,24 @@ async function getParasutToken() {
   }
 
   const tokenUrl = 'https://api.parasut.com/oauth/token';
-  const params = new URLSearchParams({
-    grant_type: 'client_credentials',
-    client_id: PARASUT_CONFIG.clientId,
-    client_secret: PARASUT_CONFIG.clientSecret
-  });
+  const params = new URLSearchParams();
+
+  if (PARASUT_CONFIG.username && PARASUT_CONFIG.password) {
+    // Password Grant Flow (Preferred for operations requiring User context)
+    console.log('🔑 Authenticating with Password Flow...');
+    params.append('grant_type', 'password');
+    params.append('client_id', PARASUT_CONFIG.clientId);
+    params.append('client_secret', PARASUT_CONFIG.clientSecret);
+    params.append('username', PARASUT_CONFIG.username);
+    params.append('password', PARASUT_CONFIG.password);
+    params.append('redirect_uri', PARASUT_CONFIG.redirectUri);
+  } else {
+    // Client Credentials Flow (Fallback)
+    console.log('🛡️ Authenticating with Client Credentials Flow...');
+    params.append('grant_type', 'client_credentials');
+    params.append('client_id', PARASUT_CONFIG.clientId);
+    params.append('client_secret', PARASUT_CONFIG.clientSecret);
+  }
 
   const response = await fetch(tokenUrl, {
     method: 'POST',
@@ -553,12 +579,13 @@ async function getParasutToken() {
 
   if (!response.ok) {
     const error = await response.text();
+    console.error('Paraşüt Token Error Body:', error);
     throw new Error(`Paraşüt token hatası: ${error}`);
   }
 
   const data = await response.json();
   parasutToken = data.access_token;
-  tokenExpiresAt = Date.now() + (data.expires_in * 1000) - 60000; // 1 dakika önce expire et
+  tokenExpiresAt = Date.now() + (data.expires_in * 1000) - 60000; // 1 minute buffer;
 
   console.log('✅ Paraşüt token alındı');
   return parasutToken;
