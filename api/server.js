@@ -690,7 +690,8 @@ async function findOrCreateParasutContact(order) {
         phone: order.customerPhone,
         address: order.customerAddress,
         city: order.customerCity,
-        district: order.customerDistrict
+        district: order.customerDistrict,
+        account_type: 'customer'
       }
     }
   };
