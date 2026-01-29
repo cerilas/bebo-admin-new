@@ -33,6 +33,7 @@ export interface ProductSize {
   nameFr?: string;
   dimensions: string;
   priceAmount: number; // in cents
+  isActive: boolean;
   sortOrder: number;
   updatedAt: Date;
   createdAt: Date;
@@ -49,6 +50,7 @@ export interface ProductFrame {
   colorCode?: string;
   frameImage?: string;
   frameImageLarge?: string;
+  isActive: boolean;
   sortOrder: number;
   updatedAt: Date;
   createdAt: Date;

@@ -78,4 +78,9 @@ export const MENU_ITEMS: NbMenuItem[] = [
     icon: 'info-outline',
     link: '/pages/settings/about',
   },
+  {
+    title: 'Yapay Zeka Ayarları',
+    icon: 'browser-outline',
+    link: '/pages/settings/ai',
+  },
 ];

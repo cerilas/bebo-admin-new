@@ -100,6 +100,7 @@ export class ProductFormComponent implements OnInit {
       nameFr: [''],
       dimensions: ['', Validators.required],
       priceAmount: [0, [Validators.required, Validators.min(0)]],
+      isActive: [true],
       sortOrder: [0],
     });
   }
@@ -120,6 +121,7 @@ export class ProductFormComponent implements OnInit {
       mockupConfigY: [15],
       mockupConfigWidth: [76],
       mockupConfigHeight: [70],
+      isActive: [true],
       sortOrder: [0],
     });
   }
@@ -186,7 +188,7 @@ export class ProductFormComponent implements OnInit {
 
   addSize(): void {
     this.editingSizeId = null;
-    this.sizeForm.reset({ sortOrder: this.sizes.length, priceAmount: 0 });
+    this.sizeForm.reset({ sortOrder: this.sizes.length, priceAmount: 0, isActive: true });
     this.showSizeForm = true;
   }
 
@@ -267,7 +269,8 @@ export class ProductFormComponent implements OnInit {
       mockupConfigX: 12,
       mockupConfigY: 15,
       mockupConfigWidth: 76,
-      mockupConfigHeight: 70
+      mockupConfigHeight: 70,
+      isActive: true
     });
     this.showFrameForm = true;
   }
@@ -335,6 +338,7 @@ export class ProductFormComponent implements OnInit {
       frameImageLarge: formValue.frameImageLarge,
       mockupTemplate: formValue.mockupTemplate,
       mockupConfig: mockupConfig,
+      isActive: formValue.isActive,
       sortOrder: formValue.sortOrder,
     };
 

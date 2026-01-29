@@ -3,6 +3,7 @@ import { Routes, RouterModule } from '@angular/router';
 import { SettingsComponent } from './settings.component';
 import { CreditSettingsComponent } from './credit-settings/credit-settings.component';
 import { AboutSettingsComponent } from './about-settings/about-settings.component';
+import { AiSettingsComponent } from './ai-settings/ai-settings.component';
 
 const routes: Routes = [{
   path: '',
@@ -20,6 +21,10 @@ const routes: Routes = [{
     {
       path: 'about',
       component: AboutSettingsComponent,
+    },
+    {
+      path: 'ai',
+      component: AiSettingsComponent,
     },
   ],
 }];

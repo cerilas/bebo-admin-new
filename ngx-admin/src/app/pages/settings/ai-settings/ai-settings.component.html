@@ -1,0 +1,131 @@
+<div class="row">
+    <div class="col-md-12">
+        <nb-card>
+            <nb-card-header>
+                <div class="header-container">
+                    <span>Yapay Zeka Modelleri</span>
+                    <button nbButton status="primary" size="small" (click)="addModel()" *ngIf="!showForm">
+                        <nb-icon icon="plus-outline"></nb-icon>
+                        Yeni Model Ekle
+                    </button>
+                </div>
+            </nb-card-header>
+            <nb-card-body [nbSpinner]="loading" nbSpinnerStatus="primary">
+
+                <!-- Model Form -->
+                <div class="form-container" *ngIf="showForm">
+                    <h6>{{ editingId ? 'Modeli Düzenle' : 'Yeni Model Ekle' }}</h6>
+                    <form [formGroup]="modelForm" (ngSubmit)="saveModel()">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="label">Model Adı *</label>
+                                    <input type="text" nbInput fullWidth formControlName="name"
+                                        placeholder="Örn: Gemini 2.0 Flash">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="label">Sağlayıcı *</label>
+                                    <input type="text" nbInput fullWidth formControlName="provider"
+                                        placeholder="Örn: Google">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="label">Model Identifier *</label>
+                                    <input type="text" nbInput fullWidth formControlName="modelIdentifier"
+                                        placeholder="Örn: gemini-2.0-flash">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="label">Kullanım Sırası *</label>
+                                    <input type="number" nbInput fullWidth formControlName="sortOrder">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="label">Durum</label>
+                                    <nb-toggle formControlName="isActive">Aktif</nb-toggle>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button nbButton status="success" type="submit" [disabled]="modelForm.invalid || submitting"
+                                [nbSpinner]="submitting">
+                                Kaydet
+                            </button>
+                            <button nbButton status="basic" type="button" (click)="cancelEdit()">
+                                İptal
+                            </button>
+                        </div>
+                    </form>
+                    <hr>
+                </div>
+
+                <!-- Models List -->
+                <div class="models-list" *ngIf="models.length > 0; else noData" cdkDropList
+                    (cdkDropListDropped)="drop($event)">
+                    <div class="model-row header-row">
+                        <div class="col-drag"></div>
+                        <div class="col-id">Sıra</div>
+                        <div class="col-name">Ad</div>
+                        <div class="col-provider">Sağlayıcı</div>
+                        <div class="col-identifier">Identifier</div>
+                        <div class="col-status">Durum</div>
+                        <div class="col-actions">İşlemler</div>
+                    </div>
+                    <div class="model-row" *ngFor="let model of models" cdkDrag>
+                        <div class="col-drag" cdkDragHandle>
+                            <nb-icon icon="more-vertical-outline"></nb-icon>
+                        </div>
+                        <div class="col-id">
+                            <span class="mobile-label">Sıra</span>
+                            {{ model.sortOrder }}
+                        </div>
+                        <div class="col-name">
+                            <span class="mobile-label">Model Adı</span>
+                            <strong>{{ model.name }}</strong>
+                        </div>
+                        <div class="col-provider">
+                            <span class="mobile-label">Sağlayıcı</span>
+                            {{ model.provider }}
+                        </div>
+                        <div class="col-identifier">
+                            <span class="mobile-label">Identifier</span>
+                            <code>{{ model.modelIdentifier }}</code>
+                        </div>
+                        <div class="col-status">
+                            <span class="mobile-label">Durum</span>
+                            <nb-toggle [checked]="model.isActive" (checkedChange)="toggleActive(model)" status="success"
+                                size="small">
+                                {{ model.isActive ? 'Aktif' : 'Pasif' }}
+                            </nb-toggle>
+                        </div>
+                        <div class="col-actions">
+                            <button nbButton status="primary" size="tiny" ghost (click)="editModel(model)">
+                                <nb-icon icon="edit-outline"></nb-icon>
+                            </button>
+                            <button nbButton status="danger" size="tiny" ghost (click)="deleteModel(model)">
+                                <nb-icon icon="trash-2-outline"></nb-icon>
+                            </button>
+                        </div>
+
+                        <!-- Drag Preview -->
+                        <div class="drag-placeholder" *cdkDragPlaceholder></div>
+                    </div>
+                </div>
+
+                <ng-template #noData>
+                    <div class="no-data" *ngIf="!loading">
+                        <p>Henüz bir AI modeli eklenmemiş.</p>
+                    </div>
+                </ng-template>
+
+            </nb-card-body>
+        </nb-card>
+    </div>
+</div>

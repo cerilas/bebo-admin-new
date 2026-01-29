@@ -312,17 +312,23 @@
                       <input type="text" nbInput fullWidth formControlName="nameFr" placeholder="30x40 cm">
                     </div>
                   </div>
-                  <div class="col-md-3">
+                  <div class="col-md-2">
                     <div class="form-group">
                       <label class="label">Fiyat (TL) *</label>
                       <input type="number" nbInput fullWidth formControlName="priceAmount" placeholder="199.99"
                         step="0.01">
                     </div>
                   </div>
-                  <div class="col-md-3">
+                  <div class="col-md-2">
                     <div class="form-group">
                       <label class="label">Sıra</label>
                       <input type="number" nbInput fullWidth formControlName="sortOrder">
+                    </div>
+                  </div>
+                  <div class="col-md-2">
+                    <div class="form-group">
+                      <label class="label">Durum</label>
+                      <nb-toggle formControlName="isActive">Aktif</nb-toggle>
                     </div>
                   </div>
                 </div>
@@ -347,6 +353,8 @@
                   <div class="item-main">
                     <span class="item-name">{{ size.name }}</span>
                     <span class="item-slug">{{ size.slug }}</span>
+                    <nb-badge *ngIf="size.isActive === false" text="Pasif" status="danger"
+                      position="top right"></nb-badge>
                   </div>
                   <div class="item-details">
                     <span class="item-dimension">{{ size.dimensions }}</span>
@@ -424,17 +432,23 @@
                       <input type="text" nbInput fullWidth formControlName="nameFr" placeholder="Cadre noir">
                     </div>
                   </div>
-                  <div class="col-md-3">
+                  <div class="col-md-2">
                     <div class="form-group">
                       <label class="label">Fiyat (TL) *</label>
                       <input type="number" nbInput fullWidth formControlName="priceAmount" placeholder="49.99"
                         step="0.01">
                     </div>
                   </div>
-                  <div class="col-md-3">
+                  <div class="col-md-2">
                     <div class="form-group">
                       <label class="label">Sıra</label>
                       <input type="number" nbInput fullWidth formControlName="sortOrder">
+                    </div>
+                  </div>
+                  <div class="col-md-2">
+                    <div class="form-group">
+                      <label class="label">Durum</label>
+                      <nb-toggle formControlName="isActive">Aktif</nb-toggle>
                     </div>
                   </div>
                 </div>
@@ -592,6 +606,8 @@
                     <div class="frame-color" [style.background-color]="frame.colorCode || '#000'"></div>
                     <span class="item-name">{{ frame.name }}</span>
                     <span class="item-slug">{{ frame.slug }}</span>
+                    <nb-badge *ngIf="frame.isActive === false" text="Pasif" status="danger"
+                      position="top right"></nb-badge>
                   </div>
                   <div class="item-details">
                     <span class="item-color-code">{{ frame.colorCode }}</span>

@@ -155,6 +155,7 @@ app.get('/api/products/:id', async (req, res) => {
         name_fr as "nameFr",
         dimensions,
         price_amount as "priceAmount",
+        is_active as "isActive",
         sort_order as "sortOrder",
         created_at as "createdAt",
         updated_at as "updatedAt"
@@ -178,6 +179,7 @@ app.get('/api/products/:id', async (req, res) => {
         frame_image_large as "frameImageLarge",
         mockup_template as "mockupTemplate",
         mockup_config as "mockupConfig",
+        is_active as "isActive",
         sort_order as "sortOrder",
         created_at as "createdAt",
         updated_at as "updatedAt"
@@ -311,6 +313,7 @@ app.get('/api/products/:productId/sizes', async (req, res) => {
         name_fr as "nameFr",
         dimensions,
         price_amount as "priceAmount",
+        is_active as "isActive",
         sort_order as "sortOrder",
         created_at as "createdAt",
         updated_at as "updatedAt"
@@ -329,13 +332,13 @@ app.get('/api/products/:productId/sizes', async (req, res) => {
 app.post('/api/products/:productId/sizes', async (req, res) => {
   try {
     const { productId } = req.params;
-    const { slug, name, nameEn, nameFr, dimensions, priceAmount, sortOrder } = req.body;
+    const { slug, name, nameEn, nameFr, dimensions, priceAmount, isActive, sortOrder } = req.body;
 
     const result = await pool.query(`
-      INSERT INTO product_size (product_id, slug, name, name_en, name_fr, dimensions, price_amount, sort_order)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO product_size (product_id, slug, name, name_en, name_fr, dimensions, price_amount, is_active, sort_order)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING id
-    `, [productId, slug, name, nameEn, nameFr, dimensions, priceAmount, sortOrder || 0]);
+    `, [productId, slug, name, nameEn, nameFr, dimensions, priceAmount, isActive !== false, sortOrder || 0]);
 
     res.status(201).json({ id: result.rows[0].id, message: 'Size created successfully' });
   } catch (error) {
@@ -348,7 +351,7 @@ app.post('/api/products/:productId/sizes', async (req, res) => {
 app.put('/api/products/:productId/sizes/:sizeId', async (req, res) => {
   try {
     const { productId, sizeId } = req.params;
-    const { slug, name, nameEn, nameFr, dimensions, priceAmount, sortOrder } = req.body;
+    const { slug, name, nameEn, nameFr, dimensions, priceAmount, isActive, sortOrder } = req.body;
 
     const result = await pool.query(`
       UPDATE product_size SET
@@ -358,11 +361,12 @@ app.put('/api/products/:productId/sizes/:sizeId', async (req, res) => {
         name_fr = $4,
         dimensions = COALESCE($5, dimensions),
         price_amount = COALESCE($6, price_amount),
-        sort_order = COALESCE($7, sort_order),
+        is_active = COALESCE($7, is_active),
+        sort_order = COALESCE($8, sort_order),
         updated_at = NOW()
-      WHERE id = $8 AND product_id = $9
+      WHERE id = $9 AND product_id = $10
       RETURNING id
-    `, [slug, name, nameEn, nameFr, dimensions, priceAmount, sortOrder, sizeId, productId]);
+    `, [slug, name, nameEn, nameFr, dimensions, priceAmount, isActive, sortOrder, sizeId, productId]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Size not found' });
@@ -415,6 +419,7 @@ app.get('/api/products/:productId/frames', async (req, res) => {
         frame_image_large as "frameImageLarge",
         mockup_template as "mockupTemplate",
         mockup_config as "mockupConfig",
+        is_active as "isActive",
         sort_order as "sortOrder",
         created_at as "createdAt",
         updated_at as "updatedAt"
@@ -433,13 +438,13 @@ app.get('/api/products/:productId/frames', async (req, res) => {
 app.post('/api/products/:productId/frames', async (req, res) => {
   try {
     const { productId } = req.params;
-    const { slug, name, nameEn, nameFr, priceAmount, colorCode, frameImage, frameImageLarge, mockupTemplate, mockupConfig, sortOrder } = req.body;
+    const { slug, name, nameEn, nameFr, priceAmount, colorCode, frameImage, frameImageLarge, mockupTemplate, mockupConfig, isActive, sortOrder } = req.body;
 
     const result = await pool.query(`
-      INSERT INTO product_frame (product_id, slug, name, name_en, name_fr, price_amount, color_code, frame_image, frame_image_large, mockup_template, mockup_config, sort_order)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      INSERT INTO product_frame (product_id, slug, name, name_en, name_fr, price_amount, color_code, frame_image, frame_image_large, mockup_template, mockup_config, is_active, sort_order)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING id
-    `, [productId, slug, name, nameEn, nameFr, priceAmount, colorCode, frameImage, frameImageLarge, mockupTemplate, mockupConfig, sortOrder || 0]);
+    `, [productId, slug, name, nameEn, nameFr, priceAmount, colorCode, frameImage, frameImageLarge, mockupTemplate, mockupConfig, isActive !== false, sortOrder || 0]);
 
     res.status(201).json({ id: result.rows[0].id, message: 'Frame created successfully' });
   } catch (error) {
@@ -452,7 +457,7 @@ app.post('/api/products/:productId/frames', async (req, res) => {
 app.put('/api/products/:productId/frames/:frameId', async (req, res) => {
   try {
     const { productId, frameId } = req.params;
-    const { slug, name, nameEn, nameFr, priceAmount, colorCode, frameImage, frameImageLarge, mockupTemplate, mockupConfig, sortOrder } = req.body;
+    const { slug, name, nameEn, nameFr, priceAmount, colorCode, frameImage, frameImageLarge, mockupTemplate, mockupConfig, isActive, sortOrder } = req.body;
 
     const result = await pool.query(`
       UPDATE product_frame SET
@@ -466,11 +471,12 @@ app.put('/api/products/:productId/frames/:frameId', async (req, res) => {
         frame_image_large = $8,
         mockup_template = $9,
         mockup_config = $10,
-        sort_order = COALESCE($11, sort_order),
+        is_active = COALESCE($11, is_active),
+        sort_order = COALESCE($12, sort_order),
         updated_at = NOW()
-      WHERE id = $12 AND product_id = $13
+      WHERE id = $13 AND product_id = $14
       RETURNING id
-    `, [slug, name, nameEn, nameFr, priceAmount, colorCode, frameImage, frameImageLarge, mockupTemplate, mockupConfig, sortOrder, frameId, productId]);
+    `, [slug, name, nameEn, nameFr, priceAmount, colorCode, frameImage, frameImageLarge, mockupTemplate, mockupConfig, isActive, sortOrder, frameId, productId]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Frame not found' });
@@ -500,6 +506,113 @@ app.delete('/api/products/:productId/frames/:frameId', async (req, res) => {
   } catch (error) {
     console.error('Frame delete error:', error);
     res.status(500).json({ error: 'Failed to delete frame' });
+  }
+});
+
+// ==================== AI MODELS API ====================
+
+// Get all AI models
+app.get('/api/ai-models', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        id, 
+        name, 
+        provider, 
+        model_identifier as "modelIdentifier", 
+        is_active as "isActive", 
+        sort_order as "sortOrder",
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      FROM ai_model 
+      ORDER BY sort_order ASC, name ASC
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('AI models fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch AI models' });
+  }
+});
+
+// Batch reorder AI models
+app.post('/api/ai-models/reorder', async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { modelIds } = req.body; // Array of IDs in the new order
+    await client.query('BEGIN');
+
+    for (let i = 0; i < modelIds.length; i++) {
+      await client.query(
+        'UPDATE ai_model SET sort_order = $1, updated_at = NOW() WHERE id = $2',
+        [i + 1, modelIds[i]]
+      );
+    }
+
+    await client.query('COMMIT');
+    res.json({ message: 'AI models reordered successfully' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('AI models reorder error:', error);
+    res.status(500).json({ error: 'Failed to reorder AI models' });
+  } finally {
+    client.release();
+  }
+});
+
+// Create AI model
+app.post('/api/ai-models', async (req, res) => {
+  try {
+    const { name, provider, modelIdentifier, isActive, sortOrder } = req.body;
+    const result = await pool.query(
+      'INSERT INTO ai_model (name, provider, model_identifier, is_active, sort_order) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+      [name, provider, modelIdentifier, isActive !== false, sortOrder || 0]
+    );
+    res.status(201).json({ id: result.rows[0].id, message: 'AI model created successfully' });
+  } catch (error) {
+    console.error('AI model create error:', error);
+    res.status(500).json({ error: 'Failed to create AI model' });
+  }
+});
+
+// Update AI model
+app.put('/api/ai-models/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, provider, modelIdentifier, isActive, sortOrder } = req.body;
+    const result = await pool.query(
+      `UPDATE ai_model SET 
+        name = COALESCE($1, name), 
+        provider = COALESCE($2, provider), 
+        model_identifier = COALESCE($3, model_identifier), 
+        is_active = COALESCE($4, is_active), 
+        sort_order = COALESCE($5, sort_order),
+        updated_at = NOW()
+      WHERE id = $6 RETURNING id`,
+      [name, provider, modelIdentifier, isActive, sortOrder, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'AI model not found' });
+    }
+    res.json({ message: 'AI model updated successfully' });
+  } catch (error) {
+    console.error('AI model update error:', error);
+    res.status(500).json({ error: 'Failed to update AI model' });
+  }
+});
+
+// Delete AI model
+app.delete('/api/ai-models/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('DELETE FROM ai_model WHERE id = $1 RETURNING id', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'AI model not found' });
+    }
+    res.json({ message: 'AI model deleted successfully' });
+  } catch (error) {
+    console.error('AI model delete error:', error);
+    res.status(500).json({ error: 'Failed to delete AI model' });
   }
 });
 
