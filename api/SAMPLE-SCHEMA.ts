@@ -93,6 +93,7 @@ export const productSchema = pgTable('product', {
   frameLabelFr: text('frame_label_fr').default('Sélectionner le cadre'),
   isActive: boolean('is_active').default(true).notNull(),
   sortOrder: integer('sort_order').default(0).notNull(),
+  desi: integer('desi').default(1).notNull(),
   updatedAt: timestamp('updated_at', { mode: 'date' })
     .defaultNow()
     .$onUpdate(() => new Date())
@@ -193,6 +194,11 @@ export const orderSchema = pgTable('order', {
   companyAddress: text('company_address'), // Şirket adresi
   shippingStatus: varchar('shipping_status', { length: 20 }).default('pending').notNull(), // pending, preparing, shipped, delivered
   trackingNumber: varchar('tracking_number', { length: 100 }),
+  geliverOfferId: varchar('geliver_offer_id', { length: 100 }),
+  geliverShipmentId: varchar('geliver_shipment_id', { length: 100 }),
+  geliverTransactionNumber: varchar('geliver_transaction_number', { length: 100 }),
+  geliverShippingCode: varchar('geliver_shipping_code', { length: 100 }),
+  geliverProviderCode: varchar('geliver_provider_code', { length: 50 }), // Kargo firması (ARAS, MNG, YURTICI, etc.)
   notes: text('notes'), // Admin notları
   paidAt: timestamp('paid_at', { mode: 'date' }),
   updatedAt: timestamp('updated_at', { mode: 'date' })

@@ -42,6 +42,7 @@ export class OrderDetailComponent implements OnInit {
   ) { }
 
   ngOnInit() {
+    // Load order details on component initialization
     this.loadOrderDetail();
   }
 
@@ -265,6 +266,119 @@ export class OrderDetailComponent implements OnInit {
         this.toastrService.danger(errorMsg, 'Hata', { duration: 5000 });
       }
     });
+  }
+
+  // ==================== KARGO (GELIVER) ====================
+  shippingOffers: any[] = [];
+  loadingOffers = false;
+  acceptingOffer = false;
+  showOffers = false;
+
+  loadShippingOffers() {
+    this.loadingOffers = true;
+    this.showOffers = true;
+    this.shippingOffers = [];
+
+    this.ordersService.getShippingOffers(this.orderId).subscribe({
+      next: (response) => {
+        this.loadingOffers = false;
+        // Geliver returns offers nested under data.offers.list
+        if (response?.data?.offers?.list && response.data.offers.list.length > 0) {
+          this.shippingOffers = response.data.offers.list;
+        } else if (response?.offers?.list && response.offers.list.length > 0) {
+          // Fallback: direct offers structure
+          this.shippingOffers = response.offers.list;
+        } else if (response && response.options) {
+          this.shippingOffers = response.options;
+        } else if (Array.isArray(response)) {
+          this.shippingOffers = response;
+        } else {
+          this.shippingOffers = [];
+          this.toastrService.warning('Uygun kargo seçeneği bulunamadı', 'Uyarı');
+        }
+      },
+      error: (err) => {
+        this.loadingOffers = false;
+        console.error('Shipping offers error:', err);
+
+        // Extract detailed error information
+        const errorData = err.error || {};
+        const errorMsg = errorData.error || 'Kargo teklifleri alınamadı';
+        const errorCode = errorData.errorCode ? ` [${errorData.errorCode}]` : '';
+        const details = errorData.details ? `<br><br><strong>Detay:</strong> ${errorData.details}` : '';
+        const suggestion = errorData.suggestion ? `<br><br>💡 ${errorData.suggestion}` : '';
+
+        const fullErrorMessage = `${errorMsg}${errorCode}${details}${suggestion}`;
+
+        this.toastrService.danger(
+          fullErrorMessage,
+          'Kargo Teklifi Hatası',
+          {
+            duration: 15000,
+            preventDuplicates: true,
+            destroyByClick: true
+          }
+        );
+      }
+    });
+  }
+
+  acceptOffer(offer: any) {
+    if (this.acceptingOffer) return;
+
+    this.acceptingOffer = true;
+    this.ordersService.acceptShippingOffer(this.orderId, offer.id).subscribe({
+      next: (response) => {
+        this.acceptingOffer = false;
+        if (response.success) {
+          const trackingCode = response.trackingCode || response.shippingCode || '';
+          const carrier = response.providerCode || '';
+          this.toastrService.success(
+            `Kabul edildi! Takip kodu: ${trackingCode} (${carrier})`,
+            'Başarılı'
+          );
+          this.hasChanges = true;
+          this.showOffers = false;
+          this.loadOrderDetail(); // Refresh order to see new status
+        } else {
+          this.toastrService.danger('Kargo teklifi kabul edilemedi', 'Hata');
+        }
+      },
+      error: (err) => {
+        this.acceptingOffer = false;
+        console.error('Accept offer error:', err);
+
+        // Extract detailed error information from backend response
+        const errorData = err.error || {};
+        const errorMsg = errorData.error || 'Kargo teklifi kabul edilirken hata oluştu';
+        const errorCode = errorData.errorCode ? ` [${errorData.errorCode}]` : '';
+        const details = errorData.details ? `<br><br><strong>Detay:</strong> ${errorData.details}` : '';
+        const suggestion = errorData.suggestion ? `<br><br>💡 ${errorData.suggestion}` : '';
+
+        // Log debug info if available
+        if (errorData.debugInfo) {
+          console.log('Debug Info:', errorData.debugInfo);
+        }
+
+        // Create comprehensive error message with HTML formatting
+        const fullErrorMessage = `${errorMsg}${errorCode}${details}${suggestion}`;
+
+        this.toastrService.danger(
+          fullErrorMessage,
+          'Kargo Hatası',
+          {
+            duration: 15000, // Longer duration for detailed messages
+            preventDuplicates: true,
+            destroyByClick: true // Allow user to dismiss by clicking
+          }
+        );
+      }
+    });
+  }
+
+  cancelShippingSelection() {
+    this.showOffers = false;
+    this.shippingOffers = [];
   }
 
   // ==================== FATURA (PARAŞÜT) ====================

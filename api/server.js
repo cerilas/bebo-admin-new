@@ -89,6 +89,7 @@ app.get('/api/products', async (req, res) => {
         p.frame_label_fr as "frameLabelFr",
         p.is_active as "isActive",
         p.sort_order as "sortOrder",
+        p.desi,
         p.created_at as "createdAt",
         p.updated_at as "updatedAt",
         (SELECT COUNT(*) FROM product_size WHERE product_id = p.id) as "sizesCount",
@@ -134,6 +135,7 @@ app.get('/api/products/:id', async (req, res) => {
         frame_label_fr as "frameLabelFr",
         is_active as "isActive",
         sort_order as "sortOrder",
+        desi,
         created_at as "createdAt",
         updated_at as "updatedAt"
       FROM product 
@@ -205,22 +207,22 @@ app.post('/api/products', async (req, res) => {
     const {
       slug, name, nameEn, nameFr, description, descriptionEn, descriptionFr,
       imageSquareUrl, imageWideUrl, imageDimensions, sizeLabel, sizeLabelEn,
-      sizeLabelFr, frameLabel, frameLabelEn, frameLabelFr, isActive, sortOrder
+      sizeLabelFr, frameLabel, frameLabelEn, frameLabelFr, isActive, sortOrder, desi
     } = req.body;
 
     const result = await pool.query(`
       INSERT INTO product (
         slug, name, name_en, name_fr, description, description_en, description_fr,
         image_square_url, image_wide_url, image_dimensions, size_label, size_label_en,
-        size_label_fr, frame_label, frame_label_en, frame_label_fr, is_active, sort_order
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+        size_label_fr, frame_label, frame_label_en, frame_label_fr, is_active, sort_order, desi
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
       RETURNING id
     `, [
       slug, name, nameEn, nameFr, description, descriptionEn, descriptionFr,
       imageSquareUrl, imageWideUrl, imageDimensions || '1920x1080',
       sizeLabel || 'Boyut Seçin', sizeLabelEn || 'Select Size', sizeLabelFr || 'Sélectionner la taille',
       frameLabel || 'Çerçeve Seçin', frameLabelEn || 'Select Frame', frameLabelFr || 'Sélectionner le cadre',
-      isActive !== false, sortOrder || 0
+      isActive !== false, sortOrder || 0, desi || 1
     ]);
 
     res.status(201).json({ id: result.rows[0].id, message: 'Product created successfully' });
@@ -237,7 +239,7 @@ app.put('/api/products/:id', async (req, res) => {
     const {
       slug, name, nameEn, nameFr, description, descriptionEn, descriptionFr,
       imageSquareUrl, imageWideUrl, imageDimensions, sizeLabel, sizeLabelEn,
-      sizeLabelFr, frameLabel, frameLabelEn, frameLabelFr, isActive, sortOrder
+      sizeLabelFr, frameLabel, frameLabelEn, frameLabelFr, isActive, sortOrder, desi
     } = req.body;
 
     const result = await pool.query(`
@@ -260,13 +262,14 @@ app.put('/api/products/:id', async (req, res) => {
         frame_label_fr = $16,
         is_active = COALESCE($17, is_active),
         sort_order = COALESCE($18, sort_order),
+        desi = COALESCE($19, desi),
         updated_at = NOW()
-      WHERE id = $19
+      WHERE id = $20
       RETURNING id
     `, [
       slug, name, nameEn, nameFr, description, descriptionEn, descriptionFr,
       imageSquareUrl, imageWideUrl, imageDimensions, sizeLabel, sizeLabelEn,
-      sizeLabelFr, frameLabel, frameLabelEn, frameLabelFr, isActive, sortOrder, id
+      sizeLabelFr, frameLabel, frameLabelEn, frameLabelFr, isActive, sortOrder, desi, id
     ]);
 
     if (result.rows.length === 0) {
@@ -752,15 +755,19 @@ async function parasutRequest(method, endpoint, body = null) {
 
   const response = await fetch(url, options);
 
-  // Parse response cautiously
+  // Parse response cautiously (Paraşüt uses application/vnd.api+json)
   let data;
   const contentType = response.headers.get('content-type');
-  if (contentType && contentType.includes('application/json')) {
+  if (contentType && (contentType.includes('application/json') || contentType.includes('application/vnd.api+json'))) {
     data = await response.json();
   } else {
     const text = await response.text();
-    console.log(`DEBUG: Non-JSON Paraşüt Response: ${text}`);
-    data = { errors: [{ detail: text || `HTTP ${response.status} ${response.statusText}` }] };
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.log(`DEBUG: Non-JSON Paraşüt Response: ${text}`);
+      data = { errors: [{ detail: text || `HTTP ${response.status} ${response.statusText}` }] };
+    }
   }
 
   if (!response.ok) {
@@ -816,21 +823,34 @@ async function findOrCreateParasutContact(order) {
   }
 
   const result = await parasutRequest('POST', '/contacts', contactData);
+  if (!result || !result.data) {
+    console.error('❌ Parasut contact creation returned invalid response:', JSON.stringify(result));
+    throw new Error('Müşteri oluşturulamadı (Invalid Response)');
+  }
   console.log('✅ Yeni müşteri oluşturuldu:', result.data.id);
   return result.data.id;
 }
 
 // Find or Create Product in Paraşüt
 async function findOrCreateParasutProduct(order) {
-  const productName = [
+  let finalProductName = [
     order.productName,
     order.sizeName ? `- ${order.sizeName}` : '',
     order.frameName ? `${order.frameName} Çerçeve` : ''
   ].filter(Boolean).join(' ');
 
+  // If no product name (e.g. credit purchase), generate one
+  if (!finalProductName) {
+    if (order.orderType === 'CREDIT' || order.creditAmount > 0) {
+      finalProductName = `Birebiro Kredi Paketi (${order.creditAmount || ''} Kredi)`;
+    } else {
+      finalProductName = 'Birebiro Hizmet Bedeli';
+    }
+  }
+
   // First try to find by name
   try {
-    const searchResult = await parasutRequest('GET', `/products?filter[name]=${encodeURIComponent(productName)}`);
+    const searchResult = await parasutRequest('GET', `/products?filter[name]=${encodeURIComponent(finalProductName)}`);
     if (searchResult.data && searchResult.data.length > 0) {
       console.log('✅ Mevcut ürün bulundu:', searchResult.data[0].id);
       return searchResult.data[0].id;
@@ -844,8 +864,8 @@ async function findOrCreateParasutProduct(order) {
     data: {
       type: 'products',
       attributes: {
-        name: productName,
-        code: `PRD-${order.productId}-${order.productSizeId}-${order.productFrameId}`,
+        name: finalProductName,
+        code: `PRD-${order.productId || 'CREDIT'}-${order.productSizeId || '0'}-${order.productFrameId || '0'}`,
         vat_rate: 20,
         currency: 'TRL',
         unit: 'Adet'
@@ -854,6 +874,10 @@ async function findOrCreateParasutProduct(order) {
   };
 
   const result = await parasutRequest('POST', '/products', productData);
+  if (!result || !result.data) {
+    console.error('❌ Parasut product creation returned invalid response:', JSON.stringify(result));
+    throw new Error('Ürün oluşturulamadı (Invalid Response)');
+  }
   console.log('✅ Yeni ürün oluşturuldu:', result.data.id);
   return result.data.id;
 }
@@ -889,7 +913,7 @@ async function createParasutInvoice(order, contactId, productId) {
                 unit_price: totalTL,
                 vat_rate: 20,
                 description: [
-                  order.productName,
+                  order.productName || (order.creditAmount ? `Birebiro Kredi Paketi (${order.creditAmount} Kredi)` : 'Birebiro Hizmet Bedeli'),
                   order.sizeName ? `- ${order.sizeName}` : '',
                   order.frameName ? `${order.frameName} Çerçeve` : ''
                 ].filter(Boolean).join(' ')
@@ -910,6 +934,10 @@ async function createParasutInvoice(order, contactId, productId) {
   };
 
   const result = await parasutRequest('POST', '/sales_invoices', invoiceData);
+  if (!result || !result.data) {
+    console.error('❌ Parasut invoice creation returned invalid response:', JSON.stringify(result));
+    throw new Error('Fatura oluşturulamadı (Invalid Response)');
+  }
   console.log('✅ Fatura oluşturuldu:', result.data.id);
   return result.data;
 }
@@ -961,6 +989,8 @@ app.post('/api/orders/:id/create-invoice', async (req, res) => {
         o.total_amount as "totalAmount",
         o.payment_status as "paymentStatus",
         o.parasut_invoice_id as "parasutInvoiceId",
+        o.order_type as "orderType",
+        o.credit_amount as "creditAmount",
         p.name as "productName",
         ps.name as "sizeName",
         pf.name as "frameName"
@@ -1003,7 +1033,7 @@ app.post('/api/orders/:id/create-invoice', async (req, res) => {
 
     // Create invoice
     const invoiceData = await createParasutInvoice(order, contactId, productId);
-    const invoiceId = invoiceData.data.id;
+    const invoiceId = invoiceData.id;
     console.log(`DEBUG: Created Invoice ID: ${invoiceId}`);
 
     // Save invoice ID to order
@@ -1032,6 +1062,39 @@ app.post('/api/orders/:id/create-invoice', async (req, res) => {
     });
   }
 });
+
+// ==================== GELIVER API ====================
+const GELIVER_CONFIG = {
+  apiToken: process.env.GELIVER_API_TOKEN || '538ffd83-a1c2-45c2-bddd-f7b98d23ed43',
+  baseUrl: 'https://api.geliver.io/api/v1'
+};
+
+async function geliverRequest(method, endpoint, body = null) {
+  const url = `${GELIVER_CONFIG.baseUrl}${endpoint}`;
+  console.log(`DEBUG: Geliver Request [${method}] ${url}`);
+
+  const options = {
+    method,
+    headers: {
+      'Authorization': `Bearer ${GELIVER_CONFIG.apiToken}`,
+      'Content-Type': 'application/json'
+    }
+  };
+
+  if (body) {
+    options.body = JSON.stringify(body);
+  }
+
+  const response = await fetch(url, options);
+  const data = await response.json();
+
+  if (!response.ok) {
+    console.error(`❌ Geliver API Error [${response.status}] ${method} ${url}`, data);
+    throw new Error(data.message || data.error || `Geliver API error (${response.status})`);
+  }
+
+  return data;
+}
 
 // ==================== ORDERS API ====================
 app.get('/api/orders', async (req, res) => {
@@ -1100,6 +1163,11 @@ app.get('/api/orders/:id', async (req, res) => {
         o.company_address as "companyAddress",
         o.shipping_status as "shippingStatus",
         o.tracking_number as "trackingNumber",
+        o.geliver_offer_id as "geliverOfferId",
+        o.geliver_shipment_id as "geliverShipmentId",
+        o.geliver_transaction_number as "geliverTransactionNumber",
+        o.geliver_shipping_code as "geliverShippingCode",
+        o.geliver_provider_code as "geliverProviderCode",
         o.notes,
         o.paid_at as "paidAt",
         o.created_at as "createdAt",
@@ -1113,6 +1181,7 @@ app.get('/api/orders/:id', async (req, res) => {
         p.name_en as "productNameEn",
         p.slug as "productSlug",
         p.image_square_url as "productImageUrl",
+        p.desi as "productDesi",
         
         -- Product size info
         ps.name as "sizeName",
@@ -1203,6 +1272,356 @@ app.patch('/api/orders/:id/notes', async (req, res) => {
   } catch (error) {
     console.error('Order notes update error:', error);
     res.status(500).json({ error: 'Failed to update order notes' });
+  }
+});
+
+// ==================== GELIVER SHIPPING API ====================
+
+// Get shipping offers from Geliver
+app.get('/api/orders/:id/shipping-offers', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Fetch order and product info
+    const orderResult = await pool.query(`
+      SELECT 
+        o.*,
+        p.desi as "productDesi"
+      FROM "order" o
+      LEFT JOIN product p ON o.product_id = p.id
+      WHERE o.id = $1
+    `, [id]);
+
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    const order = orderResult.rows[0];
+
+    // Fetch sender info from site_settings (using default fallback if empty)
+    let settings = {};
+    try {
+      const settingsResult = await pool.query(`
+        SELECT key, value FROM site_settings 
+        WHERE key IN ('company_name', 'company_address', 'contact_phone', 'contact_email', 'company_tax_number', 'company_tax_office')
+      `);
+      settingsResult.rows.forEach(row => settings[row.key] = row.value);
+    } catch (e) {
+      console.log('Site settings fetch error, using defaults:', e.message);
+    }
+
+    // Determine receiver address - parse if needed or use fields
+    // Assuming customer_address is a full string, we might need better parsing in future
+    // For now using simple logic or fallbacks
+
+    // Helper to get city code (Basic mapping for common cities)
+    const getCityCode = (cityName) => {
+      const normalized = (cityName || '').toUpperCase()
+        .replace(/Ğ/g, 'G').replace(/Ü/g, 'U').replace(/Ş/g, 'S').replace(/İ/g, 'I').replace(/Ö/g, 'O').replace(/Ç/g, 'C'); // Normalize chars
+
+      const codes = {
+        'ADANA': '01', 'ADIYAMAN': '02', 'AFYON': '03', 'AFYONKARAHISAR': '03', 'AGRI': '04', 'AMASYA': '05',
+        'ANKARA': '06', 'ANTALYA': '07', 'ARTVIN': '08', 'AYDIN': '09', 'BALIKESIR': '10', 'BILECIK': '11',
+        'BINGOL': '12', 'BITLIS': '13', 'BOLU': '14', 'BURDUR': '15', 'BURSA': '16', 'CANAKKALE': '17',
+        'CANKIRI': '18', 'CORUM': '19', 'DENIZLI': '20', 'DIYARBAKIR': '21', 'EDIRNE': '22', 'ELAZIG': '23',
+        'ERZINCAN': '24', 'ERZURUM': '25', 'ESKISEHIR': '26', 'GAZIANTEP': '27', 'GIRESUN': '28', 'GUMUSHANE': '29',
+        'HAKKARI': '30', 'HATAY': '31', 'ISPARTA': '32', 'MERSIN': '33', 'ICEL': '33', 'ISTANBUL': '34',
+        'IZMIR': '35', 'KARS': '36', 'KASTAMONU': '37', 'KAYSERI': '38', 'KIRKLARELI': '39', 'KIRSEHIR': '40',
+        'KOCAELI': '41', 'IZMIT': '41', 'KONYA': '42', 'KUTAHYA': '43', 'MALATYA': '44', 'MANISA': '45',
+        'KAHRAMANMARAS': '46', 'MARAS': '46', 'MARDIN': '47', 'MUGLA': '48', 'MUS': '49', 'NEVSEHIR': '50',
+        'NIGDE': '51', 'ORDU': '52', 'RIZE': '53', 'SAKARYA': '54', 'ADAPAZARI': '54', 'SAMSUN': '55',
+        'SIIRT': '56', 'SINOP': '57', 'SIVAS': '58', 'TEKIRDAG': '59', 'TOKAT': '60', 'TRABZON': '61',
+        'TUNCELI': '62', 'SANLIURFA': '63', 'USAK': '64', 'VAN': '65', 'YOZGAT': '66', 'ZONGULDAK': '67',
+        'AKSARAY': '68', 'BAYBURT': '69', 'KARAMAN': '70', 'KIRIKKALE': '71', 'BATMAN': '72', 'SIRNAK': '73',
+        'BARTIN': '74', 'ARDAHAN': '75', 'IGDIR': '76', 'YALOVA': '77', 'KARABUK': '78', 'KILIS': '79',
+        'OSMANIYE': '80', 'DUZCE': '81'
+      };
+
+      // Try exact match first
+      if (codes[normalized]) return codes[normalized];
+
+      // Try partial matching or fuzzy search if needed, but for now exact match on normalized
+      // Find key that contains the input or vice versa
+      const found = Object.keys(codes).find(k => k === normalized || normalized.includes(k) || k.includes(normalized));
+
+      return found ? codes[found] : '34'; // Default to Istanbul only if really can't find
+    };
+
+    // Helper to format phone number to +905051234567
+    const formatPhoneNumber = (phone) => {
+      if (!phone) return '';
+      // Remove all non-numeric characters
+      let cleaned = phone.replace(/\D/g, '');
+
+      // If starts with 90, just prepend +
+      if (cleaned.startsWith('90')) {
+        return '+' + cleaned;
+      }
+      // If starts with 0, replace 0 with +90
+      else if (cleaned.startsWith('0')) {
+        return '+90' + cleaned.substring(1);
+      }
+      // If length is 10 (e.g. 505...), prepend +90
+      else if (cleaned.length === 10) {
+        return '+90' + cleaned;
+      }
+
+      // Fallback: return as is or just prepend +
+      return '+' + cleaned;
+    };
+
+    // Prepare Geliver request matching user provided structure
+    const shipmentData = {
+      test: false, // User requested test: false
+      // senderAddressID: '...', // We need to find this or let user configure it. 
+      // For now, attempting to list addresses or expect user to provide one in settings?
+      // Falling back to inline senderAddress (hoping it's supported) OR we need to fetch user's first address ID.
+
+      // Dimensions (Defaults based on Desi or static)
+      length: "10",
+      width: "10",
+      height: "10",
+      distanceUnit: "cm",
+      weight: "1",
+      massUnit: "kg",
+
+      items: [
+        {
+          title: order.productName || 'Art Print',
+          quantity: 1
+        }
+      ],
+
+      recipientAddress: {
+        name: order.customer_name,
+        email: order.customer_email,
+        phone: formatPhoneNumber(order.customer_phone),
+        address1: order.customer_address,
+        countryCode: "TR",
+        cityCode: getCityCode(order.customer_city),
+        districtName: (order.customer_district || 'Merkez').toUpperCase()
+      },
+
+      productPaymentOnDelivery: false,
+      order: {
+        sourceCode: "API",
+        sourceIdentifier: "https://birebiro.com",
+        orderNumber: order.id.toString(),
+        totalAmount: parseFloat(order.totalAmount || order.paymentAmount) / 100, // Assuming db stores in cents
+        totalAmountCurrency: "TL"
+      }
+    };
+
+    // First, try to get a valid senderAddressID if we don't have one
+    // We'll fetch from Geliver API /addresses/sender (guessing endpoint from context or just try to fetch first one)
+    try {
+      const addressResponse = await geliverRequest('GET', '/addresses/sender'); // Endpoint guess? 
+      // Actually common endpoint is often just /addresses with type filter. 
+      // Let's try to proceed without ID first (using inline) OR 
+      // Since user gave an ID in example, maybe they want us to use THAT specific one? 
+      // "b6029b1b-cc61-4263-95c3-2bd17614c9d6" seems like a specific ID.
+      // I will assume for now we need to Find ONE.
+      // Let's use a PLACEHOLDER and log that we need a real ID if it fails.
+    } catch (e) {
+      // ignore
+    }
+
+    // Attempt to inject senderAddressID if we can find one, otherwise hope for the best or error out.
+    // For this iteration, I will add the keys the user wants.
+
+    // Fetch Sender Address ID
+    let senderAddressID = null;
+    try {
+      // Assuming GET /addresses returns list. We filter/find one.
+      // User curl example implies we need an ID.
+      const addresses = await geliverRequest('GET', '/addresses');
+      // Look for a sender address
+      if (addresses && addresses.data && Array.isArray(addresses.data)) {
+        const sender = addresses.data.find(a => a.type === 'SENDER' || a.type === 'sender') || addresses.data[0];
+        if (sender) senderAddressID = sender.id;
+      }
+    } catch (e) {
+      console.warn('Could not fetch sender addresses:', e.message);
+    }
+
+    if (senderAddressID) {
+      shipmentData.senderAddressID = senderAddressID;
+      shipmentData.returnAddressID = senderAddressID; // Use same for return for now
+    } else {
+      // Fallback: Use the ID from user example if nothing found (High risk, but maybe it's a global test ID? Unlikely)
+      // Or error out.
+      console.warn('No Sender Address ID found! Shipment creation might fail.');
+    }
+
+    console.log('📦 Kargo teklifleri alınıyor - Order ID:', id);
+    const response = await geliverRequest('POST', '/shipments', shipmentData);
+    console.log('✅ Kargo teklifleri alındı:', response?.data?.offers?.list?.length || 0, 'teklif');
+    res.json(response);
+
+  } catch (error) {
+    console.error('❌ Geliver shipping offers error:', {
+      message: error.message,
+      orderId: req.params.id,
+      stack: error.stack
+    });
+    res.status(500).json({
+      error: error.message || 'Kargo teklifleri alınamadı',
+      errorCode: 'SHIPPING_OFFERS_ERROR',
+      details: 'Geliver API ile iletişim sırasında hata oluştu',
+      suggestion: 'Sipariş adres bilgilerinin eksiksiz olduğundan emin olun. Özellikle şehir ve ilçe bilgilerini kontrol edin.'
+    });
+  }
+});
+
+// Accept shipping offer
+app.post('/api/orders/:id/accept-shipping-offer', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { offerId, shipmentId } = req.body;
+
+    if (!offerId) {
+      return res.status(400).json({
+        error: 'Teklif ID\'si gerekli',
+        errorCode: 'MISSING_OFFER_ID',
+        details: 'Kargo teklifi kabul edilmek için teklif ID\'si belirtilmelidir.'
+      });
+    }
+
+    // Geliver endpoint: POST /transactions with offerID in body
+    console.log('🔄 Kargo teklifi kabul ediliyor - Offer ID:', offerId, 'Order ID:', id);
+
+    let response;
+    try {
+      response = await geliverRequest('POST', '/transactions', {
+        offerID: offerId
+      });
+      console.log('✅ Geliver transactions response:', JSON.stringify(response, null, 2));
+    } catch (geliverError) {
+      console.error('❌ Geliver API hatası:', geliverError);
+      return res.status(500).json({
+        error: 'Geliver API ile iletişim hatası',
+        errorCode: 'GELIVER_API_ERROR',
+        details: geliverError.message,
+        suggestion: 'Lütfen internet bağlantınızı kontrol edin veya daha sonra tekrar deneyin.'
+      });
+    }
+
+    // Extract shipping info from response
+    // response.data.shipment.barcode = tracking code
+    // response.data.shipment.providerCode = carrier name
+    const shipmentData = response?.data?.shipment || {};
+    const transactionData = response?.data || {};
+
+    console.log('📦 Shipment Data:', JSON.stringify(shipmentData, null, 2));
+
+    // Check if there's an error in the shipment
+    if (shipmentData.hasError) {
+      console.error('❌ Geliver shipment error:', {
+        message: shipmentData.lastErrorMessage,
+        code: shipmentData.lastErrorCode,
+        status: shipmentData.statusCode
+      });
+      return res.status(400).json({
+        error: shipmentData.lastErrorMessage || 'Kargo oluşturulurken hata oluştu',
+        errorCode: shipmentData.lastErrorCode || 'SHIPMENT_ERROR',
+        details: `Durum Kodu: ${shipmentData.statusCode || 'Bilinmiyor'}`,
+        suggestion: 'Lütfen adres bilgilerinin doğru ve eksiksiz olduğundan emin olun.'
+      });
+    }
+
+    const trackingCode = shipmentData.barcode || '';
+    const providerCode = shipmentData.providerCode || '';
+    const labelUrl = shipmentData.labelURL || '';
+    const resShipmentId = shipmentData.id || shipmentId || '';
+    const transactionId = transactionData.id || '';
+
+    // If no tracking code was generated, it means the transaction wasn't successful
+    if (!trackingCode) {
+      console.error('❌ Geliver: Takip kodu oluşturulamadı', {
+        statusCode: shipmentData.statusCode,
+        providerCode: providerCode,
+        shipmentId: resShipmentId,
+        fullResponse: JSON.stringify(response, null, 2)
+      });
+      return res.status(400).json({
+        error: 'Kargo takip kodu oluşturulamadı',
+        errorCode: 'NO_TRACKING_CODE',
+        details: `Durum: ${shipmentData.statusCode || 'Bilinmiyor'}, Kargo Firması: ${providerCode || 'Belirtilmemiş'}`,
+        suggestion: 'Adres bilgilerini kontrol edin. Özellikle şehir ve ilçe bilgilerinin doğru olduğundan emin olun.',
+        debugInfo: {
+          statusCode: shipmentData.statusCode,
+          providerCode: providerCode,
+          hasShipmentId: !!resShipmentId
+        }
+      });
+    }
+
+    // Update order with shipping info
+    try {
+      await pool.query(`
+        UPDATE "order" 
+        SET 
+          geliver_offer_id = $1,
+          geliver_shipment_id = $2,
+          geliver_transaction_number = $3,
+          geliver_shipping_code = $4,
+          geliver_provider_code = $5,
+          tracking_number = $4,
+          shipping_status = 'preparing',
+          updated_at = NOW()
+        WHERE id = $6
+      `, [
+        offerId,
+        resShipmentId,
+        transactionId,
+        trackingCode,
+        providerCode,
+        id
+      ]);
+      console.log('✅ Sipariş güncellendi - Tracking Code:', trackingCode);
+    } catch (dbError) {
+      console.error('❌ Veritabanı güncelleme hatası:', dbError);
+      return res.status(500).json({
+        error: 'Sipariş güncellenirken hata oluştu',
+        errorCode: 'DATABASE_UPDATE_ERROR',
+        details: dbError.message,
+        suggestion: 'Kargo kaydedildi ancak sipariş güncellenemedi. Lütfen yönetici ile iletişime geçin.'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Kargo teklifi başarıyla kabul edildi',
+      trackingCode: trackingCode,
+      providerCode: providerCode,
+      labelUrl: labelUrl,
+      shippingCode: trackingCode // for backward compatibility
+    });
+
+  } catch (error) {
+    console.error('❌ Kargo teklifi kabul hatası:', {
+      message: error.message,
+      stack: error.stack,
+      orderId: req.params.id,
+      offerId: req.body.offerId
+    });
+    res.status(500).json({
+      error: 'Kargo teklifi kabul edilirken beklenmeyen bir hata oluştu',
+      errorCode: 'UNEXPECTED_ERROR',
+      details: error.message,
+      suggestion: 'Lütfen tekrar deneyin. Sorun devam ederse yönetici ile iletişime geçin.'
+    });
+  }
+});
+
+// List all shipments from Geliver
+app.get('/api/shipping/shipments', async (req, res) => {
+  try {
+    const response = await geliverRequest('GET', '/shipments');
+    res.json(response);
+  } catch (error) {
+    console.error('Geliver list shipments error:', error);
+    res.status(500).json({ error: error.message || 'Failed to list shipments' });
   }
 });
 

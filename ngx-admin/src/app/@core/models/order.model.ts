@@ -30,6 +30,10 @@ export interface Order {
   companyAddress?: string;
   shippingStatus: 'pending' | 'preparing' | 'shipped' | 'delivered' | 'cancelled';
   trackingNumber?: string;
+  geliverOfferId?: string;
+  geliverShipmentId?: string;
+  geliverTransactionNumber?: string;
+  geliverShippingCode?: string;
   notes?: string;
   paidAt?: Date;
   updatedAt: Date;
@@ -39,6 +43,7 @@ export interface Order {
   productNameEn?: string;
   productSlug?: string;
   productImageUrl?: string;
+  productDesi?: number;
 
   // Product size info
   sizeName?: string;

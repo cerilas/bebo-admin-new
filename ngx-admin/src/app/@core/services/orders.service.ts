@@ -57,6 +57,18 @@ export class OrdersService extends BaseApiService {
     return this.patch<Order>(`${this.endpoint}/${id}/notes`, { notes });
   }
 
+  getShippingOffers(id: number): Observable<any> {
+    return this.get(`${this.endpoint}/${id}/shipping-offers`);
+  }
+
+  acceptShippingOffer(id: number, offerId: string): Observable<any> {
+    return this.post(`${this.endpoint}/${id}/accept-shipping-offer`, { offerId });
+  }
+
+  getShipments(): Observable<any> {
+    return this.get('/shipping/shipments');
+  }
+
   /**
    * PayTR üzerinden sipariş iadesi yapar
    * @param id Sipariş ID

@@ -20,6 +20,7 @@ export interface Product {
   frameLabelFr?: string;
   isActive: boolean;
   sortOrder: number;
+  desi?: number;
   updatedAt: Date;
   createdAt: Date;
 }

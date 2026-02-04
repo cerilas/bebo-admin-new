@@ -89,6 +89,7 @@ export class ProductFormComponent implements OnInit {
       frameLabelFr: ['Sélectionner le cadre'],
       isActive: [true],
       sortOrder: [0, Validators.required],
+      desi: [1, [Validators.required, Validators.min(1)]],
     });
   }
 
