@@ -2557,7 +2557,8 @@ app.get('/api/credit-settings', async (req, res) => {
         pricePerCredit: 100,
         isActive: true,
         minPurchase: 1,
-        maxPurchase: 1000
+        maxPurchase: 1000,
+        maxUserCredits: 10000
       });
     }
 
@@ -2568,6 +2569,7 @@ app.get('/api/credit-settings', async (req, res) => {
       isActive: row.is_active,
       minPurchase: row.min_purchase,
       maxPurchase: row.max_purchase,
+      maxUserCredits: row.max_user_credits,
       updatedAt: row.updated_at,
       createdAt: row.created_at
     });
@@ -2580,7 +2582,7 @@ app.get('/api/credit-settings', async (req, res) => {
 // Update credit settings
 app.put('/api/credit-settings', async (req, res) => {
   try {
-    const { pricePerCredit, isActive, minPurchase, maxPurchase } = req.body;
+    const { pricePerCredit, isActive, minPurchase, maxPurchase, maxUserCredits } = req.body;
 
     // Check if settings exist
     const existing = await pool.query('SELECT id FROM art_credit_settings ORDER BY id LIMIT 1');
@@ -2589,10 +2591,10 @@ app.put('/api/credit-settings', async (req, res) => {
     if (existing.rows.length === 0) {
       // Insert new settings
       result = await pool.query(`
-        INSERT INTO art_credit_settings (price_per_credit, is_active, min_purchase, max_purchase)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO art_credit_settings (price_per_credit, is_active, min_purchase, max_purchase, max_user_credits)
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING *
-      `, [pricePerCredit || 100, isActive !== false, minPurchase || 1, maxPurchase || 1000]);
+      `, [pricePerCredit || 100, isActive !== false, minPurchase || 1, maxPurchase || 1000, maxUserCredits || 10000]);
     } else {
       // Update existing settings
       result = await pool.query(`
@@ -2601,10 +2603,11 @@ app.put('/api/credit-settings', async (req, res) => {
           is_active = COALESCE($2, is_active),
           min_purchase = COALESCE($3, min_purchase),
           max_purchase = COALESCE($4, max_purchase),
+          max_user_credits = COALESCE($5, max_user_credits),
           updated_at = NOW()
-        WHERE id = $5
+        WHERE id = $6
         RETURNING *
-      `, [pricePerCredit, isActive, minPurchase, maxPurchase, existing.rows[0].id]);
+      `, [pricePerCredit, isActive, minPurchase, maxPurchase, maxUserCredits, existing.rows[0].id]);
     }
 
     const row = result.rows[0];
@@ -2616,6 +2619,7 @@ app.put('/api/credit-settings', async (req, res) => {
         isActive: row.is_active,
         minPurchase: row.min_purchase,
         maxPurchase: row.max_purchase,
+        maxUserCredits: row.max_user_credits,
         updatedAt: row.updated_at
       }
     });

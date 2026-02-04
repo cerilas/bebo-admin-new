@@ -14,13 +14,14 @@ export class CreditSettingsComponent implements OnInit {
     isActive: true,
     minPurchase: 1,
     maxPurchase: 1000,
+    maxUserCredits: 10000,
   };
   loading = true;
   saving = false;
   saved = false;
   error: string = null;
 
-  constructor(private settingsService: SettingsService) {}
+  constructor(private settingsService: SettingsService) { }
 
   ngOnInit(): void {
     this.loadSettings();

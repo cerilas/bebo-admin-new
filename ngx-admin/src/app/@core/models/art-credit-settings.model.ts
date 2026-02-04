@@ -4,6 +4,7 @@ export interface ArtCreditSettings {
   isActive: boolean;
   minPurchase: number;
   maxPurchase: number;
+  maxUserCredits: number;
   updatedAt?: Date;
   createdAt?: Date;
 }
