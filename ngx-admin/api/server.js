@@ -166,6 +166,8 @@ app.get('/api/products/:id', async (req, res) => {
         frame_image_large as "frameImageLarge",
         mockup_template as "mockupTemplate",
         mockup_config as "mockupConfig",
+        mockup_template_vertical as "mockupTemplateVertical",
+        mockup_config_vertical as "mockupConfigVertical",
         sort_order as "sortOrder",
         created_at as "createdAt",
         updated_at as "updatedAt"
@@ -174,10 +176,21 @@ app.get('/api/products/:id', async (req, res) => {
       ORDER BY sort_order ASC
     `, [id]);
 
+    // Get size-frame availability
+    const availabilityResult = await pool.query(`
+      SELECT 
+        size_id as "sizeId",
+        frame_id as "frameId",
+        is_available as "isAvailable"
+      FROM product_size_frame
+      WHERE product_id = $1
+    `, [id]);
+
     res.json({
       ...productResult.rows[0],
       sizes: sizesResult.rows,
       frames: framesResult.rows,
+      sizeFrameAvailability: availabilityResult.rows,
     });
   } catch (error) {
     console.error('Product fetch error:', error);
@@ -405,6 +418,8 @@ app.get('/api/products/:productId/frames', async (req, res) => {
         frame_image_large as "frameImageLarge",
         mockup_template as "mockupTemplate",
         mockup_config as "mockupConfig",
+        mockup_template_vertical as "mockupTemplateVertical",
+        mockup_config_vertical as "mockupConfigVertical",
         sort_order as "sortOrder",
         created_at as "createdAt",
         updated_at as "updatedAt"
@@ -423,13 +438,13 @@ app.get('/api/products/:productId/frames', async (req, res) => {
 app.post('/api/products/:productId/frames', async (req, res) => {
   try {
     const { productId } = req.params;
-    const { slug, name, nameEn, nameFr, priceAmount, colorCode, frameImage, frameImageLarge, mockupTemplate, mockupConfig, sortOrder } = req.body;
+    const { slug, name, nameEn, nameFr, priceAmount, colorCode, frameImage, frameImageLarge, mockupTemplate, mockupConfig, mockupTemplateVertical, mockupConfigVertical, sortOrder } = req.body;
 
     const result = await pool.query(`
-      INSERT INTO product_frame (product_id, slug, name, name_en, name_fr, price_amount, color_code, frame_image, frame_image_large, mockup_template, mockup_config, sort_order)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      INSERT INTO product_frame (product_id, slug, name, name_en, name_fr, price_amount, color_code, frame_image, frame_image_large, mockup_template, mockup_config, mockup_template_vertical, mockup_config_vertical, sort_order)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING id
-    `, [productId, slug, name, nameEn, nameFr, priceAmount, colorCode, frameImage, frameImageLarge, mockupTemplate, mockupConfig, sortOrder || 0]);
+    `, [productId, slug, name, nameEn, nameFr, priceAmount, colorCode, frameImage, frameImageLarge, mockupTemplate, mockupConfig, mockupTemplateVertical, mockupConfigVertical, sortOrder || 0]);
 
     res.status(201).json({ id: result.rows[0].id, message: 'Frame created successfully' });
   } catch (error) {
@@ -442,7 +457,7 @@ app.post('/api/products/:productId/frames', async (req, res) => {
 app.put('/api/products/:productId/frames/:frameId', async (req, res) => {
   try {
     const { productId, frameId } = req.params;
-    const { slug, name, nameEn, nameFr, priceAmount, colorCode, frameImage, frameImageLarge, mockupTemplate, mockupConfig, sortOrder } = req.body;
+    const { slug, name, nameEn, nameFr, priceAmount, colorCode, frameImage, frameImageLarge, mockupTemplate, mockupConfig, mockupTemplateVertical, mockupConfigVertical, sortOrder } = req.body;
 
     const result = await pool.query(`
       UPDATE product_frame SET
@@ -456,11 +471,13 @@ app.put('/api/products/:productId/frames/:frameId', async (req, res) => {
         frame_image_large = $8,
         mockup_template = $9,
         mockup_config = $10,
-        sort_order = COALESCE($11, sort_order),
+        mockup_template_vertical = $11,
+        mockup_config_vertical = COALESCE($12, mockup_config_vertical),
+        sort_order = COALESCE($13, sort_order),
         updated_at = NOW()
-      WHERE id = $12 AND product_id = $13
+      WHERE id = $14 AND product_id = $15
       RETURNING id
-    `, [slug, name, nameEn, nameFr, priceAmount, colorCode, frameImage, frameImageLarge, mockupTemplate, mockupConfig, sortOrder, frameId, productId]);
+    `, [slug, name, nameEn, nameFr, priceAmount, colorCode, frameImage, frameImageLarge, mockupTemplate, mockupConfig, mockupTemplateVertical, mockupConfigVertical, sortOrder, frameId, productId]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Frame not found' });
@@ -493,6 +510,67 @@ app.delete('/api/products/:productId/frames/:frameId', async (req, res) => {
   }
 });
 
+// ==================== PRODUCT SIZE-FRAME AVAILABILITY API ====================
+
+// Get size-frame availability for a product
+app.get('/api/products/:productId/size-frame-availability', async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const result = await pool.query(`
+      SELECT 
+        id,
+        product_id as "productId",
+        size_id as "sizeId",
+        frame_id as "frameId",
+        is_available as "isAvailable"
+      FROM product_size_frame
+      WHERE product_id = $1
+    `, [productId]);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Size-frame availability fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch size-frame availability' });
+  }
+});
+
+// Update size-frame availability (bulk upsert)
+app.put('/api/products/:productId/size-frame-availability', async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { availability } = req.body; // Array of { sizeId, frameId, isAvailable }
+
+    if (!Array.isArray(availability)) {
+      return res.status(400).json({ error: 'availability must be an array' });
+    }
+
+    // Use a transaction for bulk upsert
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      for (const item of availability) {
+        await client.query(`
+          INSERT INTO product_size_frame (product_id, size_id, frame_id, is_available, updated_at)
+          VALUES ($1, $2, $3, $4, NOW())
+          ON CONFLICT (product_id, size_id, frame_id)
+          DO UPDATE SET is_available = $4, updated_at = NOW()
+        `, [productId, item.sizeId, item.frameId, item.isAvailable]);
+      }
+
+      await client.query('COMMIT');
+      res.json({ message: 'Size-frame availability updated successfully' });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Size-frame availability update error:', error);
+    res.status(500).json({ error: 'Failed to update size-frame availability' });
+  }
+});
+
 // ==================== ORDERS API ====================
 app.get('/api/orders', async (req, res) => {
   try {
@@ -515,6 +593,7 @@ app.get('/api/orders', async (req, res) => {
         o.tracking_number as "trackingNumber",
         o.created_at as "createdAt",
         o.updated_at as "updatedAt",
+        o.orientation,
         p.name as "productName"
       FROM "order" o
       LEFT JOIN product p ON o.product_id = p.id
@@ -566,6 +645,7 @@ app.get('/api/orders/:id', async (req, res) => {
         o.updated_at as "updatedAt",
         o.failed_reason_code as "failedReasonCode",
         o.failed_reason_msg as "failedReasonMsg",
+        o.orientation,
         
         -- User info
         u.art_credits as "userArtCredits",
@@ -585,6 +665,10 @@ app.get('/api/orders/:id', async (req, res) => {
         pf.name as "frameName",
         pf.price_amount as "framePrice",
         pf.color_code as "frameColorCode",
+        pf.mockup_template as "frameMockupTemplate",
+        pf.mockup_config as "frameMockupConfig",
+        pf.mockup_template_vertical as "frameMockupTemplateVertical",
+        pf.mockup_config_vertical as "frameMockupConfigVertical",
         
         -- Generated image info
         gi.image_url as "generatedImageUrl",

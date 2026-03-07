@@ -9,9 +9,14 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // PostgreSQL connection pool
-const connectionString = 'postgresql://postgres:ptrzmLFbwlrQYpPJfeAofGqMkXFdSIhu@crossover.proxy.rlwy.net:37534/railway';
+console.log('🔍 Environment Check:');
+console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'PRESENT' : 'MISSING');
+console.log('PGHOST:', process.env.PGHOST || 'NOT SET');
+const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:ptrzmLFbwlrQYpPJfeAofGqMkXFdSIhu@crossover.proxy.rlwy.net:37534/railway';
+console.log('📡 Using DB connection string (host partially shown):', connectionString.split('@')[1] || '(none)');
 const pool = new Pool({
-  connectionString: connectionString
+  connectionString: connectionString,
+  ssl: connectionString.includes('rlwy.net') ? { rejectUnauthorized: false } : false
 });
 
 // Test database connection
@@ -61,7 +66,9 @@ app.get('/api/products/stats', async (req, res) => {
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Products stats error:', error);
-    res.status(500).json({ error: 'Failed to fetch stats' });
+    if (!res.headersSent) {
+      res.status(500).type('application/json').send(JSON.stringify({ error: 'Failed to fetch stats', details: error.message }));
+    }
   }
 });
 
@@ -102,7 +109,9 @@ app.get('/api/products', async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     console.error('Products fetch error:', error);
-    res.status(500).json({ error: 'Failed to fetch products' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to fetch products' });
+    }
   }
 });
 
@@ -181,6 +190,8 @@ app.get('/api/products/:id', async (req, res) => {
         frame_image_large as "frameImageLarge",
         mockup_template as "mockupTemplate",
         mockup_config as "mockupConfig",
+        mockup_template_vertical as "mockupTemplateVertical",
+        mockup_config_vertical as "mockupConfigVertical",
         is_active as "isActive",
         sort_order as "sortOrder",
         created_at as "createdAt",
@@ -190,14 +201,27 @@ app.get('/api/products/:id', async (req, res) => {
       ORDER BY sort_order ASC
     `, [id]);
 
+    // Get size-frame availability
+    const availabilityResult = await pool.query(`
+      SELECT 
+        size_id as "sizeId",
+        frame_id as "frameId",
+        is_available as "isAvailable"
+      FROM product_size_frame
+      WHERE product_id = $1
+    `, [id]);
+
     res.json({
       ...productResult.rows[0],
       sizes: sizesResult.rows,
       frames: framesResult.rows,
+      sizeFrameAvailability: availabilityResult.rows,
     });
   } catch (error) {
     console.error('Product fetch error:', error);
-    res.status(500).json({ error: 'Failed to fetch product' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to fetch product' });
+    }
   }
 });
 
@@ -206,20 +230,20 @@ app.post('/api/products', async (req, res) => {
   try {
     const {
       slug, name, nameEn, nameFr, description, descriptionEn, descriptionFr,
-      imageSquareUrl, imageWideUrl, imageDimensions, sizeLabel, sizeLabelEn,
+      imageSquareUrl, imageSquareUrl2, imageSquareUrl3, imageWideUrl, imageDimensions, sizeLabel, sizeLabelEn,
       sizeLabelFr, frameLabel, frameLabelEn, frameLabelFr, isActive, sortOrder, desi
     } = req.body;
 
     const result = await pool.query(`
       INSERT INTO product (
         slug, name, name_en, name_fr, description, description_en, description_fr,
-        image_square_url, image_wide_url, image_dimensions, size_label, size_label_en,
+        image_square_url, image_square_url_2, image_square_url_3, image_wide_url, image_dimensions, size_label, size_label_en,
         size_label_fr, frame_label, frame_label_en, frame_label_fr, is_active, sort_order, desi
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
       RETURNING id
     `, [
       slug, name, nameEn, nameFr, description, descriptionEn, descriptionFr,
-      imageSquareUrl, imageWideUrl, imageDimensions || '1920x1080',
+      imageSquareUrl, imageSquareUrl2, imageSquareUrl3, imageWideUrl, imageDimensions || '1920x1080',
       sizeLabel || 'Boyut Seçin', sizeLabelEn || 'Select Size', sizeLabelFr || 'Sélectionner la taille',
       frameLabel || 'Çerçeve Seçin', frameLabelEn || 'Select Frame', frameLabelFr || 'Sélectionner le cadre',
       isActive !== false, sortOrder || 0, desi || 1
@@ -238,7 +262,7 @@ app.put('/api/products/:id', async (req, res) => {
     const { id } = req.params;
     const {
       slug, name, nameEn, nameFr, description, descriptionEn, descriptionFr,
-      imageSquareUrl, imageWideUrl, imageDimensions, sizeLabel, sizeLabelEn,
+      imageSquareUrl, imageSquareUrl2, imageSquareUrl3, imageWideUrl, imageDimensions, sizeLabel, sizeLabelEn,
       sizeLabelFr, frameLabel, frameLabelEn, frameLabelFr, isActive, sortOrder, desi
     } = req.body;
 
@@ -252,23 +276,25 @@ app.put('/api/products/:id', async (req, res) => {
         description_en = $6,
         description_fr = $7,
         image_square_url = $8,
-        image_wide_url = $9,
-        image_dimensions = COALESCE($10, image_dimensions),
-        size_label = COALESCE($11, size_label),
-        size_label_en = $12,
-        size_label_fr = $13,
-        frame_label = COALESCE($14, frame_label),
-        frame_label_en = $15,
-        frame_label_fr = $16,
-        is_active = COALESCE($17, is_active),
-        sort_order = COALESCE($18, sort_order),
-        desi = COALESCE($19, desi),
+        image_square_url_2 = $9,
+        image_square_url_3 = $10,
+        image_wide_url = $11,
+        image_dimensions = COALESCE($12, image_dimensions),
+        size_label = COALESCE($13, size_label),
+        size_label_en = $14,
+        size_label_fr = $15,
+        frame_label = COALESCE($16, frame_label),
+        frame_label_en = $17,
+        frame_label_fr = $18,
+        is_active = COALESCE($19, is_active),
+        sort_order = COALESCE($20, sort_order),
+        desi = COALESCE($21, desi),
         updated_at = NOW()
-      WHERE id = $20
+      WHERE id = $22
       RETURNING id
     `, [
       slug, name, nameEn, nameFr, description, descriptionEn, descriptionFr,
-      imageSquareUrl, imageWideUrl, imageDimensions, sizeLabel, sizeLabelEn,
+      imageSquareUrl, imageSquareUrl2, imageSquareUrl3, imageWideUrl, imageDimensions, sizeLabel, sizeLabelEn,
       sizeLabelFr, frameLabel, frameLabelEn, frameLabelFr, isActive, sortOrder, desi, id
     ]);
 
@@ -422,6 +448,8 @@ app.get('/api/products/:productId/frames', async (req, res) => {
         frame_image_large as "frameImageLarge",
         mockup_template as "mockupTemplate",
         mockup_config as "mockupConfig",
+        mockup_template_vertical as "mockupTemplateVertical",
+        mockup_config_vertical as "mockupConfigVertical",
         is_active as "isActive",
         sort_order as "sortOrder",
         created_at as "createdAt",
@@ -441,13 +469,13 @@ app.get('/api/products/:productId/frames', async (req, res) => {
 app.post('/api/products/:productId/frames', async (req, res) => {
   try {
     const { productId } = req.params;
-    const { slug, name, nameEn, nameFr, priceAmount, colorCode, frameImage, frameImageLarge, mockupTemplate, mockupConfig, isActive, sortOrder } = req.body;
+    const { slug, name, nameEn, nameFr, priceAmount, colorCode, frameImage, frameImageLarge, mockupTemplate, mockupConfig, mockupTemplateVertical, mockupConfigVertical, isActive, sortOrder } = req.body;
 
     const result = await pool.query(`
-      INSERT INTO product_frame (product_id, slug, name, name_en, name_fr, price_amount, color_code, frame_image, frame_image_large, mockup_template, mockup_config, is_active, sort_order)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      INSERT INTO product_frame (product_id, slug, name, name_en, name_fr, price_amount, color_code, frame_image, frame_image_large, mockup_template, mockup_config, mockup_template_vertical, mockup_config_vertical, is_active, sort_order)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING id
-    `, [productId, slug, name, nameEn, nameFr, priceAmount, colorCode, frameImage, frameImageLarge, mockupTemplate, mockupConfig, isActive !== false, sortOrder || 0]);
+    `, [productId, slug, name, nameEn, nameFr, priceAmount, colorCode, frameImage, frameImageLarge, mockupTemplate, mockupConfig, mockupTemplateVertical || null, mockupConfigVertical || '{}', isActive !== false, sortOrder || 0]);
 
     res.status(201).json({ id: result.rows[0].id, message: 'Frame created successfully' });
   } catch (error) {
@@ -460,7 +488,7 @@ app.post('/api/products/:productId/frames', async (req, res) => {
 app.put('/api/products/:productId/frames/:frameId', async (req, res) => {
   try {
     const { productId, frameId } = req.params;
-    const { slug, name, nameEn, nameFr, priceAmount, colorCode, frameImage, frameImageLarge, mockupTemplate, mockupConfig, isActive, sortOrder } = req.body;
+    const { slug, name, nameEn, nameFr, priceAmount, colorCode, frameImage, frameImageLarge, mockupTemplate, mockupConfig, mockupTemplateVertical, mockupConfigVertical, isActive, sortOrder } = req.body;
 
     const result = await pool.query(`
       UPDATE product_frame SET
@@ -474,12 +502,14 @@ app.put('/api/products/:productId/frames/:frameId', async (req, res) => {
         frame_image_large = $8,
         mockup_template = $9,
         mockup_config = $10,
-        is_active = COALESCE($11, is_active),
-        sort_order = COALESCE($12, sort_order),
+        mockup_template_vertical = $11,
+        mockup_config_vertical = COALESCE($12, mockup_config_vertical),
+        is_active = COALESCE($13, is_active),
+        sort_order = COALESCE($14, sort_order),
         updated_at = NOW()
-      WHERE id = $13 AND product_id = $14
+      WHERE id = $15 AND product_id = $16
       RETURNING id
-    `, [slug, name, nameEn, nameFr, priceAmount, colorCode, frameImage, frameImageLarge, mockupTemplate, mockupConfig, isActive, sortOrder, frameId, productId]);
+    `, [slug, name, nameEn, nameFr, priceAmount, colorCode, frameImage, frameImageLarge, mockupTemplate, mockupConfig, mockupTemplateVertical, mockupConfigVertical, isActive, sortOrder, frameId, productId]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Frame not found' });
@@ -509,6 +539,67 @@ app.delete('/api/products/:productId/frames/:frameId', async (req, res) => {
   } catch (error) {
     console.error('Frame delete error:', error);
     res.status(500).json({ error: 'Failed to delete frame' });
+  }
+});
+
+// ==================== PRODUCT SIZE-FRAME AVAILABILITY API ====================
+
+// Get size-frame availability for a product
+app.get('/api/products/:productId/size-frame-availability', async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const result = await pool.query(`
+      SELECT 
+        id,
+        product_id as "productId",
+        size_id as "sizeId",
+        frame_id as "frameId",
+        is_available as "isAvailable"
+      FROM product_size_frame
+      WHERE product_id = $1
+    `, [productId]);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Size-frame availability fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch size-frame availability' });
+  }
+});
+
+// Update size-frame availability (bulk upsert)
+app.put('/api/products/:productId/size-frame-availability', async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { availability } = req.body; // Array of { sizeId, frameId, isAvailable }
+
+    if (!Array.isArray(availability)) {
+      return res.status(400).json({ error: 'availability must be an array' });
+    }
+
+    // Use a transaction for bulk upsert
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      for (const item of availability) {
+        await client.query(`
+          INSERT INTO product_size_frame (product_id, size_id, frame_id, is_available, updated_at)
+          VALUES ($1, $2, $3, $4, NOW())
+          ON CONFLICT (product_id, size_id, frame_id)
+          DO UPDATE SET is_available = $4, updated_at = NOW()
+        `, [productId, item.sizeId, item.frameId, item.isAvailable]);
+      }
+
+      await client.query('COMMIT');
+      res.json({ message: 'Size-frame availability updated successfully' });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Size-frame availability update error:', error);
+    res.status(500).json({ error: 'Failed to update size-frame availability' });
   }
 });
 
@@ -1116,6 +1207,7 @@ app.get('/api/orders', async (req, res) => {
         o.payment_status as "paymentStatus",
         o.shipping_status as "shippingStatus",
         o.tracking_number as "trackingNumber",
+        o.orientation,
         o.created_at as "createdAt",
         o.updated_at as "updatedAt",
         p.name as "productName"
@@ -1169,6 +1261,7 @@ app.get('/api/orders/:id', async (req, res) => {
         o.geliver_shipping_code as "geliverShippingCode",
         o.geliver_provider_code as "geliverProviderCode",
         o.notes,
+        o.orientation,
         o.paid_at as "paidAt",
         o.created_at as "createdAt",
         o.updated_at as "updatedAt",
@@ -1192,6 +1285,10 @@ app.get('/api/orders/:id', async (req, res) => {
         pf.name as "frameName",
         pf.price_amount as "framePrice",
         pf.color_code as "frameColorCode",
+        pf.mockup_template as "frameMockupTemplate",
+        pf.mockup_config as "frameMockupConfig",
+        pf.mockup_template_vertical as "frameMockupTemplateVertical",
+        pf.mockup_config_vertical as "frameMockupConfigVertical",
         
         -- Generated image info
         gi.image_url as "generatedImageUrl",
@@ -3151,7 +3248,9 @@ app.get('/api/dashboard/recent-users', async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     console.error('Recent users error:', error);
-    res.status(500).json({ error: 'Failed to fetch recent users' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to fetch recent users' });
+    }
   }
 });
 

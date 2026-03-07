@@ -1,0 +1,63 @@
+:host {
+  display: block;
+}
+
+.mockup-editor-wrapper {
+  margin-top: 0.75rem;
+}
+
+.toggle-btn {
+  margin-bottom: 0.5rem;
+  font-size: 12px;
+}
+
+.editor-container {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fafafa;
+}
+
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: #f0f0f5;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  flex-wrap: wrap;
+  gap: 4px;
+
+  .toolbar-label {
+    font-size: 11px;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    nb-icon {
+      font-size: 14px;
+    }
+  }
+
+  .toolbar-actions {
+    display: flex;
+    gap: 4px;
+  }
+}
+
+.canvas-wrapper {
+  padding: 8px;
+  display: flex;
+  justify-content: center;
+
+  canvas {
+    width: 100%;
+    height: auto;
+    max-width: 800px;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    user-select: none;
+    -webkit-user-select: none;
+  }
+}

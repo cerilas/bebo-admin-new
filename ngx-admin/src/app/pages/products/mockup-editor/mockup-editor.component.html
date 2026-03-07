@@ -1,0 +1,37 @@
+<div class="mockup-editor-wrapper">
+  <button nbButton ghost size="small" status="info" type="button" (click)="toggleEditor()" class="toggle-btn">
+    <nb-icon [icon]="showEditor ? 'eye-off-outline' : 'eye-outline'"></nb-icon>
+    {{ showEditor ? 'Editörü Kapat' : 'Görsel Editörü Aç' }}
+  </button>
+
+  <div class="editor-container" *ngIf="showEditor">
+    <div class="editor-toolbar">
+      <span class="toolbar-label">
+        <nb-icon icon="move-outline"></nb-icon>
+        Sürükle &bull; Köşelerden boyutlandır &bull; Üst tutamaçtan döndür
+      </span>
+      <div class="toolbar-actions">
+        <button nbButton ghost size="tiny" status="basic" type="button" (click)="centerRect()" title="Ortala">
+          <nb-icon icon="maximize-outline"></nb-icon>
+          Ortala
+        </button>
+        <button nbButton ghost size="tiny" status="danger" type="button" (click)="resetPosition()" title="Sıfırla">
+          <nb-icon icon="refresh-outline"></nb-icon>
+          Sıfırla
+        </button>
+      </div>
+    </div>
+
+    <div class="canvas-wrapper">
+      <canvas
+        #editorCanvas
+        [width]="canvasWidth"
+        [height]="canvasHeight"
+        [style.cursor]="cursorStyle"
+        (mousedown)="onMouseDown($event)"
+        (mousemove)="onMouseMove($event)"
+        (mouseup)="onMouseUp()">
+      </canvas>
+    </div>
+  </div>
+</div>

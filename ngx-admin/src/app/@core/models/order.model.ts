@@ -36,6 +36,7 @@ export interface Order {
   geliverShippingCode?: string;
   notes?: string;
   paidAt?: Date;
+  orientation?: 'landscape' | 'portrait';
   updatedAt: Date;
   createdAt: Date;
   // API'den gelen ekstra alanlar (JOIN'lerden)

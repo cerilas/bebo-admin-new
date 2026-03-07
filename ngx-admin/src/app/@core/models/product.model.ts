@@ -51,8 +51,20 @@ export interface ProductFrame {
   colorCode?: string;
   frameImage?: string;
   frameImageLarge?: string;
+  mockupTemplate?: string;
+  mockupConfig?: string;
+  mockupTemplateVertical?: string;
+  mockupConfigVertical?: string;
   isActive: boolean;
   sortOrder: number;
   updatedAt: Date;
   createdAt: Date;
+}
+
+export interface SizeFrameAvailability {
+  id?: number;
+  productId: number;
+  sizeId: number;
+  frameId: number;
+  isAvailable: boolean;
 }

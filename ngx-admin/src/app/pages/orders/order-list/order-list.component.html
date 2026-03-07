@@ -100,6 +100,7 @@
           </th>
           <th>Ödeme</th>
           <th>Kargo</th>
+          <th>Yön</th>
           <th class="sortable" (click)="sortBy('createdAt')">
             <span>Tarih</span>
             <nb-icon [icon]="getSortIcon('createdAt')"></nb-icon>
@@ -136,6 +137,13 @@
               {{ getShippingStatusText(order.shippingStatus) }}
             </span>
             <span *ngIf="!order.shippingStatus || order.orderType === 'credit'" class="no-shipping">-</span>
+          </td>
+          <td>
+            <span class="status-badge orientation-badge" *ngIf="order.orientation && order.orderType === 'product'">
+              <nb-icon [icon]="order.orientation === 'portrait' ? 'smartphone-outline' : 'monitor-outline'"></nb-icon>
+              {{ order.orientation === 'portrait' ? 'Dikey' : 'Yatay' }}
+            </span>
+            <span *ngIf="!order.orientation || order.orderType !== 'product'" class="no-shipping">-</span>
           </td>
           <td class="date">{{ order.createdAt | date:'dd MMM yy, HH:mm' }}</td>
           <td class="action">

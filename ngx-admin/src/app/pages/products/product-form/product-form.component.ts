@@ -3,8 +3,9 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NbToastrService } from '@nebular/theme';
 import { ProductsService, ProductWithDetails } from '../../../@core/services/products.service';
-import { ProductSize, ProductFrame } from '../../../@core/models/product.model';
+import { ProductSize, ProductFrame, SizeFrameAvailability } from '../../../@core/models/product.model';
 import { ImageUploadService } from '../../../@core/services/image-upload.service';
+import { MockupConfig } from '../mockup-editor/mockup-editor.component';
 
 @Component({
   selector: 'ngx-product-form',
@@ -43,6 +44,12 @@ export class ProductFormComponent implements OnInit {
   uploadingFrameImage = false;
   uploadingFrameImageLarge = false;
   uploadingMockupTemplate = false;
+  uploadingMockupTemplateVertical = false;
+
+  // Size-Frame Availability
+  availabilityMap: { [key: string]: boolean } = {}; // key: "sizeId_frameId"
+  savingAvailability = false;
+  loadingAvailability = false;
 
   constructor(
     private fb: FormBuilder,
@@ -116,12 +123,28 @@ export class ProductFormComponent implements OnInit {
       colorCode: ['#000000'],
       frameImage: [''],
       frameImageLarge: [''],
+      // Yatay (Landscape) Mockup
       mockupTemplate: [''],
       mockupConfigType: ['frame'],
       mockupConfigX: [12],
       mockupConfigY: [15],
       mockupConfigWidth: [76],
       mockupConfigHeight: [70],
+      mockupConfigRotation: [0],
+      mockupConfigPerspective: [0],
+      mockupConfigSkewX: [0],
+      mockupConfigSkewY: [0],
+      // Dikey (Portrait) Mockup
+      mockupTemplateVertical: [''],
+      mockupConfigVerticalType: ['frame'],
+      mockupConfigVerticalX: [12],
+      mockupConfigVerticalY: [15],
+      mockupConfigVerticalWidth: [76],
+      mockupConfigVerticalHeight: [70],
+      mockupConfigVerticalRotation: [0],
+      mockupConfigVerticalPerspective: [0],
+      mockupConfigVerticalSkewX: [0],
+      mockupConfigVerticalSkewY: [0],
       isActive: [true],
       sortOrder: [0],
     });
@@ -136,6 +159,7 @@ export class ProductFormComponent implements OnInit {
         this.sizes = product.sizes || [];
         this.frames = product.frames || [];
         this.loading = false;
+        this.loadAvailability();
       },
       error: (error) => {
         console.error('Error loading product:', error);
@@ -143,6 +167,79 @@ export class ProductFormComponent implements OnInit {
         this.loading = false;
       },
     });
+  }
+
+  // ==================== SIZE-FRAME AVAILABILITY ====================
+
+  loadAvailability(): void {
+    if (!this.productId) return;
+    this.loadingAvailability = true;
+    this.productsService.getSizeFrameAvailability(this.productId).subscribe({
+      next: (data) => {
+        this.availabilityMap = {};
+        // Default all combinations to true
+        for (const size of this.sizes) {
+          for (const frame of this.frames) {
+            this.availabilityMap[`${size.id}_${frame.id}`] = true;
+          }
+        }
+        // Override with saved values
+        for (const item of data) {
+          this.availabilityMap[`${item.sizeId}_${item.frameId}`] = item.isAvailable;
+        }
+        this.loadingAvailability = false;
+      },
+      error: (error) => {
+        console.error('Error loading availability:', error);
+        this.loadingAvailability = false;
+      },
+    });
+  }
+
+  getAvailability(sizeId: number, frameId: number): boolean {
+    const key = `${sizeId}_${frameId}`;
+    return this.availabilityMap[key] !== false;
+  }
+
+  toggleAvailability(sizeId: number, frameId: number): void {
+    const key = `${sizeId}_${frameId}`;
+    this.availabilityMap[key] = !this.getAvailability(sizeId, frameId);
+  }
+
+  saveAvailability(): void {
+    this.savingAvailability = true;
+    const availability: SizeFrameAvailability[] = [];
+
+    for (const size of this.sizes) {
+      for (const frame of this.frames) {
+        availability.push({
+          productId: this.productId,
+          sizeId: size.id,
+          frameId: frame.id,
+          isAvailable: this.getAvailability(size.id, frame.id),
+        });
+      }
+    }
+
+    this.productsService.updateSizeFrameAvailability(this.productId, availability).subscribe({
+      next: () => {
+        this.toastrService.success('Stok durumu güncellendi', 'Başarılı');
+        this.savingAvailability = false;
+      },
+      error: (error) => {
+        console.error('Error saving availability:', error);
+        this.toastrService.danger('Stok durumu kaydedilemedi', 'Hata');
+        this.savingAvailability = false;
+      },
+    });
+  }
+
+  setAllAvailability(value: boolean): void {
+    for (const size of this.sizes) {
+      for (const frame of this.frames) {
+        this.availabilityMap[`${size.id}_${frame.id}`] = value;
+      }
+    }
   }
 
   onSubmit(): void {
@@ -271,6 +368,19 @@ export class ProductFormComponent implements OnInit {
       mockupConfigY: 15,
       mockupConfigWidth: 76,
       mockupConfigHeight: 70,
+      mockupConfigRotation: 0,
+      mockupConfigPerspective: 0,
+      mockupConfigSkewX: 0,
+      mockupConfigSkewY: 0,
+      mockupConfigVerticalType: 'frame',
+      mockupConfigVerticalX: 12,
+      mockupConfigVerticalY: 15,
+      mockupConfigVerticalWidth: 76,
+      mockupConfigVerticalHeight: 70,
+      mockupConfigVerticalRotation: 0,
+      mockupConfigVerticalPerspective: 0,
+      mockupConfigVerticalSkewX: 0,
+      mockupConfigVerticalSkewY: 0,
       isActive: true
     });
     this.showFrameForm = true;
@@ -279,27 +389,57 @@ export class ProductFormComponent implements OnInit {
   editFrame(frame: ProductFrame): void {
     this.editingFrameId = frame.id;
 
-    // Parse mockup config if exists
-    let mockupConfig = { type: 'frame', x: 12, y: 15, width: 76, height: 70 };
+    // Parse horizontal mockup config
+    let mockupConfig = { type: 'frame', x: 12, y: 15, width: 76, height: 70, rotation: 0, perspective: 0, skewX: 0, skewY: 0 };
     if ((frame as any).mockupConfig) {
       try {
-        mockupConfig = typeof (frame as any).mockupConfig === 'string'
+        const parsed = typeof (frame as any).mockupConfig === 'string'
           ? JSON.parse((frame as any).mockupConfig)
           : (frame as any).mockupConfig;
+        mockupConfig = { ...mockupConfig, ...parsed };
       } catch (e) {
         console.error('Error parsing mockup config:', e);
       }
     }
 
+    // Parse vertical mockup config
+    let mockupConfigVertical = { type: 'frame', x: 12, y: 15, width: 76, height: 70, rotation: 0, perspective: 0, skewX: 0, skewY: 0 };
+    if ((frame as any).mockupConfigVertical) {
+      try {
+        const parsed = typeof (frame as any).mockupConfigVertical === 'string'
+          ? JSON.parse((frame as any).mockupConfigVertical)
+          : (frame as any).mockupConfigVertical;
+        mockupConfigVertical = { ...mockupConfigVertical, ...parsed };
+      } catch (e) {
+        console.error('Error parsing vertical mockup config:', e);
+      }
+    }
+
     this.frameForm.patchValue({
       ...frame,
-      priceAmount: frame.priceAmount / 100, // Convert from cents to TL
+      priceAmount: frame.priceAmount / 100,
+      // Yatay
       mockupTemplate: (frame as any).mockupTemplate || '',
       mockupConfigType: mockupConfig.type || 'frame',
-      mockupConfigX: mockupConfig.x || 12,
-      mockupConfigY: mockupConfig.y || 15,
-      mockupConfigWidth: mockupConfig.width || 76,
-      mockupConfigHeight: mockupConfig.height || 70,
+      mockupConfigX: mockupConfig.x ?? 12,
+      mockupConfigY: mockupConfig.y ?? 15,
+      mockupConfigWidth: mockupConfig.width ?? 76,
+      mockupConfigHeight: mockupConfig.height ?? 70,
+      mockupConfigRotation: mockupConfig.rotation ?? 0,
+      mockupConfigPerspective: mockupConfig.perspective ?? 0,
+      mockupConfigSkewX: mockupConfig.skewX ?? 0,
+      mockupConfigSkewY: mockupConfig.skewY ?? 0,
+      // Dikey
+      mockupTemplateVertical: (frame as any).mockupTemplateVertical || '',
+      mockupConfigVerticalType: mockupConfigVertical.type || 'frame',
+      mockupConfigVerticalX: mockupConfigVertical.x ?? 12,
+      mockupConfigVerticalY: mockupConfigVertical.y ?? 15,
+      mockupConfigVerticalWidth: mockupConfigVertical.width ?? 76,
+      mockupConfigVerticalHeight: mockupConfigVertical.height ?? 70,
+      mockupConfigVerticalRotation: mockupConfigVertical.rotation ?? 0,
+      mockupConfigVerticalPerspective: mockupConfigVertical.perspective ?? 0,
+      mockupConfigVerticalSkewX: mockupConfigVertical.skewX ?? 0,
+      mockupConfigVerticalSkewY: mockupConfigVertical.skewY ?? 0,
     });
     this.showFrameForm = true;
   }
@@ -319,13 +459,30 @@ export class ProductFormComponent implements OnInit {
     this.savingFrame = true;
     const formValue = this.frameForm.value;
 
-    // Build mockup config JSON with type
+    // Build horizontal mockup config JSON
     const mockupConfig = JSON.stringify({
       type: formValue.mockupConfigType || 'frame',
-      x: formValue.mockupConfigX || 12,
-      y: formValue.mockupConfigY || 15,
-      width: formValue.mockupConfigWidth || 76,
-      height: formValue.mockupConfigHeight || 70
+      x: formValue.mockupConfigX ?? 12,
+      y: formValue.mockupConfigY ?? 15,
+      width: formValue.mockupConfigWidth ?? 76,
+      height: formValue.mockupConfigHeight ?? 70,
+      rotation: formValue.mockupConfigRotation ?? 0,
+      perspective: formValue.mockupConfigPerspective ?? 0,
+      skewX: formValue.mockupConfigSkewX ?? 0,
+      skewY: formValue.mockupConfigSkewY ?? 0,
+    });
+
+    // Build vertical mockup config JSON
+    const mockupConfigVertical = JSON.stringify({
+      type: formValue.mockupConfigVerticalType || 'frame',
+      x: formValue.mockupConfigVerticalX ?? 12,
+      y: formValue.mockupConfigVerticalY ?? 15,
+      width: formValue.mockupConfigVerticalWidth ?? 76,
+      height: formValue.mockupConfigVerticalHeight ?? 70,
+      rotation: formValue.mockupConfigVerticalRotation ?? 0,
+      perspective: formValue.mockupConfigVerticalPerspective ?? 0,
+      skewX: formValue.mockupConfigVerticalSkewX ?? 0,
+      skewY: formValue.mockupConfigVerticalSkewY ?? 0,
     });
 
     const frameData = {
@@ -333,12 +490,14 @@ export class ProductFormComponent implements OnInit {
       name: formValue.name,
       nameEn: formValue.nameEn,
       nameFr: formValue.nameFr,
-      priceAmount: Math.round(formValue.priceAmount * 100), // Convert to cents
+      priceAmount: Math.round(formValue.priceAmount * 100),
       colorCode: formValue.colorCode,
       frameImage: formValue.frameImage,
       frameImageLarge: formValue.frameImageLarge,
       mockupTemplate: formValue.mockupTemplate,
       mockupConfig: mockupConfig,
+      mockupTemplateVertical: formValue.mockupTemplateVertical,
+      mockupConfigVertical: mockupConfigVertical,
       isActive: formValue.isActive,
       sortOrder: formValue.sortOrder,
     };
@@ -523,6 +682,83 @@ export class ProductFormComponent implements OnInit {
         },
       });
     }
+  }
+
+  onMockupTemplateVerticalSelect(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      this.uploadingMockupTemplateVertical = true;
+      this.imageUploadService.upload(input.files[0]).subscribe({
+        next: (response) => {
+          this.frameForm.patchValue({ mockupTemplateVertical: response.imageUrl });
+          this.uploadingMockupTemplateVertical = false;
+          this.toastrService.success('Dikey mockup template yüklendi', 'Başarılı');
+        },
+        error: (error) => {
+          console.error('Vertical mockup template upload error:', error);
+          this.uploadingMockupTemplateVertical = false;
+          this.toastrService.danger('Görsel yüklenemedi', 'Hata');
+        },
+      });
+    }
+  }
+
+  // ==================== MOCKUP EDITOR HELPERS ====================
+
+  getLandscapeMockupConfig(): MockupConfig {
+    return {
+      type: this.frameForm.get('mockupConfigType')?.value || 'frame',
+      x: this.frameForm.get('mockupConfigX')?.value ?? 12,
+      y: this.frameForm.get('mockupConfigY')?.value ?? 15,
+      width: this.frameForm.get('mockupConfigWidth')?.value ?? 76,
+      height: this.frameForm.get('mockupConfigHeight')?.value ?? 70,
+      rotation: this.frameForm.get('mockupConfigRotation')?.value ?? 0,
+      perspective: this.frameForm.get('mockupConfigPerspective')?.value ?? 0,
+      skewX: this.frameForm.get('mockupConfigSkewX')?.value ?? 0,
+      skewY: this.frameForm.get('mockupConfigSkewY')?.value ?? 0,
+    };
+  }
+
+  onLandscapeMockupConfigChange(config: MockupConfig): void {
+    this.frameForm.patchValue({
+      mockupConfigType: config.type,
+      mockupConfigX: config.x,
+      mockupConfigY: config.y,
+      mockupConfigWidth: config.width,
+      mockupConfigHeight: config.height,
+      mockupConfigRotation: config.rotation,
+      mockupConfigPerspective: config.perspective,
+      mockupConfigSkewX: config.skewX,
+      mockupConfigSkewY: config.skewY,
+    });
+  }
+
+  getVerticalMockupConfig(): MockupConfig {
+    return {
+      type: this.frameForm.get('mockupConfigVerticalType')?.value || 'frame',
+      x: this.frameForm.get('mockupConfigVerticalX')?.value ?? 12,
+      y: this.frameForm.get('mockupConfigVerticalY')?.value ?? 15,
+      width: this.frameForm.get('mockupConfigVerticalWidth')?.value ?? 76,
+      height: this.frameForm.get('mockupConfigVerticalHeight')?.value ?? 70,
+      rotation: this.frameForm.get('mockupConfigVerticalRotation')?.value ?? 0,
+      perspective: this.frameForm.get('mockupConfigVerticalPerspective')?.value ?? 0,
+      skewX: this.frameForm.get('mockupConfigVerticalSkewX')?.value ?? 0,
+      skewY: this.frameForm.get('mockupConfigVerticalSkewY')?.value ?? 0,
+    };
+  }
+
+  onVerticalMockupConfigChange(config: MockupConfig): void {
+    this.frameForm.patchValue({
+      mockupConfigVerticalType: config.type,
+      mockupConfigVerticalX: config.x,
+      mockupConfigVerticalY: config.y,
+      mockupConfigVerticalWidth: config.width,
+      mockupConfigVerticalHeight: config.height,
+      mockupConfigVerticalRotation: config.rotation,
+      mockupConfigVerticalPerspective: config.perspective,
+      mockupConfigVerticalSkewX: config.skewX,
+      mockupConfigVerticalSkewY: config.skewY,
+    });
   }
 
   openImage(url: string): void {

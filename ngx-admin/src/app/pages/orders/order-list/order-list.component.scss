@@ -357,6 +357,21 @@ $info: #0095ff;
     background: rgba($danger, 0.15);
     color: $danger;
   }
+
+  // Orientation
+  &.orientation-badge {
+    background: rgba($primary, 0.1);
+    color: $primary;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    text-transform: none;
+    font-weight: 500;
+
+    nb-icon {
+      font-size: 13px;
+    }
+  }
 }
 
 // Empty State

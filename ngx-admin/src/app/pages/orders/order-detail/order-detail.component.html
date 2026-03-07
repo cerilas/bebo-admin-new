@@ -98,6 +98,11 @@
           <nb-badge [status]="order.orderType === 'credit' ? 'warning' : 'info'"
             [text]="order.orderType === 'credit' ? 'Kredi' : 'Ürün'"></nb-badge>
         </div>
+        <div class="status-item" *ngIf="order.orderType === 'product' && order.orientation">
+          <span class="label">Yön</span>
+          <nb-badge [status]="order.orientation === 'portrait' ? 'primary' : 'info'"
+            [text]="order.orientation === 'portrait' ? '↕ Dikey' : '↔ Yatay'"></nb-badge>
+        </div>
         <!-- İade Butonu - Sadece başarılı ödemelerde göster -->
         <div class="status-item refund-action" *ngIf="order.paymentStatus === 'success'">
           <button nbButton status="danger" size="small" outline (click)="showRefundDialog()" [disabled]="refunding">

@@ -517,78 +517,206 @@
                     <nb-icon icon="image-outline"></nb-icon>
                     Mockup Ön İzleme Ayarları
                   </h6>
-                  <div class="row">
-                    <div class="col-md-12">
-                      <div class="form-group">
-                        <label class="label">Mockup Template URL</label>
-                        <div class="image-input-group">
-                          <div class="image-preview mockup-preview" *ngIf="frameForm.get('mockupTemplate')?.value">
-                            <img [src]="frameForm.get('mockupTemplate')?.value"
-                              (click)="openImage(frameForm.get('mockupTemplate')?.value)" alt="Mockup Template"
-                              class="thumbnail">
-                          </div>
-                          <div class="input-with-upload">
-                            <input type="text" nbInput fullWidth formControlName="mockupTemplate"
-                              placeholder="https://cdn.example.com/mockups/siyah-cerceve.png">
-                            <div class="upload-button">
-                              <input type="file" #mockupTemplateInput accept="image/*"
-                                (change)="onMockupTemplateSelect($event)" hidden>
-                              <button nbButton status="primary" size="small" type="button"
-                                [disabled]="uploadingMockupTemplate" (click)="mockupTemplateInput.click()">
-                                <nb-icon *ngIf="!uploadingMockupTemplate" icon="cloud-upload-outline"></nb-icon>
-                                <nb-spinner *ngIf="uploadingMockupTemplate" size="tiny" status="control"></nb-spinner>
-                              </button>
+
+                  <nb-tabset class="mockup-tabs">
+                    <!-- YATAY (Landscape) Tab -->
+                    <nb-tab tabTitle="Yatay (Landscape)" tabIcon="monitor-outline">
+                      <div class="row">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="label">Yatay Mockup Template URL</label>
+                            <div class="image-input-group">
+                              <div class="image-preview mockup-preview" *ngIf="frameForm.get('mockupTemplate')?.value">
+                                <img [src]="frameForm.get('mockupTemplate')?.value"
+                                  (click)="openImage(frameForm.get('mockupTemplate')?.value)" alt="Mockup Template"
+                                  class="thumbnail">
+                              </div>
+                              <div class="input-with-upload">
+                                <input type="text" nbInput fullWidth formControlName="mockupTemplate"
+                                  placeholder="https://cdn.example.com/mockups/siyah-cerceve-landscape.png">
+                                <div class="upload-button">
+                                  <input type="file" #mockupTemplateInput accept="image/*"
+                                    (change)="onMockupTemplateSelect($event)" hidden>
+                                  <button nbButton status="primary" size="small" type="button"
+                                    [disabled]="uploadingMockupTemplate" (click)="mockupTemplateInput.click()">
+                                    <nb-icon *ngIf="!uploadingMockupTemplate" icon="cloud-upload-outline"></nb-icon>
+                                    <nb-spinner *ngIf="uploadingMockupTemplate" size="tiny" status="control"></nb-spinner>
+                                  </button>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
-                        <small class="form-text text-muted">Çerçevenin mockup önizleme görseli (üretilen görsel bu
-                          template üzerine yerleştirilir)</small>
                       </div>
-                    </div>
-                  </div>
-                  <div class="row">
-                    <div class="col-md-4">
-                      <div class="form-group">
-                        <label class="label">Config Tipi</label>
-                        <input type="text" nbInput fullWidth formControlName="mockupConfigType" placeholder="frame">
-                        <small class="form-text text-muted">Örn: frame, canvas, poster</small>
+
+                      <!-- Canvas Editor - Yatay -->
+                      <ngx-mockup-editor
+                        *ngIf="frameForm.get('mockupTemplate')?.value"
+                        [templateUrl]="frameForm.get('mockupTemplate')?.value"
+                        [config]="getLandscapeMockupConfig()"
+                        (configChange)="onLandscapeMockupConfigChange($event)">
+                      </ngx-mockup-editor>
+
+                      <div class="row">
+                        <div class="col-md-3">
+                          <div class="form-group">
+                            <label class="label">Config Tipi</label>
+                            <input type="text" nbInput fullWidth formControlName="mockupConfigType" placeholder="frame">
+                          </div>
+                        </div>
+                        <div class="col-md-3">
+                          <div class="form-group">
+                            <label class="label">X (%)</label>
+                            <input type="number" nbInput fullWidth formControlName="mockupConfigX" step="0.1" min="0" max="100">
+                          </div>
+                        </div>
+                        <div class="col-md-3">
+                          <div class="form-group">
+                            <label class="label">Y (%)</label>
+                            <input type="number" nbInput fullWidth formControlName="mockupConfigY" step="0.1" min="0" max="100">
+                          </div>
+                        </div>
+                        <div class="col-md-3">
+                          <div class="form-group">
+                            <label class="label">Genişlik (%)</label>
+                            <input type="number" nbInput fullWidth formControlName="mockupConfigWidth" step="0.1" min="1" max="100">
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                  <div class="row">
-                    <div class="col-md-3">
-                      <div class="form-group">
-                        <label class="label">X Pozisyonu (%)</label>
-                        <input type="number" nbInput fullWidth formControlName="mockupConfigX" placeholder="12" min="0"
-                          max="100" step="1">
-                        <small class="form-text text-muted">Sol kenardan uzaklık</small>
+                      <div class="row">
+                        <div class="col-md-3">
+                          <div class="form-group">
+                            <label class="label">Yükseklik (%)</label>
+                            <input type="number" nbInput fullWidth formControlName="mockupConfigHeight" step="0.1" min="1" max="100">
+                          </div>
+                        </div>
+                        <div class="col-md-3">
+                          <div class="form-group">
+                            <label class="label">Rotation (°)</label>
+                            <input type="number" nbInput fullWidth formControlName="mockupConfigRotation" step="0.1">
+                          </div>
+                        </div>
+                        <div class="col-md-3">
+                          <div class="form-group">
+                            <label class="label">Perspective</label>
+                            <input type="number" nbInput fullWidth formControlName="mockupConfigPerspective" step="1">
+                          </div>
+                        </div>
+                        <div class="col-md-3">
+                          <div class="form-group">
+                            <label class="label">SkewX / SkewY</label>
+                            <div class="row no-gutters">
+                              <div class="col-6 pr-1">
+                                <input type="number" nbInput fullWidth formControlName="mockupConfigSkewX" step="0.1" placeholder="X">
+                              </div>
+                              <div class="col-6 pl-1">
+                                <input type="number" nbInput fullWidth formControlName="mockupConfigSkewY" step="0.1" placeholder="Y">
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div class="col-md-3">
-                      <div class="form-group">
-                        <label class="label">Y Pozisyonu (%)</label>
-                        <input type="number" nbInput fullWidth formControlName="mockupConfigY" placeholder="15" min="0"
-                          max="100" step="1">
-                        <small class="form-text text-muted">Üst kenardan uzaklık</small>
+                    </nb-tab>
+
+                    <!-- DİKEY (Portrait) Tab -->
+                    <nb-tab tabTitle="Dikey (Portrait)" tabIcon="smartphone-outline">
+                      <div class="row">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label class="label">Dikey Mockup Template URL</label>
+                            <div class="image-input-group">
+                              <div class="image-preview mockup-preview" *ngIf="frameForm.get('mockupTemplateVertical')?.value">
+                                <img [src]="frameForm.get('mockupTemplateVertical')?.value"
+                                  (click)="openImage(frameForm.get('mockupTemplateVertical')?.value)" alt="Dikey Mockup"
+                                  class="thumbnail">
+                              </div>
+                              <div class="input-with-upload">
+                                <input type="text" nbInput fullWidth formControlName="mockupTemplateVertical"
+                                  placeholder="https://cdn.example.com/mockups/siyah-cerceve-portrait.png">
+                                <div class="upload-button">
+                                  <input type="file" #mockupTemplateVerticalInput accept="image/*"
+                                    (change)="onMockupTemplateVerticalSelect($event)" hidden>
+                                  <button nbButton status="primary" size="small" type="button"
+                                    [disabled]="uploadingMockupTemplateVertical" (click)="mockupTemplateVerticalInput.click()">
+                                    <nb-icon *ngIf="!uploadingMockupTemplateVertical" icon="cloud-upload-outline"></nb-icon>
+                                    <nb-spinner *ngIf="uploadingMockupTemplateVertical" size="tiny" status="control"></nb-spinner>
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div class="col-md-3">
-                      <div class="form-group">
-                        <label class="label">Genişlik (%)</label>
-                        <input type="number" nbInput fullWidth formControlName="mockupConfigWidth" placeholder="76"
-                          min="1" max="100" step="1">
-                        <small class="form-text text-muted">Görsel genişliği</small>
+
+                      <!-- Canvas Editor - Dikey -->
+                      <ngx-mockup-editor
+                        *ngIf="frameForm.get('mockupTemplateVertical')?.value"
+                        [templateUrl]="frameForm.get('mockupTemplateVertical')?.value"
+                        [config]="getVerticalMockupConfig()"
+                        (configChange)="onVerticalMockupConfigChange($event)">
+                      </ngx-mockup-editor>
+
+                      <div class="row">
+                        <div class="col-md-3">
+                          <div class="form-group">
+                            <label class="label">Config Tipi</label>
+                            <input type="text" nbInput fullWidth formControlName="mockupConfigVerticalType" placeholder="frame">
+                          </div>
+                        </div>
+                        <div class="col-md-3">
+                          <div class="form-group">
+                            <label class="label">X (%)</label>
+                            <input type="number" nbInput fullWidth formControlName="mockupConfigVerticalX" step="0.1" min="0" max="100">
+                          </div>
+                        </div>
+                        <div class="col-md-3">
+                          <div class="form-group">
+                            <label class="label">Y (%)</label>
+                            <input type="number" nbInput fullWidth formControlName="mockupConfigVerticalY" step="0.1" min="0" max="100">
+                          </div>
+                        </div>
+                        <div class="col-md-3">
+                          <div class="form-group">
+                            <label class="label">Genişlik (%)</label>
+                            <input type="number" nbInput fullWidth formControlName="mockupConfigVerticalWidth" step="0.1" min="1" max="100">
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div class="col-md-3">
-                      <div class="form-group">
-                        <label class="label">Yükseklik (%)</label>
-                        <input type="number" nbInput fullWidth formControlName="mockupConfigHeight" placeholder="70"
-                          min="1" max="100" step="1">
-                        <small class="form-text text-muted">Görsel yüksekliği</small>
+                      <div class="row">
+                        <div class="col-md-3">
+                          <div class="form-group">
+                            <label class="label">Yükseklik (%)</label>
+                            <input type="number" nbInput fullWidth formControlName="mockupConfigVerticalHeight" step="0.1" min="1" max="100">
+                          </div>
+                        </div>
+                        <div class="col-md-3">
+                          <div class="form-group">
+                            <label class="label">Rotation (°)</label>
+                            <input type="number" nbInput fullWidth formControlName="mockupConfigVerticalRotation" step="0.1">
+                          </div>
+                        </div>
+                        <div class="col-md-3">
+                          <div class="form-group">
+                            <label class="label">Perspective</label>
+                            <input type="number" nbInput fullWidth formControlName="mockupConfigVerticalPerspective" step="1">
+                          </div>
+                        </div>
+                        <div class="col-md-3">
+                          <div class="form-group">
+                            <label class="label">SkewX / SkewY</label>
+                            <div class="row no-gutters">
+                              <div class="col-6 pr-1">
+                                <input type="number" nbInput fullWidth formControlName="mockupConfigVerticalSkewX" step="0.1" placeholder="X">
+                              </div>
+                              <div class="col-6 pl-1">
+                                <input type="number" nbInput fullWidth formControlName="mockupConfigVerticalSkewY" step="0.1" placeholder="Y">
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    </nb-tab>
+                  </nb-tabset>
                 </div>
 
                 <div class="form-actions">
@@ -636,6 +764,75 @@
               <nb-icon icon="square-outline"></nb-icon>
               <p>Henüz çerçeve eklenmemiş</p>
             </div>
+          </div>
+        </nb-tab>
+
+        <!-- Stok Durumu Tab (sadece edit modunda, boyut ve çerçeve varsa) -->
+        <nb-tab tabTitle="Stok Durumu" tabIcon="grid-outline" *ngIf="isEditMode">
+          <div class="tab-header">
+            <h6>Boyut - Çerçeve Stok Durumu</h6>
+            <div class="availability-actions">
+              <button nbButton status="success" size="small" ghost (click)="setAllAvailability(true)">
+                <nb-icon icon="checkmark-circle-2-outline"></nb-icon>
+                Tümünü Aç
+              </button>
+              <button nbButton status="danger" size="small" ghost (click)="setAllAvailability(false)">
+                <nb-icon icon="close-circle-outline"></nb-icon>
+                Tümünü Kapat
+              </button>
+              <button nbButton status="primary" size="small" (click)="saveAvailability()"
+                [disabled]="savingAvailability" [nbSpinner]="savingAvailability">
+                <nb-icon icon="save-outline"></nb-icon>
+                Kaydet
+              </button>
+            </div>
+          </div>
+
+          <div *ngIf="sizes.length === 0 || frames.length === 0" class="empty-state">
+            <nb-icon icon="alert-circle-outline"></nb-icon>
+            <p>Stok durumu ayarlamak için önce boyut ve çerçeve eklemelisiniz.</p>
+          </div>
+
+          <div *ngIf="sizes.length > 0 && frames.length > 0" class="availability-matrix-wrapper">
+            <div *ngIf="loadingAvailability" class="loading-overlay">
+              <nb-spinner status="primary" size="medium"></nb-spinner>
+            </div>
+
+            <table class="availability-matrix" *ngIf="!loadingAvailability">
+              <thead>
+                <tr>
+                  <th class="corner-cell">Boyut \ Çerçeve</th>
+                  <th *ngFor="let frame of frames" class="frame-header">
+                    <div class="frame-header-content">
+                      <div class="frame-color-dot" [style.background-color]="frame.colorCode || '#000'"></div>
+                      <span>{{ frame.name }}</span>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let size of sizes">
+                  <td class="size-label">
+                    <span class="size-name">{{ size.name }}</span>
+                    <span class="size-dim">{{ size.dimensions }}</span>
+                  </td>
+                  <td *ngFor="let frame of frames" class="availability-cell"
+                    [class.available]="getAvailability(size.id, frame.id)"
+                    [class.unavailable]="!getAvailability(size.id, frame.id)"
+                    (click)="toggleAvailability(size.id, frame.id)">
+                    <nb-icon *ngIf="getAvailability(size.id, frame.id)" icon="checkmark-circle-2-outline"
+                      class="icon-available"></nb-icon>
+                    <nb-icon *ngIf="!getAvailability(size.id, frame.id)" icon="close-circle-outline"
+                      class="icon-unavailable"></nb-icon>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <p class="availability-hint">
+              <nb-icon icon="info-outline"></nb-icon>
+              Hücrelere tıklayarak stok durumunu değiştirebilirsiniz. Değişiklikleri kaydetmeyi unutmayın.
+            </p>
           </div>
         </nb-tab>
       </nb-tabset>
