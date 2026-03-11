@@ -120,7 +120,11 @@
             <span *ngIf="order.orderType === 'credit'" class="credit-badge">
               <nb-icon icon="flash-outline"></nb-icon> Kredi Alımı
             </span>
-            <span *ngIf="order.orderType !== 'credit'">{{ order.productName || '-' }}</span>
+            <span *ngIf="order.orderType !== 'credit'" class="product-with-transform">
+              {{ order.productName || '-' }}
+              <nb-icon *ngIf="hasImageTransform(order)" icon="crop-outline" class="transform-icon" 
+                title="Görsel konumlandırma uygulanmış"></nb-icon>
+            </span>
           </td>
           <td class="amount">
             <!-- Fiziksel ürün siparişi ise paymentAmount, değilse totalAmount -->

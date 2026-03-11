@@ -517,6 +517,108 @@ $gap: 12px;
     }
   }
 
+  // Görsel Konumlandırma Bölümü
+  .image-transform-section {
+    margin-top: 10px;
+    padding: 10px;
+    background: linear-gradient(135deg, rgba(51, 102, 255, 0.04) 0%, rgba(0, 214, 143, 0.04) 100%);
+    border: 1px solid rgba(51, 102, 255, 0.15);
+    border-radius: 6px;
+
+    .transform-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: $primary;
+      margin-bottom: 8px;
+
+      nb-icon {
+        font-size: 16px;
+      }
+    }
+
+    .transform-details {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .transform-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      padding: 4px 8px;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 4px;
+
+      .transform-label {
+        color: $text-muted;
+      }
+
+      .transform-value {
+        font-weight: 500;
+        color: $text-dark;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+
+        &.scaled {
+          color: $primary;
+        }
+
+        &.shifted {
+          color: #ff8a00;
+        }
+
+        .scale-type {
+          font-size: 10px;
+          font-weight: 400;
+          color: $text-muted;
+        }
+      }
+    }
+
+    .transform-warning {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      margin-top: 8px;
+      padding: 8px;
+      background: rgba(255, 170, 0, 0.08);
+      border-radius: 4px;
+      font-size: 11px;
+      line-height: 1.4;
+
+      nb-icon {
+        font-size: 14px;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+
+      span {
+        color: $text-dark;
+      }
+    }
+
+    .transform-default {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: $success;
+      padding: 6px 8px;
+      background: rgba(0, 214, 143, 0.08);
+      border-radius: 4px;
+
+      nb-icon {
+        font-size: 16px;
+      }
+    }
+  }
+
   .prices {
     margin-top: auto;
     padding-top: 8px;

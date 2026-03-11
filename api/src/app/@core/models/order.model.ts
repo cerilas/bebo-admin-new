@@ -55,4 +55,7 @@ export interface Order {
   productionImageUrl?: string;
   imagePrompt?: string;
   creditsUsed?: number;
+
+  // Image transform (görsel konumlandırma)
+  imageTransform?: string; // JSON string: {"x": number, "y": number, "scale": number}
 }

@@ -272,6 +272,23 @@ $info: #0095ff;
   }
 }
 
+.product-with-transform {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.transform-icon {
+  font-size: 14px;
+  color: $primary;
+  opacity: 0.8;
+  flex-shrink: 0;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
 .amount {
   font-weight: 600;
   color: $success !important;

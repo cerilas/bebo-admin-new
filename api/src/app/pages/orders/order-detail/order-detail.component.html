@@ -154,6 +154,47 @@
                   <div class="spec"><span>Çerçeve:</span> {{ order.frameName }} <i *ngIf="order.frameColorCode"
                       class="color-dot" [style.background]="order.frameColorCode"></i></div>
                 </div>
+                <!-- Görsel Konumlandırma Bilgisi -->
+                <div class="image-transform-section" *ngIf="order.orderType === 'product'">
+                  <div class="transform-header">
+                    <nb-icon icon="crop-outline"></nb-icon>
+                    <span>Görsel Konumlandırma</span>
+                  </div>
+                  <div class="transform-details" *ngIf="getImageTransform(); let transform">
+                    <div class="transform-row">
+                      <span class="transform-label">Yakınlaştırma:</span>
+                      <span class="transform-value scale" [class.scaled]="transform.scale !== 1">
+                        {{ getScalePercent() }}
+                        <span class="scale-type">({{ getScaleType() }})</span>
+                      </span>
+                    </div>
+                    <div class="transform-row">
+                      <span class="transform-label">Pozisyon X:</span>
+                      <span class="transform-value" [class.shifted]="transform.x !== 0">
+                        {{ formatPosition(transform.x) }}
+                      </span>
+                    </div>
+                    <div class="transform-row">
+                      <span class="transform-label">Pozisyon Y:</span>
+                      <span class="transform-value" [class.shifted]="transform.y !== 0">
+                        {{ formatPosition(transform.y) }}
+                      </span>
+                    </div>
+                    <!-- Baskı uyarısı: Crop varsa baskıcıya bilgi -->
+                    <div class="transform-warning" *ngIf="transform.scale > 1">
+                      <nb-icon icon="alert-circle-outline" status="warning"></nb-icon>
+                      <span>Görsel yakınlaştırılmış, baskıda sadece görünen kısım basılacak.</span>
+                    </div>
+                    <div class="transform-warning" *ngIf="transform.scale < 1">
+                      <nb-icon icon="alert-circle-outline" status="info"></nb-icon>
+                      <span>Görsel küçültülmüş, baskıda etrafında boşluk olacak.</span>
+                    </div>
+                  </div>
+                  <div class="transform-default" *ngIf="!getImageTransform()">
+                    <nb-icon icon="checkmark-circle-outline" status="success"></nb-icon>
+                    <span>Varsayılan (Ortalanmış)</span>
+                  </div>
+                </div>
                 <div class="prices">
                   <div class="price-row"><span>Boyut:</span><span>{{ kurusToTl(order.sizePrice) }} TL</span></div>
                   <div class="price-row"><span>Çerçeve:</span><span>{{ kurusToTl(order.framePrice) }} TL</span></div>

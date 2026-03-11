@@ -160,6 +160,71 @@ export class OrderDetailComponent implements OnInit {
     return kurus / 100;
   }
 
+  // ==================== IMAGE TRANSFORM (GÖRSEL KONUMLANDIRMA) ====================
+  /**
+   * image_transform JSON string'ini parse eder
+   * Format: {"x": number, "y": number, "scale": number}
+   */
+  getImageTransform(): { x: number, y: number, scale: number } | null {
+    if (!this.order?.imageTransform) return null;
+    try {
+      const transform = typeof this.order.imageTransform === 'string'
+        ? JSON.parse(this.order.imageTransform)
+        : this.order.imageTransform;
+      return {
+        x: transform.x ?? 0,
+        y: transform.y ?? 0,
+        scale: transform.scale ?? 1
+      };
+    } catch (e) {
+      console.error('Image transform parse error:', e);
+      return null;
+    }
+  }
+
+  /**
+   * Transform uygulanmış mı kontrol eder
+   * scale !== 1 veya x/y !== 0 ise transform uygulanmıştır
+   */
+  hasImageTransform(): boolean {
+    const transform = this.getImageTransform();
+    if (!transform) return false;
+    return transform.scale !== 1 || transform.x !== 0 || transform.y !== 0;
+  }
+
+  /**
+   * Scale değerini yüzde formatında döndürür
+   * Örn: 1.5 -> "%150"
+   */
+  getScalePercent(): string {
+    const transform = this.getImageTransform();
+    if (!transform) return '%100';
+    return `%${Math.round(transform.scale * 100)}`;
+  }
+
+  /**
+   * Pozisyon değerini formatlar
+   * Örn: 10 -> "+10%", -5 -> "-5%", 0 -> "0%"
+   */
+  formatPosition(value: number): string {
+    if (value === 0) return '0%';
+    return value > 0 ? `+${value}%` : `${value}%`;
+  }
+
+  /**
+   * Scale tipini döndürür (baskı için önemli)
+   * scale = 1: Tam sığdırılmış (crop yok)
+   * scale > 1: Büyütülmüş (crop var)
+   * scale < 1: Küçültülmüş (boşluk var)
+   */
+  getScaleType(): string {
+    const transform = this.getImageTransform();
+    if (!transform) return 'normal';
+    if (transform.scale === 1) return 'Tam Sığdırılmış';
+    if (transform.scale > 1) return 'Yakınlaştırılmış';
+    return 'Küçültülmüş';
+  }
+
   calculateCreditsFromAmount(amountInTL: number): number {
     // Kredi fiyatlandırması - amountInTL zaten TL cinsinden (getOrderTotal'dan geliyor)
     // 1 kredi = 1.5 TL (150 kuruş) - Birebiro'nun gerçek fiyatlandırması

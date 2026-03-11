@@ -2269,8 +2269,14 @@ app.get('/api/legal-documents/:slug', async (req, res) => {
       return res.status(404).json({ error: 'Legal document not found' });
     }
 
-    // Tek dil istendiyse tek obje, değilse array dön
-    res.json(language ? result.rows[0] : result.rows);
+    // If ID is provided, return single object (for admin edit)
+    // If slug is provided with language, return single object
+    // Otherwise return array for public listing
+    if (isId) {
+      res.json(result.rows[0]);
+    } else {
+      res.json(language ? result.rows[0] : result.rows);
+    }
   } catch (error) {
     console.error('Legal document fetch error:', error);
     res.status(500).json({ error: 'Failed to fetch legal document' });
@@ -2281,17 +2287,19 @@ app.get('/api/legal-documents/:slug', async (req, res) => {
 app.put('/api/legal-documents/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, content, isActive, sortOrder } = req.body;
+    const { slug, title, content, language, isActive, sortOrder } = req.body;
 
     const result = await pool.query(`
       UPDATE legal_documents 
       SET 
-        title = COALESCE($1, title),
-        content = COALESCE($2, content),
-        is_active = COALESCE($3, is_active),
-        sort_order = COALESCE($4, sort_order),
+        slug = COALESCE($1, slug),
+        title = COALESCE($2, title),
+        content = COALESCE($3, content),
+        language = COALESCE($4, language),
+        is_active = COALESCE($5, is_active),
+        sort_order = COALESCE($6, sort_order),
         updated_at = NOW()
-      WHERE id = $5
+      WHERE id = $7
       RETURNING 
         id,
         slug,
@@ -2302,7 +2310,7 @@ app.put('/api/legal-documents/:id', async (req, res) => {
         sort_order as "sortOrder",
         created_at as "createdAt",
         updated_at as "updatedAt"
-    `, [title, content, isActive, sortOrder, id]);
+    `, [slug, title, content, language, isActive, sortOrder, id]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Legal document not found' });

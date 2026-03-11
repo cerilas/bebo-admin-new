@@ -246,6 +246,22 @@ export class OrderListComponent implements OnInit {
     return statusMap[status] || 'basic';
   }
 
+  /**
+   * Siparişte görsel konumlandırma transform uygulanmış mı kontrol eder
+   * imageTransform varsa ve varsayılan değerler (x:0, y:0, scale:1) değilse true döner
+   */
+  hasImageTransform(order: Order): boolean {
+    if (!order.imageTransform) return false;
+    try {
+      const transform = typeof order.imageTransform === 'string'
+        ? JSON.parse(order.imageTransform)
+        : order.imageTransform;
+      return transform.scale !== 1 || transform.x !== 0 || transform.y !== 0;
+    } catch (e) {
+      return false;
+    }
+  }
+
   openOrderDetail(orderId: number): void {
     this.dialogService.open(OrderDetailComponent, {
       context: {
