@@ -316,7 +316,7 @@ Detaylı database schema bilgisi için `SAMPLE-SCHEMA.ts` dosyasına bakınız.
 - **product**: Ürün ana bilgileri (multi-language)
 - **product_size**: Ürün boyut seçenekleri
 - **product_frame**: Ürün çerçeve seçenekleri
-- **order**: Sipariş bilgileri (PayTR, shipping, invoice)
+- **order**: Sipariş bilgileri (Akbank Sanal POS, shipping, invoice)
 - **generated_image**: AI-üretilmiş görseller
 - **legal_documents**: Yasal metinler
 - **about_content**: Hakkımızda sayfası içeriği

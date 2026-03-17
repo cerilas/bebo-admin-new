@@ -170,13 +170,12 @@ export const orderSchema = pgTable('order', {
   productId: integer('product_id').notNull().references(() => productSchema.id, { onDelete: 'restrict' }),
   productSizeId: integer('product_size_id').notNull().references(() => productSizeSchema.id, { onDelete: 'restrict' }),
   productFrameId: integer('product_frame_id').notNull().references(() => productFrameSchema.id, { onDelete: 'restrict' }),
-  merchantOid: varchar('merchant_oid', { length: 64 }).notNull().unique(), // PayTR sipariş numarası
+  merchantOid: varchar('merchant_oid', { length: 64 }).notNull().unique(), // Ödeme sipariş numarası (Akbank)
   paymentAmount: integer('payment_amount').notNull(), // Ödeme tutarı (kuruş cinsinden)
   totalAmount: integer('total_amount'), // Müşteriden tahsil edilen toplam tutar (taksit vs. ile değişebilir)
   currency: varchar('currency', { length: 10 }).default('TL').notNull(),
   paymentStatus: varchar('payment_status', { length: 20 }).default('pending').notNull(), // pending, success, failed
   paymentType: varchar('payment_type', { length: 20 }), // card, eft
-  paytrToken: text('paytr_token'), // PayTR iframe token
   orderType: varchar('order_type', { length: 20 }).default('product').notNull(), // 'product' | 'credit'
   failedReasonCode: varchar('failed_reason_code', { length: 10 }), // Başarısız ödeme kodu
   failedReasonMsg: text('failed_reason_msg'), // Başarısız ödeme mesajı

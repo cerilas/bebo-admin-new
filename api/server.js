@@ -3,6 +3,9 @@ const cors = require('cors');
 const { Pool } = require('pg');
 const path = require('path');
 const compression = require('compression');
+const crypto = require('crypto');
+const https = require('https');
+const net = require('net');
 require('dotenv').config();
 
 const app = express();
@@ -1292,6 +1295,7 @@ app.get('/api/orders/:id', async (req, res) => {
         
         -- Generated image info
         gi.image_url as "generatedImageUrl",
+        gi.production_image_url as "productionImageUrl",
         gi.text_prompt as "imagePrompt",
         gi.credit_used as "creditsUsed"
         
@@ -1722,12 +1726,191 @@ app.get('/api/shipping/shipments', async (req, res) => {
   }
 });
 
-// ==================== PAYTR REFUND API ====================
-const crypto = require('crypto');
-const https = require('https');
-const querystring = require('querystring');
+// ==================== AKBANK REFUND API ====================
+function generateAkbankRandomNumber() {
+  return crypto.randomBytes(64).toString('hex').toUpperCase();
+}
 
-// PayTR İade işlemi
+function hashToBase64HmacSha512(serializedModel, secretKey) {
+  let keyBuffer;
+  if (Buffer.isBuffer(secretKey)) {
+    keyBuffer = secretKey;
+  } else if (typeof secretKey === 'string' && /^[0-9a-fA-F]+$/.test(secretKey) && secretKey.length % 2 === 0) {
+    keyBuffer = Buffer.from(secretKey, 'hex');
+  } else {
+    keyBuffer = Buffer.from(String(secretKey), 'utf8');
+  }
+  return crypto
+    .createHmac('sha512', keyBuffer)
+    .update(Buffer.from(serializedModel, 'utf8'))
+    .digest('base64');
+}
+
+function getAkbankKeyCandidates(secretKey) {
+  if (!secretKey) {
+    return [];
+  }
+
+  // Matrix test showed AKBANK accepts auth when the .env value is used as raw UTF-8 bytes.
+  return [Buffer.from(String(secretKey), 'utf8')];
+}
+
+function toHashString(value) {
+  return value === undefined || value === null ? '' : String(value);
+}
+
+function buildAkbankHashItems(payload) {
+  const transaction = payload.transaction || {};
+  const customer = payload.customer || {};
+  const terminal = payload.terminal || {};
+  const order = payload.order || {};
+
+  const hashItems =
+    toHashString(payload.paymentModel) +
+    toHashString(payload.txnCode) +
+    toHashString(terminal.merchantSafeId) +
+    toHashString(terminal.terminalSafeId) +
+    toHashString(order.orderId) +
+    toHashString(payload.lang) +
+    toHashString(transaction.amount) +
+    toHashString(transaction.ccbRewardAmount) +
+    toHashString(transaction.pcbRewardAmount) +
+    toHashString(transaction.xcbRewardAmount) +
+    toHashString(transaction.currencyCode) +
+    toHashString(transaction.installCount) +
+    toHashString(payload.okUrl) +
+    toHashString(payload.failUrl) +
+    toHashString(customer.emailAddress) +
+    toHashString(customer.mobilePhone) +
+    toHashString(customer.homePhone) +
+    toHashString(customer.workPhone) +
+    toHashString(payload.subMerchantId) +
+    toHashString(payload.creditCard) +
+    toHashString(payload.expiredDate) +
+    toHashString(payload.cvv) +
+    toHashString(payload.cardHolderName) +
+    toHashString(payload.randomNumber) +
+    toHashString(payload.requestDateTime) +
+    toHashString(payload.b2bIdentityNumber) +
+    toHashString(payload.merchantData) +
+    toHashString(payload.merchantBranchNo) +
+    toHashString(payload.mobileEci) +
+    toHashString(payload.walletProgramData) +
+    toHashString(payload.mobileAssignedId) +
+    toHashString(payload.mobileDeviceType);
+
+  return hashItems;
+}
+
+// Simplified hash for minimal AKBANK spec-compliant payload
+function buildAkbankHashItemsMinimal(payload) {
+  const transaction = payload.transaction || {};
+  const customer = payload.customer || {};
+  const terminal = payload.terminal || {};
+  const order = payload.order || {};
+
+  // Field order matters for AKBANK hash calculation
+  const hashItems =
+    toHashString(payload.txnCode) +
+    toHashString(terminal.merchantSafeId) +
+    toHashString(terminal.terminalSafeId) +
+    toHashString(order.orderId) +
+    toHashString(transaction.amount) +
+    toHashString(transaction.currencyCode) +
+    toHashString(customer.emailAddress) +
+    toHashString(customer.ipAddress) +
+    toHashString(payload.randomNumber) +
+    toHashString(payload.requestDateTime);
+
+  return hashItems;
+}
+
+function getRequestDateTime() {
+  // AKBANK accepts milliseconds and does not require trailing Z in this integration.
+  return new Date().toISOString().replace('Z', '');
+}
+
+function getClientIpAddress(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  const xRealIp = req.headers['x-real-ip'];
+
+  const candidates = [];
+  if (typeof forwarded === 'string' && forwarded.length > 0) {
+    candidates.push(...forwarded.split(',').map((ip) => ip.trim()));
+  }
+  if (typeof xRealIp === 'string' && xRealIp.length > 0) {
+    candidates.push(xRealIp.trim());
+  }
+  if (typeof req.ip === 'string' && req.ip.length > 0) {
+    candidates.push(req.ip.trim());
+  }
+  if (typeof req.socket?.remoteAddress === 'string' && req.socket.remoteAddress.length > 0) {
+    candidates.push(req.socket.remoteAddress.trim());
+  }
+
+  for (const rawIp of candidates) {
+    const normalized = rawIp.replace(/^::ffff:/, '');
+    if (!net.isIP(normalized)) {
+      continue;
+    }
+
+    if (
+      normalized === '127.0.0.1' ||
+      normalized === '::1' ||
+      normalized === '0.0.0.0' ||
+      normalized === '::'
+    ) {
+      continue;
+    }
+
+    return normalized;
+  }
+
+  return null;
+}
+
+function postJsonWithHeaders(urlString, bodyString, headers) {
+  const endpoint = new URL(urlString);
+
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      protocol: endpoint.protocol,
+      hostname: endpoint.hostname,
+      port: endpoint.port || 443,
+      path: `${endpoint.pathname}${endpoint.search}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(bodyString),
+        ...headers,
+      },
+    }, (response) => {
+      let rawBody = '';
+      response.on('data', (chunk) => {
+        rawBody += chunk;
+      });
+
+      response.on('end', () => {
+        resolve({
+          statusCode: response.statusCode,
+          headers: response.headers,
+          rawBody,
+        });
+      });
+    });
+
+    req.on('error', (error) => reject(error));
+    req.setTimeout(90000, () => {
+      req.destroy();
+      reject(new Error('AKBANK isteği zaman aşımına uğradı'));
+    });
+
+    req.write(bodyString);
+    req.end();
+  });
+}
+
+// AKBANK Referanslı İade işlemi
 app.post('/api/orders/:id/refund', async (req, res) => {
   try {
     const { id } = req.params;
@@ -1741,6 +1924,7 @@ app.post('/api/orders/:id/refund', async (req, res) => {
         payment_amount as "paymentAmount",
         total_amount as "totalAmount",
         payment_status as "paymentStatus",
+        customer_email as "customerEmail",
         currency
       FROM "order" 
       WHERE id = $1
@@ -1766,99 +1950,188 @@ app.post('/api/orders/:id/refund', async (req, res) => {
       return res.status(400).json({ error: 'İade tutarı sipariş tutarından fazla olamaz' });
     }
 
-    // PayTR API bilgileri
-    const merchantId = process.env.PAYTR_MERCHANT_ID;
-    const merchantKey = process.env.PAYTR_MERCHANT_KEY;
-    const merchantSalt = process.env.PAYTR_MERCHANT_SALT;
+    const akbankRefundUrl = process.env.AKBANK_REFUND_URL;
+    const akbankSecretKey = process.env.AKBANK_SECRET_KEY;
+    const merchantSafeId = process.env.AKBANK_MERCHANT_SAFE_ID;
+    const terminalSafeId = process.env.AKBANK_TERMINAL_SAFE_ID;
 
-    if (!merchantId || !merchantKey || !merchantSalt) {
-      console.error('PayTR credentials missing');
-      return res.status(500).json({ error: 'PayTR yapılandırması eksik' });
+    if (!akbankRefundUrl || !akbankSecretKey || !merchantSafeId || !terminalSafeId) {
+      console.error('AKBANK credentials missing');
+      return res.status(500).json({ error: 'AKBANK yapılandırması eksik' });
     }
 
     // İade tutarını TL formatına çevir (kuruştan TL'ye, 2 ondalık)
     const returnAmountTL = (refundAmount / 100).toFixed(2);
 
-    // PayTR token oluştur
-    // Token: base64(hmac_sha256(merchant_id + merchant_oid + return_amount + merchant_salt, merchant_key))
-    const hashStr = merchantId + order.merchantOid + returnAmountTL + merchantSalt;
-    const paytrToken = crypto
-      .createHmac('sha256', merchantKey)
-      .update(hashStr)
-      .digest('base64');
+    const customerEmail = order.customerEmail || 'unknown@birebiro.com';
+    const clientIp = getClientIpAddress(req);
 
-    // PayTR'a iade isteği gönder
-    const postData = querystring.stringify({
-      merchant_id: merchantId,
-      merchant_oid: order.merchantOid,
-      return_amount: returnAmountTL,
-      paytr_token: paytrToken,
-      reference_no: `REFUND${id}T${Date.now()}`
-    });
-
-    const options = {
-      hostname: 'www.paytr.com',
-      port: 443,
-      path: '/odeme/iade',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Content-Length': Buffer.byteLength(postData)
-      }
+    const requestPayload = {
+      version: '1.00',
+      txnCode: '1002',
+      requestDateTime: getRequestDateTime(),
+      randomNumber: generateAkbankRandomNumber(),
+      terminal: {
+        merchantSafeId,
+        terminalSafeId,
+      },
+      order: {
+        orderId: order.merchantOid,
+      },
+      transaction: {
+        amount: returnAmountTL,
+        currencyCode: 949,
+      },
+      customer: {
+        emailAddress: customerEmail,
+      },
     };
 
-    // PayTR'a istek at
-    const paytrResponse = await new Promise((resolve, reject) => {
-      const req = https.request(options, (response) => {
-        let data = '';
-        response.on('data', chunk => data += chunk);
-        response.on('end', () => {
-          try {
-            resolve(JSON.parse(data));
-          } catch (e) {
-            reject(new Error('PayTR yanıtı parse edilemedi: ' + data));
+    if (clientIp) {
+      requestPayload.customer.ipAddress = clientIp;
+    }
+
+    const serializedRequest = JSON.stringify(requestPayload);
+      console.log('=== AKBANK REFUND REQUEST ===');
+      console.log('Payload:', JSON.stringify(requestPayload, null, 2));
+      console.log('Serialized:', serializedRequest);
+    const hashItems = buildAkbankHashItemsMinimal(requestPayload);
+      console.log('Hash items string:', hashItems);
+    const keyCandidates = getAkbankKeyCandidates(akbankSecretKey);
+    const hashStrategies = [
+      { name: 'json-body', value: serializedRequest },
+      { name: 'hash-items', value: hashItems },
+    ];
+
+    let akbankRawResponse = null;
+    let usedHashStrategy = null;
+    let fallbackResponse = null;
+    let fallbackHashStrategy = null;
+
+    for (const strategy of hashStrategies) {
+      for (const keyCandidate of keyCandidates) {
+        const requestHash = hashToBase64HmacSha512(strategy.value, keyCandidate);
+          console.log(`Trying ${strategy.name} with hash: ${requestHash.substring(0, 50)}...`);
+        const response = await postJsonWithHeaders(
+          akbankRefundUrl,
+          serializedRequest,
+          { 'auth-hash': requestHash }
+        );
+          console.log(`${strategy.name} response status:`, response.statusCode);
+          if (response.statusCode !== 401) {
+            console.log(`${strategy.name} response body:`, response.rawBody);
           }
+
+        if (response.statusCode === 400 || response.statusCode === 401) {
+          fallbackResponse = response;
+          fallbackHashStrategy = strategy.name;
+          continue;
+        }
+
+        if (response.statusCode !== 401) {
+          akbankRawResponse = response;
+          usedHashStrategy = strategy.name;
+          break;
+        }
+      }
+
+      if (akbankRawResponse) {
+        break;
+      }
+    }
+
+    if (!akbankRawResponse && fallbackResponse) {
+      akbankRawResponse = fallbackResponse;
+      usedHashStrategy = fallbackHashStrategy;
+    }
+
+    if (!akbankRawResponse) {
+      return res.status(401).json({
+        success: false,
+        error: 'AKBANK auth-hash doğrulaması başarısız',
+      });
+    }
+
+    console.log('AKBANK refund hash strategy:', usedHashStrategy);
+
+    const responseAuthHash = akbankRawResponse.headers['auth-hash'];
+    const responseAuthHashValue = Array.isArray(responseAuthHash)
+      ? responseAuthHash[0]
+      : responseAuthHash;
+    if (responseAuthHashValue) {
+      const responseHashMatched = keyCandidates.some((candidate) => (
+        hashToBase64HmacSha512(akbankRawResponse.rawBody, candidate) === responseAuthHashValue
+      ));
+      if (!responseHashMatched) {
+        console.error('AKBANK response hash mismatch', {
+          responseAuthHashValue,
+          requestHashStrategy: usedHashStrategy,
         });
+      }
+    } else {
+      console.warn('AKBANK response auth-hash header not provided, verification skipped');
+    }
+
+    let akbankResponse;
+    try {
+      akbankResponse = JSON.parse(akbankRawResponse.rawBody);
+    } catch (parseError) {
+      return res.status(502).json({
+        success: false,
+        error: 'AKBANK yanıtı parse edilemedi',
+        details: akbankRawResponse.rawBody,
       });
+    }
 
-      req.on('error', (e) => reject(e));
-      req.setTimeout(90000, () => {
-        req.destroy();
-        reject(new Error('PayTR isteği zaman aşımına uğradı'));
-      });
+    console.log('AKBANK Refund Response:', akbankResponse);
 
-      req.write(postData);
-      req.end();
-    });
+    if (akbankResponse.responseCode === 'VPS-0000' && akbankResponse.hostResponseCode === '00') {
+      const isFullRefund = Math.round(refundAmount) >= Math.round(orderTotal);
+      const nextPaymentStatus = isFullRefund ? 'refunded' : 'partially_refunded';
 
-    console.log('PayTR Refund Response:', paytrResponse);
-
-    // PayTR yanıtını kontrol et
-    if (paytrResponse.status === 'success') {
       // Veritabanında siparişi güncelle
       await pool.query(`
         UPDATE "order" 
         SET 
-          payment_status = 'refunded',
-          notes = COALESCE(notes, '') || E'\n\n[İADE] ' || $1 || ' - Tutar: ' || $2 || ' TL - Tarih: ' || NOW()::text,
+          payment_status = $1,
+          notes = COALESCE(notes, '') || E'\n\n[AKBANK İADE] ' || $2 || ' - Tutar: ' || $3 || ' TL - AuthCode: ' || COALESCE($4, '-') || ' - RRN: ' || COALESCE($5, '-') || ' - Tarih: ' || NOW()::text,
           updated_at = NOW()
-        WHERE id = $3
-      `, [reason || 'İade yapıldı', returnAmountTL, id]);
+        WHERE id = $6
+      `, [
+        nextPaymentStatus,
+        reason || 'İade yapıldı',
+        returnAmountTL,
+        akbankResponse.transaction?.authCode || null,
+        akbankResponse.transaction?.rrn || null,
+        id,
+      ]);
 
       res.json({
         success: true,
         message: 'İade işlemi başarılı',
         refundAmount: returnAmountTL,
         merchantOid: order.merchantOid,
-        isTest: paytrResponse.is_test === 1
+        authCode: akbankResponse.transaction?.authCode,
+        rrn: akbankResponse.transaction?.rrn,
+        refundableAmount: akbankResponse.transaction?.refundableAmount,
       });
     } else {
-      // PayTR hatası
-      console.error('PayTR refund error:', paytrResponse);
+      console.error('AKBANK refund error:', akbankResponse);
       res.status(400).json({
         success: false,
-        error: paytrResponse.err_msg || 'İade işlemi başarısız',
-        errorCode: paytrResponse.err_no
+        error: akbankResponse.responseMessage || akbankResponse.message || 'İade işlemi başarısız',
+        errorCode: akbankResponse.responseCode || akbankResponse.code,
+        hostResponseCode: akbankResponse.hostResponseCode,
+        hostMessage: akbankResponse.hostMessage || akbankResponse.message,
+        diagnostics: {
+          akbankUrl: akbankRefundUrl,
+          merchantOid: order.merchantOid,
+          requestDateTime: requestPayload.requestDateTime,
+          hasCustomerIp: Boolean(requestPayload.customer?.ipAddress),
+          attemptedHashStrategies: hashStrategies.map((item) => item.name),
+          usedHashStrategy,
+          rawResponse: akbankRawResponse.rawBody,
+        },
       });
     }
 

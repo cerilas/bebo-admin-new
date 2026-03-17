@@ -146,24 +146,41 @@
           <div *ngIf="order.orderType === 'product' && order.generationId" class="product-box">
             <div class="box-title">
               Ürün Bilgisi
-              <button *ngIf="order.generatedImageUrl" nbButton ghost size="tiny" status="primary"
+              <button *ngIf="hasProductionImage()" nbButton ghost size="tiny" status="primary"
                 (click)="downloadGeneratedImage()" class="download-btn" title="Üretim Görselini İndir">
                 <nb-icon icon="download-outline"></nb-icon>
               </button>
+              <span *ngIf="!hasProductionImage()" class="production-image-status">
+                <span class="inline-spinner" aria-hidden="true"></span>
+                Üretim Görseli Hazırlanıyor
+              </span>
             </div>
             <div class="product-content">
               <div class="product-img-container">
-                <!-- Image Skeleton Loader -->
-                <div *ngIf="imageLoading && order.generatedImageUrl" class="image-skeleton">
-                  <div class="skeleton-shimmer"></div>
-                  <div class="skeleton-icon">
-                    <nb-icon icon="image-outline"></nb-icon>
+                <ng-container *ngIf="getPreviewImageUrl() as previewImageUrl; else productionImagePreparing">
+                  <!-- Image Skeleton Loader -->
+                  <div *ngIf="imageLoading" class="image-skeleton">
+                    <div class="skeleton-shimmer"></div>
+                    <div class="skeleton-icon">
+                      <nb-icon icon="image-outline"></nb-icon>
+                    </div>
                   </div>
-                </div>
-                <!-- Actual Image -->
-                <img *ngIf="order.generatedImageUrl" [src]="order.generatedImageUrl" class="product-img"
-                  [class.image-loaded]="!imageLoading" alt="Ürün" (click)="downloadGeneratedImage()"
-                  (load)="imageLoading = false" (error)="imageLoading = false">
+                  <!-- Actual Image -->
+                  <img [src]="previewImageUrl" class="product-img"
+                    [class.image-loaded]="!imageLoading"
+                    [class.clickable]="hasProductionImage()"
+                    alt="Ürün"
+                    (click)="hasProductionImage() && downloadGeneratedImage()"
+                    (load)="imageLoading = false"
+                    (error)="imageLoading = false">
+                </ng-container>
+
+                <ng-template #productionImagePreparing>
+                  <div class="production-image-placeholder">
+                    <span class="placeholder-spinner" aria-hidden="true"></span>
+                    <span>Üretim Görseli Hazırlanıyor</span>
+                  </div>
+                </ng-template>
               </div>
               <div class="product-details">
                 <div class="product-name">{{ order.productName }}</div>
@@ -257,6 +274,51 @@
               <span class="copyable">
                 {{ order.trackingNumber }}
                 <nb-icon icon="copy-outline" class="copy-icon" (click)="copyToClipboard(order.trackingNumber)"
+                  title="Kopyala"></nb-icon>
+              </span>
+            </div>
+          </div>
+
+          <!-- Technical Info -->
+          <div class="info-box technical-box">
+            <div class="box-title">Teknik Bilgiler</div>
+            <div class="info-row">
+              <span>DB Sipariş No:</span>
+              <span class="copyable mono">
+                {{ order.id }}
+                <nb-icon icon="copy-outline" class="copy-icon" (click)="copyToClipboard(order.id?.toString())"
+                  title="Kopyala"></nb-icon>
+              </span>
+            </div>
+            <div class="info-row" *ngIf="order.generationId">
+              <span>Generation ID:</span>
+              <span class="copyable mono break-all">
+                {{ order.generationId }}
+                <nb-icon icon="copy-outline" class="copy-icon" (click)="copyToClipboard(order.generationId)"
+                  title="Kopyala"></nb-icon>
+              </span>
+            </div>
+            <div class="info-row" *ngIf="order.userId">
+              <span>User ID:</span>
+              <span class="copyable mono break-all">
+                {{ order.userId }}
+                <nb-icon icon="copy-outline" class="copy-icon" (click)="copyToClipboard(order.userId)"
+                  title="Kopyala"></nb-icon>
+              </span>
+            </div>
+            <div class="info-row" *ngIf="order.merchantOid">
+              <span>Merchant OID:</span>
+              <span class="copyable mono break-all">
+                {{ order.merchantOid }}
+                <nb-icon icon="copy-outline" class="copy-icon" (click)="copyToClipboard(order.merchantOid)"
+                  title="Kopyala"></nb-icon>
+              </span>
+            </div>
+            <div class="info-row" *ngIf="order.productId !== null && order.productId !== undefined">
+              <span>Ürün ID:</span>
+              <span class="copyable mono">
+                {{ order.productId }}
+                <nb-icon icon="copy-outline" class="copy-icon" (click)="copyToClipboard(order.productId?.toString())"
                   title="Kopyala"></nb-icon>
               </span>
             </div>
@@ -487,7 +549,7 @@
             <p>
               <strong>Sipariş #{{ order.id }}</strong> için
               <strong>{{ getOrderTotal(order) }} TL</strong> tutarında
-              PayTR üzerinden iade işlemi yapılacak.
+              Akbank Sanal POS üzerinden iade işlemi yapılacak.
             </p>
             <p class="warning-text">
               <nb-icon icon="alert-circle-outline"></nb-icon>

@@ -53,6 +53,7 @@ export class OrderDetailComponent implements OnInit {
     this.ordersService.getOrder(this.orderId).subscribe({
       next: (data) => {
         this.order = data;
+        this.imageLoading = !!this.getPreviewImageUrl(data);
         this.trackingNumber = data.trackingNumber || '';
         this.shippingStatus = data.shippingStatus || 'pending';
         this.notes = data.notes || '';
@@ -239,14 +240,29 @@ export class OrderDetailComponent implements OnInit {
     event.target.src = 'assets/images/placeholder.png';
   }
 
+  hasProductionImage(order: any = this.order): boolean {
+    const imageUrl = order?.productionImageUrl;
+    return typeof imageUrl === 'string' ? imageUrl.trim().length > 0 : !!imageUrl;
+  }
+
+  getPreviewImageUrl(order: any = this.order): string | null {
+    const productionImageUrl = typeof order?.productionImageUrl === 'string'
+      ? order.productionImageUrl.trim()
+      : order?.productionImageUrl;
+    const generatedImageUrl = typeof order?.generatedImageUrl === 'string'
+      ? order.generatedImageUrl.trim()
+      : order?.generatedImageUrl;
+
+    return productionImageUrl || generatedImageUrl || null;
+  }
+
   downloadGeneratedImage(): void {
-    if (!this.order?.generatedImageUrl) {
+    if (!this.hasProductionImage()) {
       return;
     }
 
-    // Görsel URL'sinden dosyayı indir
-    // productionImageUrl varsa onu kullan (watermarksız), yoksa generatedImageUrl (watermarklı)
-    const imageUrl = this.order.productionImageUrl || this.order.generatedImageUrl;
+    // Üretim görselini indir (watermarksız)
+    const imageUrl = this.order.productionImageUrl;
     const fileName = `siparis-${this.orderId}-gorsel.png`;
 
     fetch(imageUrl)

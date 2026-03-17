@@ -12,7 +12,6 @@ export interface Order {
   currency: string;
   paymentStatus: 'pending' | 'success' | 'failed' | 'refunded';
   paymentType?: string;
-  paytrToken?: string;
   orderType: 'product' | 'credit';
   creditAmount?: number;
   failedReasonCode?: string;

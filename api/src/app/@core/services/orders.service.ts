@@ -58,7 +58,7 @@ export class OrdersService extends BaseApiService {
   }
 
   /**
-   * PayTR üzerinden sipariş iadesi yapar
+   * AKBANK Sanal POS üzerinden sipariş iadesi yapar
    * @param id Sipariş ID
    * @param amount İade tutarı (kuruş cinsinden, opsiyonel - boş bırakılırsa tam iade)
    * @param reason İade nedeni

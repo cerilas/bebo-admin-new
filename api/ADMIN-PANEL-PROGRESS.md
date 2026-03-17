@@ -112,7 +112,7 @@ Yeni admin menü yapısı:
 - **product**: Ürünler (multi-language, images, active status)
 - **product_size**: Ürün boyutları (fiyat, boyutlar)
 - **product_frame**: Ürün çerçeveleri (fiyat, renk, görsel)
-- **order**: Siparişler (PayTR entegrasyonu, shipping, invoice)
+- **order**: Siparişler (Akbank Sanal POS entegrasyonu, shipping, invoice)
 - **generated_image**: AI-üretilmiş görseller
 - **legal_documents**: Yasal metinler
 - **about_content**: Hakkımızda sayfası içeriği
@@ -138,7 +138,7 @@ POST   /api/products/:id/sizes
 
 ### Önemli Özellikler
 1. **Multi-language**: TR/EN/FR desteği her yerde
-2. **PayTR**: Ödeme entegrasyonu bilgileri
+2. **Akbank Sanal POS**: Ödeme entegrasyonu bilgileri
 3. **Clerk**: Kullanıcı kimlik doğrulama
 4. **Credits**: Sanat hakki sistemi
 5. **Images**: Cloudinary veya benzeri CDN bekleniyor
