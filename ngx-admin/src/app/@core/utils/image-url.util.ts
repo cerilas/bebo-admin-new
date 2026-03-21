@@ -1,5 +1,5 @@
 // Utility to ensure image URLs are absolute in production
-import { environment } from '../../environments/environment';
+import { environment } from '../../../environments/environment';
 
 /**
  * Returns an absolute image URL for /api/files/... paths in production.

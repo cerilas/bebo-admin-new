@@ -1,6 +1,4 @@
 import { getAbsoluteImageUrl } from '../../../@core/utils/image-url.util';
-  // Expose helper for template
-  getAbsoluteImageUrl = getAbsoluteImageUrl;
 import { Component, OnInit } from '@angular/core';
 import { GeneratedImagesService, ImageStats, ProductOption } from '../../../@core/services/generated-images.service';
 import { GeneratedImage } from '../../../@core/models';

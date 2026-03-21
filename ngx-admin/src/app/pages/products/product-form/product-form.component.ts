@@ -1,6 +1,4 @@
 import { getAbsoluteImageUrl } from '../../../@core/utils/image-url.util';
-  // Expose helper for template
-  getAbsoluteImageUrl = getAbsoluteImageUrl;
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
