@@ -1,48 +1,4 @@
-// PUBLIC USER IMAGE UPLOAD ENDPOINT
-// This endpoint is for user uploads (not admin panel). It always returns image URLs with www.birebiro.com in production.
-app.post('/api/upload-image', (req, res) => {
-  upload.single('image')(req, res, async (error) => {
-    if (error) {
-      if (error.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({ error: 'Dosya boyutu 5MB\'dan büyük olamaz' });
-      }
-      return res.status(400).json({ error: error.message || 'Görsel yüklenemedi' });
-    }
 
-    if (!req.file) {
-      return res.status(400).json({ error: 'Yüklenecek görsel bulunamadı' });
-    }
-
-    try {
-      const now = new Date();
-      const year = String(now.getFullYear());
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const extension = getExtensionFromFile(req.file);
-      const fileName = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${extension}`;
-
-      const relativeDirectory = path.join(year, month);
-      const absoluteDirectory = path.join(UPLOAD_DIR, relativeDirectory);
-      await fs.promises.mkdir(absoluteDirectory, { recursive: true });
-
-      const absolutePath = path.join(absoluteDirectory, fileName);
-      await fs.promises.writeFile(absolutePath, req.file.buffer);
-
-      const relativePath = path.join(relativeDirectory, fileName).replace(/\\/g, '/');
-      // Always use www.birebiro.com in production, relative in dev
-      let imageUrl = `/api/files/${relativePath}`;
-      if (process.env.NODE_ENV === 'production') {
-        imageUrl = `https://www.birebiro.com${imageUrl}`;
-      }
-      return res.json({
-        image_url: imageUrl,
-        thumb_url: imageUrl,
-      });
-    } catch (writeError) {
-      console.error('Image upload write error:', writeError);
-      return res.status(500).json({ error: 'Görsel kaydedilirken hata oluştu' });
-    }
-  });
-});
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -141,6 +97,52 @@ const getExtensionFromFile = (file) => {
 };
 
 app.use('/api/files', express.static(UPLOAD_DIR));
+
+// PUBLIC USER IMAGE UPLOAD ENDPOINT
+// This endpoint is for user uploads (not admin panel). It always returns image URLs with www.birebiro.com in production.
+app.post('/api/upload-image', (req, res) => {
+  upload.single('image')(req, res, async (error) => {
+    if (error) {
+      if (error.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'Dosya boyutu 5MB\'dan büyük olamaz' });
+      }
+      return res.status(400).json({ error: error.message || 'Görsel yüklenemedi' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Yüklenecek görsel bulunamadı' });
+    }
+
+    try {
+      const now = new Date();
+      const year = String(now.getFullYear());
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const extension = getExtensionFromFile(req.file);
+      const fileName = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${extension}`;
+
+      const relativeDirectory = path.join(year, month);
+      const absoluteDirectory = path.join(UPLOAD_DIR, relativeDirectory);
+      await fs.promises.mkdir(absoluteDirectory, { recursive: true });
+
+      const absolutePath = path.join(absoluteDirectory, fileName);
+      await fs.promises.writeFile(absolutePath, req.file.buffer);
+
+      const relativePath = path.join(relativeDirectory, fileName).replace(/\\/g, '/');
+      // Always use www.birebiro.com in production, relative in dev
+      let imageUrl = `/api/files/${relativePath}`;
+      if (process.env.NODE_ENV === 'production') {
+        imageUrl = `https://www.birebiro.com${imageUrl}`;
+      }
+      return res.json({
+        image_url: imageUrl,
+        thumb_url: imageUrl,
+      });
+    } catch (writeError) {
+      console.error('Image upload write error:', writeError);
+      return res.status(500).json({ error: 'Görsel kaydedilirken hata oluştu' });
+    }
+  });
+});
 
 app.post('/api/admin/upload-image', requireAdminUploadAccess, (req, res) => {
   upload.single('image')(req, res, async (error) => {
@@ -2136,11 +2138,11 @@ app.post('/api/orders/:id/refund', async (req, res) => {
     }
 
     const serializedRequest = JSON.stringify(requestPayload);
-      console.log('=== AKBANK REFUND REQUEST ===');
-      console.log('Payload:', JSON.stringify(requestPayload, null, 2));
-      console.log('Serialized:', serializedRequest);
+    console.log('=== AKBANK REFUND REQUEST ===');
+    console.log('Payload:', JSON.stringify(requestPayload, null, 2));
+    console.log('Serialized:', serializedRequest);
     const hashItems = buildAkbankHashItemsMinimal(requestPayload);
-      console.log('Hash items string:', hashItems);
+    console.log('Hash items string:', hashItems);
     const keyCandidates = getAkbankKeyCandidates(akbankSecretKey);
     const hashStrategies = [
       { name: 'json-body', value: serializedRequest },
@@ -2155,16 +2157,16 @@ app.post('/api/orders/:id/refund', async (req, res) => {
     for (const strategy of hashStrategies) {
       for (const keyCandidate of keyCandidates) {
         const requestHash = hashToBase64HmacSha512(strategy.value, keyCandidate);
-          console.log(`Trying ${strategy.name} with hash: ${requestHash.substring(0, 50)}...`);
+        console.log(`Trying ${strategy.name} with hash: ${requestHash.substring(0, 50)}...`);
         const response = await postJsonWithHeaders(
           akbankRefundUrl,
           serializedRequest,
           { 'auth-hash': requestHash }
         );
-          console.log(`${strategy.name} response status:`, response.statusCode);
-          if (response.statusCode !== 401) {
-            console.log(`${strategy.name} response body:`, response.rawBody);
-          }
+        console.log(`${strategy.name} response status:`, response.statusCode);
+        if (response.statusCode !== 401) {
+          console.log(`${strategy.name} response body:`, response.rawBody);
+        }
 
         if (response.statusCode === 400 || response.statusCode === 401) {
           fallbackResponse = response;
