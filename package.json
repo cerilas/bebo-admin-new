@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Birebiro Admin Panel - Backend & Frontend",
   "scripts": {
-    "start": "./start.sh",
+    "start": "node api/server.js",
     "start:api": "cd api && node server.js",
     "start:frontend": "cd ngx-admin && npm start",
     "dev": "./start.sh",
