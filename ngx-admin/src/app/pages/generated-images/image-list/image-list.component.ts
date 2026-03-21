@@ -1,3 +1,6 @@
+import { getAbsoluteImageUrl } from '../../../@core/utils/image-url.util';
+  // Expose helper for template
+  getAbsoluteImageUrl = getAbsoluteImageUrl;
 import { Component, OnInit } from '@angular/core';
 import { GeneratedImagesService, ImageStats, ProductOption } from '../../../@core/services/generated-images.service';
 import { GeneratedImage } from '../../../@core/models';
@@ -133,7 +136,12 @@ export class ImageListComponent implements OnInit {
   }
 
   openDetail(image: GeneratedImage): void {
-    this.selectedImage = image;
+    // Ensure imageUrl is absolute for modal
+    this.selectedImage = {
+      ...image,
+      imageUrl: getAbsoluteImageUrl(image.imageUrl),
+      thumbnailUrl: getAbsoluteImageUrl(image.thumbnailUrl),
+    };
     this.showModal = true;
   }
 
@@ -192,7 +200,7 @@ export class ImageListComponent implements OnInit {
   }
 
   downloadImage(url: string): void {
-    window.open(url, '_blank');
+    window.open(getAbsoluteImageUrl(url), '_blank');
   }
 
   copyToClipboard(text: string): void {

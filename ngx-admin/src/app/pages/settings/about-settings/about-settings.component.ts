@@ -1,7 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AboutContentService } from '../../../@core/services';
-import { ImageUploadService } from '../../../@core/services/image-upload.service';
 import { AboutContent } from '../../../@core/models';
 import { NbToastrService } from '@nebular/theme';
 import { Subject } from 'rxjs';
@@ -17,7 +16,6 @@ export class AboutSettingsComponent implements OnInit, OnDestroy {
   loading = false;
   saving = false;
   selectedLanguage: 'tr' | 'en' | 'fr' = 'tr';
-  uploading: { [key: string]: boolean } = {};
   languages: Array<{ code: 'tr' | 'en' | 'fr'; label: string }> = [
     { code: 'tr', label: 'Türkçe' },
     { code: 'en', label: 'English' },
@@ -30,7 +28,6 @@ export class AboutSettingsComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private aboutContentService: AboutContentService,
-    private imageUploadService: ImageUploadService,
     private toastr: NbToastrService,
   ) {
     this.aboutForm = this.fb.group({
@@ -101,52 +98,16 @@ export class AboutSettingsComponent implements OnInit, OnDestroy {
     this.loadAboutContent();
   }
 
-  onImageSelected(event: Event, imageFieldName: string): void {
-    const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) {
-      return;
-    }
-
-    const file = input.files[0];
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      this.toastr.danger('Lütfen geçerli bir görsel dosyası seçin', 'Hata');
-      return;
-    }
-
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      this.toastr.danger('Dosya boyutu 10MB\'dan fazla olamaz', 'Hata');
-      return;
-    }
-
-    this.uploadImage(file, imageFieldName);
+  onImageUploaded(imageFieldName: string, imageUrl: string): void {
+    this.aboutForm.patchValue({
+      [imageFieldName]: imageUrl,
+    });
+    this.imagePreview[imageFieldName] = imageUrl;
+    this.toastr.success('Görsel başarıyla yüklendi', 'Başarılı');
   }
 
-  uploadImage(file: File, imageFieldName: string): void {
-    this.uploading[imageFieldName] = true;
-
-    this.imageUploadService
-      .uploadImage(file)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (response) => {
-          const imageUrl = response.image_url;
-          this.aboutForm.patchValue({
-            [imageFieldName]: imageUrl,
-          });
-          this.imagePreview[imageFieldName] = imageUrl;
-          this.uploading[imageFieldName] = false;
-          this.toastr.success('Görsel başarıyla yüklendi', 'Başarılı');
-        },
-        error: (error) => {
-          console.error('Görsel yükleme hatası:', error);
-          this.uploading[imageFieldName] = false;
-          const serverMessage = error?.error?.error || error?.error?.message || error?.message;
-          this.toastr.danger(serverMessage || 'Görsel yüklenemedi', 'Hata');
-        },
-      });
+  onUploadError(message: string): void {
+    this.toastr.danger(message || 'Görsel yüklenemedi', 'Hata');
   }
 
   saveAboutContent(): void {

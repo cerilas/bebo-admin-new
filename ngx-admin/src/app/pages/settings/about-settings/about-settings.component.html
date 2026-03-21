@@ -42,33 +42,13 @@
                 formControlName="image1"
                 placeholder="Görsel URL'si"
                 nbInput />
-              <button
-                type="button"
-                class="btn btn-upload"
-                (click)="fileInput1.click()"
-                [disabled]="uploading['image1']"
-                nbButton>
-                <span *ngIf="!uploading['image1']">
-                  <nb-icon icon="cloud-upload-outline"></nb-icon>
-                  Yükle
-                </span>
-                <span *ngIf="uploading['image1']" class="upload-loading">
-                  <span class="small-spinner" aria-hidden="true"></span>
-                  Yükleniyor...
-                </span>
-              </button>
-              <input
-                #fileInput1
-                type="file"
-                accept="image/*"
-                (change)="onImageSelected($event, 'image1')"
-                style="display: none" />
             </div>
-
-            <!-- Image Preview -->
-            <div *ngIf="imagePreview['image1']" class="image-preview mb-3">
-              <img [src]="imagePreview['image1']" alt="Görsel 1 Önizlemesi" />
-            </div>
+            <ngx-admin-image-upload
+              [currentUrl]="imagePreview['image1']"
+              [buttonText]="'Yükle'"
+              (uploaded)="onImageUploaded('image1', $event)"
+              (uploadError)="onUploadError($event)">
+            </ngx-admin-image-upload>
           </div>
         </div>
 
@@ -124,33 +104,13 @@
                 formControlName="image2"
                 placeholder="Görsel URL'si"
                 nbInput />
-              <button
-                type="button"
-                class="btn btn-upload"
-                (click)="fileInput2.click()"
-                [disabled]="uploading['image2']"
-                nbButton>
-                <span *ngIf="!uploading['image2']">
-                  <nb-icon icon="cloud-upload-outline"></nb-icon>
-                  Yükle
-                </span>
-                <span *ngIf="uploading['image2']" class="upload-loading">
-                  <span class="small-spinner" aria-hidden="true"></span>
-                  Yükleniyor...
-                </span>
-              </button>
-              <input
-                #fileInput2
-                type="file"
-                accept="image/*"
-                (change)="onImageSelected($event, 'image2')"
-                style="display: none" />
             </div>
-
-            <!-- Image Preview -->
-            <div *ngIf="imagePreview['image2']" class="image-preview mb-3">
-              <img [src]="imagePreview['image2']" alt="Görsel 2 Önizlemesi" />
-            </div>
+            <ngx-admin-image-upload
+              [currentUrl]="imagePreview['image2']"
+              [buttonText]="'Yükle'"
+              (uploaded)="onImageUploaded('image2', $event)"
+              (uploadError)="onUploadError($event)">
+            </ngx-admin-image-upload>
           </div>
         </div>
 
@@ -206,33 +166,13 @@
                 formControlName="image3"
                 placeholder="Görsel URL'si"
                 nbInput />
-              <button
-                type="button"
-                class="btn btn-upload"
-                (click)="fileInput3.click()"
-                [disabled]="uploading['image3']"
-                nbButton>
-                <span *ngIf="!uploading['image3']">
-                  <nb-icon icon="cloud-upload-outline"></nb-icon>
-                  Yükle
-                </span>
-                <span *ngIf="uploading['image3']" class="upload-loading">
-                  <span class="small-spinner" aria-hidden="true"></span>
-                  Yükleniyor...
-                </span>
-              </button>
-              <input
-                #fileInput3
-                type="file"
-                accept="image/*"
-                (change)="onImageSelected($event, 'image3')"
-                style="display: none" />
             </div>
-
-            <!-- Image Preview -->
-            <div *ngIf="imagePreview['image3']" class="image-preview mb-3">
-              <img [src]="imagePreview['image3']" alt="Görsel 3 Önizlemesi" />
-            </div>
+            <ngx-admin-image-upload
+              [currentUrl]="imagePreview['image3']"
+              [buttonText]="'Yükle'"
+              (uploaded)="onImageUploaded('image3', $event)"
+              (uploadError)="onUploadError($event)">
+            </ngx-admin-image-upload>
           </div>
         </div>
 

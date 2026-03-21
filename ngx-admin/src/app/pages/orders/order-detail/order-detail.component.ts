@@ -245,6 +245,7 @@ export class OrderDetailComponent implements OnInit {
     return typeof imageUrl === 'string' ? imageUrl.trim().length > 0 : !!imageUrl;
   }
 
+  // Returns the preview image URL, absolute in production
   getPreviewImageUrl(order: any = this.order): string | null {
     const productionImageUrl = typeof order?.productionImageUrl === 'string'
       ? order.productionImageUrl.trim()
@@ -252,8 +253,10 @@ export class OrderDetailComponent implements OnInit {
     const generatedImageUrl = typeof order?.generatedImageUrl === 'string'
       ? order.generatedImageUrl.trim()
       : order?.generatedImageUrl;
-
-    return productionImageUrl || generatedImageUrl || null;
+    // Use helper to ensure absolute URL
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { getAbsoluteImageUrl } = require('../../../@core/utils/image-url.util');
+    return getAbsoluteImageUrl(productionImageUrl || generatedImageUrl || null);
   }
 
   downloadGeneratedImage(): void {

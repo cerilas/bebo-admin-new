@@ -57,21 +57,19 @@
                     <label class="label">Kare Görsel 1 (1080x1080)</label>
                     <div class="image-input-group">
                       <div class="image-preview" *ngIf="productForm.get('imageSquareUrl')?.value">
-                        <img [src]="productForm.get('imageSquareUrl')?.value"
+                        <img [src]="getAbsoluteImageUrl(productForm.get('imageSquareUrl')?.value)"
                           (click)="openImage(productForm.get('imageSquareUrl')?.value)" alt="Kare Görsel 1"
                           class="thumbnail">
                       </div>
                       <div class="input-with-upload">
                         <input type="text" nbInput fullWidth formControlName="imageSquareUrl" placeholder="https://...">
-                        <div class="upload-button">
-                          <input type="file" #squareImageInput accept="image/*" (change)="onSquareImageSelect($event)"
-                            hidden>
-                          <button nbButton status="primary" size="small" type="button" [disabled]="uploadingSquareImage"
-                            (click)="squareImageInput.click()">
-                            <nb-icon *ngIf="!uploadingSquareImage" icon="cloud-upload-outline"></nb-icon>
-                            <nb-spinner *ngIf="uploadingSquareImage" size="tiny" status="control"></nb-spinner>
-                          </button>
-                        </div>
+                        <ngx-admin-image-upload
+                          [compact]="true"
+                          [currentUrl]="productForm.get('imageSquareUrl')?.value"
+                          [buttonText]="'Yükle'"
+                          (uploaded)="onProductImageUploaded('imageSquareUrl', $event, 'Kare görsel 1 yüklendi')"
+                          (uploadError)="onImageUploadError($event)">
+                        </ngx-admin-image-upload>
                       </div>
                     </div>
                   </div>
@@ -82,22 +80,20 @@
                     <label class="label">Kare Görsel 2 (1080x1080)</label>
                     <div class="image-input-group">
                       <div class="image-preview" *ngIf="productForm.get('imageSquareUrl2')?.value">
-                        <img [src]="productForm.get('imageSquareUrl2')?.value"
+                        <img [src]="getAbsoluteImageUrl(productForm.get('imageSquareUrl2')?.value)"
                           (click)="openImage(productForm.get('imageSquareUrl2')?.value)" alt="Kare Görsel 2"
                           class="thumbnail">
                       </div>
                       <div class="input-with-upload">
                         <input type="text" nbInput fullWidth formControlName="imageSquareUrl2"
                           placeholder="https://...">
-                        <div class="upload-button">
-                          <input type="file" #squareImage2Input accept="image/*" (change)="onSquareImage2Select($event)"
-                            hidden>
-                          <button nbButton status="primary" size="small" type="button"
-                            [disabled]="uploadingSquareImage2" (click)="squareImage2Input.click()">
-                            <nb-icon *ngIf="!uploadingSquareImage2" icon="cloud-upload-outline"></nb-icon>
-                            <nb-spinner *ngIf="uploadingSquareImage2" size="tiny" status="control"></nb-spinner>
-                          </button>
-                        </div>
+                        <ngx-admin-image-upload
+                          [compact]="true"
+                          [currentUrl]="productForm.get('imageSquareUrl2')?.value"
+                          [buttonText]="'Yükle'"
+                          (uploaded)="onProductImageUploaded('imageSquareUrl2', $event, 'Kare görsel 2 yüklendi')"
+                          (uploadError)="onImageUploadError($event)">
+                        </ngx-admin-image-upload>
                       </div>
                     </div>
                   </div>
@@ -108,22 +104,20 @@
                     <label class="label">Kare Görsel 3 (1080x1080)</label>
                     <div class="image-input-group">
                       <div class="image-preview" *ngIf="productForm.get('imageSquareUrl3')?.value">
-                        <img [src]="productForm.get('imageSquareUrl3')?.value"
+                        <img [src]="getAbsoluteImageUrl(productForm.get('imageSquareUrl3')?.value)"
                           (click)="openImage(productForm.get('imageSquareUrl3')?.value)" alt="Kare Görsel 3"
                           class="thumbnail">
                       </div>
                       <div class="input-with-upload">
                         <input type="text" nbInput fullWidth formControlName="imageSquareUrl3"
                           placeholder="https://...">
-                        <div class="upload-button">
-                          <input type="file" #squareImage3Input accept="image/*" (change)="onSquareImage3Select($event)"
-                            hidden>
-                          <button nbButton status="primary" size="small" type="button"
-                            [disabled]="uploadingSquareImage3" (click)="squareImage3Input.click()">
-                            <nb-icon *ngIf="!uploadingSquareImage3" icon="cloud-upload-outline"></nb-icon>
-                            <nb-spinner *ngIf="uploadingSquareImage3" size="tiny" status="control"></nb-spinner>
-                          </button>
-                        </div>
+                        <ngx-admin-image-upload
+                          [compact]="true"
+                          [currentUrl]="productForm.get('imageSquareUrl3')?.value"
+                          [buttonText]="'Yükle'"
+                          (uploaded)="onProductImageUploaded('imageSquareUrl3', $event, 'Kare görsel 3 yüklendi')"
+                          (uploadError)="onImageUploadError($event)">
+                        </ngx-admin-image-upload>
                       </div>
                     </div>
                   </div>
@@ -142,15 +136,13 @@
                       </div>
                       <div class="input-with-upload">
                         <input type="text" nbInput fullWidth formControlName="imageWideUrl" placeholder="https://...">
-                        <div class="upload-button">
-                          <input type="file" #wideImageInput accept="image/*" (change)="onWideImageSelect($event)"
-                            hidden>
-                          <button nbButton status="primary" size="small" type="button" [disabled]="uploadingWideImage"
-                            (click)="wideImageInput.click()">
-                            <nb-icon *ngIf="!uploadingWideImage" icon="cloud-upload-outline"></nb-icon>
-                            <nb-spinner *ngIf="uploadingWideImage" size="tiny" status="control"></nb-spinner>
-                          </button>
-                        </div>
+                        <ngx-admin-image-upload
+                          [compact]="true"
+                          [currentUrl]="productForm.get('imageWideUrl')?.value"
+                          [buttonText]="'Yükle'"
+                          (uploaded)="onProductImageUploaded('imageWideUrl', $event, 'Geniş görsel yüklendi')"
+                          (uploadError)="onImageUploadError($event)">
+                        </ngx-admin-image-upload>
                       </div>
                     </div>
                   </div>
@@ -471,15 +463,13 @@
                         </div>
                         <div class="input-with-upload">
                           <input type="text" nbInput fullWidth formControlName="frameImage" placeholder="https://...">
-                          <div class="upload-button">
-                            <input type="file" #frameImageInput accept="image/*" (change)="onFrameImageSelect($event)"
-                              hidden>
-                            <button nbButton status="primary" size="small" type="button"
-                              [disabled]="uploadingFrameImage" (click)="frameImageInput.click()">
-                              <nb-icon *ngIf="!uploadingFrameImage" icon="cloud-upload-outline"></nb-icon>
-                              <nb-spinner *ngIf="uploadingFrameImage" size="tiny" status="control"></nb-spinner>
-                            </button>
-                          </div>
+                          <ngx-admin-image-upload
+                            [compact]="true"
+                            [currentUrl]="frameForm.get('frameImage')?.value"
+                            [buttonText]="'Yükle'"
+                            (uploaded)="onFrameImageUploaded('frameImage', $event, 'Çerçeve görseli yüklendi')"
+                            (uploadError)="onImageUploadError($event)">
+                          </ngx-admin-image-upload>
                         </div>
                       </div>
                     </div>
@@ -496,15 +486,13 @@
                         <div class="input-with-upload">
                           <input type="text" nbInput fullWidth formControlName="frameImageLarge"
                             placeholder="https://...">
-                          <div class="upload-button">
-                            <input type="file" #frameImageLargeInput accept="image/*"
-                              (change)="onFrameImageLargeSelect($event)" hidden>
-                            <button nbButton status="primary" size="small" type="button"
-                              [disabled]="uploadingFrameImageLarge" (click)="frameImageLargeInput.click()">
-                              <nb-icon *ngIf="!uploadingFrameImageLarge" icon="cloud-upload-outline"></nb-icon>
-                              <nb-spinner *ngIf="uploadingFrameImageLarge" size="tiny" status="control"></nb-spinner>
-                            </button>
-                          </div>
+                          <ngx-admin-image-upload
+                            [compact]="true"
+                            [currentUrl]="frameForm.get('frameImageLarge')?.value"
+                            [buttonText]="'Yükle'"
+                            (uploaded)="onFrameImageUploaded('frameImageLarge', $event, 'Büyük çerçeve görseli yüklendi')"
+                            (uploadError)="onImageUploadError($event)">
+                          </ngx-admin-image-upload>
                         </div>
                       </div>
                     </div>
@@ -534,15 +522,13 @@
                               <div class="input-with-upload">
                                 <input type="text" nbInput fullWidth formControlName="mockupTemplate"
                                   placeholder="https://cdn.example.com/mockups/siyah-cerceve-landscape.png">
-                                <div class="upload-button">
-                                  <input type="file" #mockupTemplateInput accept="image/*"
-                                    (change)="onMockupTemplateSelect($event)" hidden>
-                                  <button nbButton status="primary" size="small" type="button"
-                                    [disabled]="uploadingMockupTemplate" (click)="mockupTemplateInput.click()">
-                                    <nb-icon *ngIf="!uploadingMockupTemplate" icon="cloud-upload-outline"></nb-icon>
-                                    <nb-spinner *ngIf="uploadingMockupTemplate" size="tiny" status="control"></nb-spinner>
-                                  </button>
-                                </div>
+                                <ngx-admin-image-upload
+                                  [compact]="true"
+                                  [currentUrl]="frameForm.get('mockupTemplate')?.value"
+                                  [buttonText]="'Yükle'"
+                                  (uploaded)="onFrameImageUploaded('mockupTemplate', $event, 'Mockup template yüklendi')"
+                                  (uploadError)="onImageUploadError($event)">
+                                </ngx-admin-image-upload>
                               </div>
                             </div>
                           </div>
@@ -633,15 +619,13 @@
                               <div class="input-with-upload">
                                 <input type="text" nbInput fullWidth formControlName="mockupTemplateVertical"
                                   placeholder="https://cdn.example.com/mockups/siyah-cerceve-portrait.png">
-                                <div class="upload-button">
-                                  <input type="file" #mockupTemplateVerticalInput accept="image/*"
-                                    (change)="onMockupTemplateVerticalSelect($event)" hidden>
-                                  <button nbButton status="primary" size="small" type="button"
-                                    [disabled]="uploadingMockupTemplateVertical" (click)="mockupTemplateVerticalInput.click()">
-                                    <nb-icon *ngIf="!uploadingMockupTemplateVertical" icon="cloud-upload-outline"></nb-icon>
-                                    <nb-spinner *ngIf="uploadingMockupTemplateVertical" size="tiny" status="control"></nb-spinner>
-                                  </button>
-                                </div>
+                                <ngx-admin-image-upload
+                                  [compact]="true"
+                                  [currentUrl]="frameForm.get('mockupTemplateVertical')?.value"
+                                  [buttonText]="'Yükle'"
+                                  (uploaded)="onFrameImageUploaded('mockupTemplateVertical', $event, 'Dikey mockup template yüklendi')"
+                                  (uploadError)="onImageUploadError($event)">
+                                </ngx-admin-image-upload>
                               </div>
                             </div>
                           </div>

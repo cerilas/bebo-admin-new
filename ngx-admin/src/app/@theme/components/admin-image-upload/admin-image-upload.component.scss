@@ -1,0 +1,43 @@
+.upload-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.upload-dropzone {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.5rem;
+  border: 1px dashed var(--border-basic-color-3);
+  border-radius: 0.375rem;
+}
+
+.upload-dropzone.drag-active {
+  border-style: solid;
+}
+
+.upload-help {
+  opacity: 0.8;
+}
+
+.upload-preview img {
+  max-width: 120px;
+  max-height: 120px;
+  object-fit: cover;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+.upload-error {
+  color: var(--color-danger-500);
+}
+
+.upload-wrapper.compact .upload-dropzone {
+  padding: 0.25rem;
+}
+
+.upload-wrapper.compact .upload-help {
+  display: none;
+}

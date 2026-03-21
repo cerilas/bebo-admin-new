@@ -1,10 +1,12 @@
+import { getAbsoluteImageUrl } from '../../../@core/utils/image-url.util';
+  // Expose helper for template
+  getAbsoluteImageUrl = getAbsoluteImageUrl;
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NbToastrService } from '@nebular/theme';
 import { ProductsService, ProductWithDetails } from '../../../@core/services/products.service';
 import { ProductSize, ProductFrame, SizeFrameAvailability } from '../../../@core/models/product.model';
-import { ImageUploadService } from '../../../@core/services/image-upload.service';
 import { MockupConfig } from '../mockup-editor/mockup-editor.component';
 
 @Component({
@@ -36,16 +38,6 @@ export class ProductFormComponent implements OnInit {
   showFrameForm = false;
   savingFrame = false;
 
-  // Image upload states
-  uploadingSquareImage = false;
-  uploadingSquareImage2 = false;
-  uploadingSquareImage3 = false;
-  uploadingWideImage = false;
-  uploadingFrameImage = false;
-  uploadingFrameImageLarge = false;
-  uploadingMockupTemplate = false;
-  uploadingMockupTemplateVertical = false;
-
   // Size-Frame Availability
   availabilityMap: { [key: string]: boolean } = {}; // key: "sizeId_frameId"
   savingAvailability = false;
@@ -54,7 +46,6 @@ export class ProductFormComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private productsService: ProductsService,
-    private imageUploadService: ImageUploadService,
     private route: ActivatedRoute,
     private router: Router,
     private toastrService: NbToastrService,
@@ -551,156 +542,18 @@ export class ProductFormComponent implements OnInit {
 
   // ==================== IMAGE UPLOAD ====================
 
-  onSquareImageSelect(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      this.uploadingSquareImage = true;
-      this.imageUploadService.upload(input.files[0]).subscribe({
-        next: (response) => {
-          this.productForm.patchValue({ imageSquareUrl: response.imageUrl });
-          this.uploadingSquareImage = false;
-          this.toastrService.success('Kare görsel 1 yüklendi', 'Başarılı');
-        },
-        error: (error) => {
-          console.error('Square image 1 upload error:', error);
-          this.uploadingSquareImage = false;
-          this.toastrService.danger('Görsel yüklenemedi', 'Hata');
-        },
-      });
-    }
+  onProductImageUploaded(controlName: string, imageUrl: string, successMessage: string): void {
+    this.productForm.patchValue({ [controlName]: imageUrl });
+    this.toastrService.success(successMessage, 'Başarılı');
   }
 
-  onSquareImage2Select(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      this.uploadingSquareImage2 = true;
-      this.imageUploadService.upload(input.files[0]).subscribe({
-        next: (response) => {
-          this.productForm.patchValue({ imageSquareUrl2: response.imageUrl });
-          this.uploadingSquareImage2 = false;
-          this.toastrService.success('Kare görsel 2 yüklendi', 'Başarılı');
-        },
-        error: (error) => {
-          console.error('Square image 2 upload error:', error);
-          this.uploadingSquareImage2 = false;
-          this.toastrService.danger('Görsel yüklenemedi', 'Hata');
-        },
-      });
-    }
+  onFrameImageUploaded(controlName: string, imageUrl: string, successMessage: string): void {
+    this.frameForm.patchValue({ [controlName]: imageUrl });
+    this.toastrService.success(successMessage, 'Başarılı');
   }
 
-  onSquareImage3Select(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      this.uploadingSquareImage3 = true;
-      this.imageUploadService.upload(input.files[0]).subscribe({
-        next: (response) => {
-          this.productForm.patchValue({ imageSquareUrl3: response.imageUrl });
-          this.uploadingSquareImage3 = false;
-          this.toastrService.success('Kare görsel 3 yüklendi', 'Başarılı');
-        },
-        error: (error) => {
-          console.error('Square image 3 upload error:', error);
-          this.uploadingSquareImage3 = false;
-          this.toastrService.danger('Görsel yüklenemedi', 'Hata');
-        },
-      });
-    }
-  }
-
-  onWideImageSelect(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      this.uploadingWideImage = true;
-      this.imageUploadService.upload(input.files[0]).subscribe({
-        next: (response) => {
-          this.productForm.patchValue({ imageWideUrl: response.imageUrl });
-          this.uploadingWideImage = false;
-          this.toastrService.success('Geniş görsel yüklendi', 'Başarılı');
-        },
-        error: (error) => {
-          console.error('Wide image upload error:', error);
-          this.uploadingWideImage = false;
-          this.toastrService.danger('Görsel yüklenemedi', 'Hata');
-        },
-      });
-    }
-  }
-
-  onFrameImageSelect(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      this.uploadingFrameImage = true;
-      this.imageUploadService.upload(input.files[0]).subscribe({
-        next: (response) => {
-          this.frameForm.patchValue({ frameImage: response.imageUrl });
-          this.uploadingFrameImage = false;
-          this.toastrService.success('Çerçeve görseli yüklendi', 'Başarılı');
-        },
-        error: (error) => {
-          console.error('Frame image upload error:', error);
-          this.uploadingFrameImage = false;
-          this.toastrService.danger('Görsel yüklenemedi', 'Hata');
-        },
-      });
-    }
-  }
-
-  onFrameImageLargeSelect(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      this.uploadingFrameImageLarge = true;
-      this.imageUploadService.upload(input.files[0]).subscribe({
-        next: (response) => {
-          this.frameForm.patchValue({ frameImageLarge: response.imageUrl });
-          this.uploadingFrameImageLarge = false;
-          this.toastrService.success('Büyük çerçeve görseli yüklendi', 'Başarılı');
-        },
-        error: (error) => {
-          console.error('Frame large image upload error:', error);
-          this.uploadingFrameImageLarge = false;
-          this.toastrService.danger('Görsel yüklenemedi', 'Hata');
-        },
-      });
-    }
-  }
-
-  onMockupTemplateSelect(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      this.uploadingMockupTemplate = true;
-      this.imageUploadService.upload(input.files[0]).subscribe({
-        next: (response) => {
-          this.frameForm.patchValue({ mockupTemplate: response.imageUrl });
-          this.uploadingMockupTemplate = false;
-          this.toastrService.success('Mockup template yüklendi', 'Başarılı');
-        },
-        error: (error) => {
-          console.error('Mockup template upload error:', error);
-          this.uploadingMockupTemplate = false;
-          this.toastrService.danger('Görsel yüklenemedi', 'Hata');
-        },
-      });
-    }
-  }
-
-  onMockupTemplateVerticalSelect(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      this.uploadingMockupTemplateVertical = true;
-      this.imageUploadService.upload(input.files[0]).subscribe({
-        next: (response) => {
-          this.frameForm.patchValue({ mockupTemplateVertical: response.imageUrl });
-          this.uploadingMockupTemplateVertical = false;
-          this.toastrService.success('Dikey mockup template yüklendi', 'Başarılı');
-        },
-        error: (error) => {
-          console.error('Vertical mockup template upload error:', error);
-          this.uploadingMockupTemplateVertical = false;
-          this.toastrService.danger('Görsel yüklenemedi', 'Hata');
-        },
-      });
-    }
+  onImageUploadError(message: string): void {
+    this.toastrService.danger(message || 'Görsel yüklenemedi', 'Hata');
   }
 
   // ==================== MOCKUP EDITOR HELPERS ====================

@@ -1,0 +1,30 @@
+<div class="upload-wrapper" [class.compact]="compact">
+  <div
+    class="upload-dropzone"
+    [class.drag-active]="dragActive"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
+    (drop)="onDrop($event)">
+    <input #fileInput type="file" accept="image/*" (change)="onFileInputChange($event)" hidden>
+
+    <button
+      nbButton
+      status="primary"
+      size="small"
+      type="button"
+      [disabled]="uploading"
+      (click)="fileInput.click()">
+      <nb-icon *ngIf="!uploading" icon="cloud-upload-outline"></nb-icon>
+      <nb-spinner *ngIf="uploading" size="tiny" status="control"></nb-spinner>
+      {{ uploading ? 'Yükleniyor...' : buttonText }}
+    </button>
+
+    <small class="upload-help">veya görseli sürükleyip bırakın (max 5MB)</small>
+  </div>
+
+  <div *ngIf="currentUrl" class="upload-preview">
+    <img [src]="currentUrl" alt="Yüklenen görsel önizleme">
+  </div>
+
+  <small *ngIf="errorMessage" class="upload-error">{{ errorMessage }}</small>
+</div>

@@ -170,7 +170,7 @@
       (click)="openDetail(image)"
     >
       <div class="image-container">
-        <img [src]="image.thumbnailUrl || image.imageUrl" [alt]="image.prompt" loading="lazy">
+        <img [src]="getAbsoluteImageUrl(image.thumbnailUrl || image.imageUrl)" [alt]="image.prompt" loading="lazy">
         <div class="image-overlay">
           <button class="overlay-btn" nbTooltip="Detay">
             <nb-icon icon="expand-outline"></nb-icon>
@@ -217,7 +217,7 @@
       
       <div class="modal-body" *ngIf="selectedImage">
         <div class="image-preview">
-          <img [src]="selectedImage.imageUrl" [alt]="selectedImage.prompt">
+          <img [src]="getAbsoluteImageUrl(selectedImage.imageUrl)" [alt]="selectedImage.prompt">
         </div>
         
         <div class="detail-sections">

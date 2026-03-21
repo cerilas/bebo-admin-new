@@ -17,6 +17,7 @@ import { SettingsComponent } from './settings.component';
 import { CreditSettingsComponent } from './credit-settings/credit-settings.component';
 import { AboutSettingsComponent } from './about-settings/about-settings.component';
 import { AiSettingsComponent } from './ai-settings/ai-settings.component';
+import { AdminImageUploadComponent } from '../../@theme/components/admin-image-upload/admin-image-upload.component';
 
 @NgModule({
   declarations: [
@@ -38,6 +39,7 @@ import { AiSettingsComponent } from './ai-settings/ai-settings.component';
     NbToggleModule,
     NbIconModule,
     NbSpinnerModule,
+    AdminImageUploadComponent,
   ],
 })
 export class SettingsModule { }
