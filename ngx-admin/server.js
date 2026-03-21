@@ -118,8 +118,11 @@ app.post('/api/admin/upload-image', requireAdminUploadAccess, (req, res) => {
       await fs.promises.writeFile(absolutePath, req.file.buffer);
 
       const relativePath = path.join(relativeDirectory, fileName).replace(/\\/g, '/');
-      const imageUrl = `/api/files/${relativePath}`;
-
+      // Always use www.birebiro.com in production, relative in dev
+      let imageUrl = `/api/files/${relativePath}`;
+      if (process.env.NODE_ENV === 'production') {
+        imageUrl = `https://www.birebiro.com${imageUrl}`;
+      }
       return res.json({
         image_url: imageUrl,
         thumb_url: imageUrl,

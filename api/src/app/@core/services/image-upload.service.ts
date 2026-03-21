@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
 
 export interface ImageUploadResponse {
   image_url: string;
@@ -12,12 +13,12 @@ export interface ImageUploadResponse {
   providedIn: 'root',
 })
 export class ImageUploadService {
-  private uploadUrl = 'https://n8n-production-14b9.up.railway.app/webhook/upload-image';
+  private uploadUrl = `${environment.apiUrl}/admin/upload-image`;
 
   constructor(private http: HttpClient) {}
 
   /**
-   * Upload image file to N8N webhook
+  * Upload image file to admin backend endpoint
    * @param file - The image file to upload
    * @returns Observable with image_url and thumb_url
    */
@@ -25,7 +26,11 @@ export class ImageUploadService {
     const formData = new FormData();
     formData.append('image', file);
 
-    return this.http.post<ImageUploadResponse>(this.uploadUrl, formData);
+    return this.http.post<ImageUploadResponse>(this.uploadUrl, formData, {
+      headers: {
+        'x-admin-upload-key': environment.adminUploadKey,
+      },
+    });
   }
 
   /**

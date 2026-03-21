@@ -1,11 +1,58 @@
+// PUBLIC USER IMAGE UPLOAD ENDPOINT
+// This endpoint is for user uploads (not admin panel). It always returns image URLs with www.birebiro.com in production.
+app.post('/api/upload-image', (req, res) => {
+  upload.single('image')(req, res, async (error) => {
+    if (error) {
+      if (error.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'Dosya boyutu 5MB\'dan büyük olamaz' });
+      }
+      return res.status(400).json({ error: error.message || 'Görsel yüklenemedi' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Yüklenecek görsel bulunamadı' });
+    }
+
+    try {
+      const now = new Date();
+      const year = String(now.getFullYear());
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const extension = getExtensionFromFile(req.file);
+      const fileName = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${extension}`;
+
+      const relativeDirectory = path.join(year, month);
+      const absoluteDirectory = path.join(UPLOAD_DIR, relativeDirectory);
+      await fs.promises.mkdir(absoluteDirectory, { recursive: true });
+
+      const absolutePath = path.join(absoluteDirectory, fileName);
+      await fs.promises.writeFile(absolutePath, req.file.buffer);
+
+      const relativePath = path.join(relativeDirectory, fileName).replace(/\\/g, '/');
+      // Always use www.birebiro.com in production, relative in dev
+      let imageUrl = `/api/files/${relativePath}`;
+      if (process.env.NODE_ENV === 'production') {
+        imageUrl = `https://www.birebiro.com${imageUrl}`;
+      }
+      return res.json({
+        image_url: imageUrl,
+        thumb_url: imageUrl,
+      });
+    } catch (writeError) {
+      console.error('Image upload write error:', writeError);
+      return res.status(500).json({ error: 'Görsel kaydedilirken hata oluştu' });
+    }
+  });
+});
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
 const path = require('path');
+const fs = require('fs');
 const compression = require('compression');
 const crypto = require('crypto');
 const https = require('https');
 const net = require('net');
+const multer = require('multer');
 require('dotenv').config();
 
 const app = express();
@@ -40,6 +87,103 @@ app.use(express.json());
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path}`);
   next();
+});
+
+const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, 'files');
+const ADMIN_UPLOAD_KEY = process.env.ADMIN_UPLOAD_KEY || 'birebiro2024';
+const MAX_UPLOAD_SIZE = 5 * 1024 * 1024;
+
+if (!fs.existsSync(UPLOAD_DIR)) {
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_UPLOAD_SIZE },
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype || !file.mimetype.startsWith('image/')) {
+      cb(new Error('Lütfen geçerli bir görsel dosyası seçin'));
+      return;
+    }
+    cb(null, true);
+  },
+});
+
+const requireAdminUploadAccess = (req, res, next) => {
+  const providedKey = req.headers['x-admin-upload-key'];
+
+  if (!providedKey) {
+    return res.status(401).json({ error: 'Admin upload erişim anahtarı gerekli' });
+  }
+
+  if (providedKey !== ADMIN_UPLOAD_KEY) {
+    return res.status(403).json({ error: 'Bu işlem için admin yetkisi gerekli' });
+  }
+
+  return next();
+};
+
+const getExtensionFromFile = (file) => {
+  const fromName = path.extname(file.originalname || '').toLowerCase();
+  if (fromName) {
+    return fromName;
+  }
+
+  const mimeExtensionMap = {
+    'image/jpeg': '.jpg',
+    'image/png': '.png',
+    'image/webp': '.webp',
+    'image/gif': '.gif',
+    'image/svg+xml': '.svg',
+  };
+
+  return mimeExtensionMap[file.mimetype] || '.jpg';
+};
+
+app.use('/api/files', express.static(UPLOAD_DIR));
+
+app.post('/api/admin/upload-image', requireAdminUploadAccess, (req, res) => {
+  upload.single('image')(req, res, async (error) => {
+    if (error) {
+      if (error.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'Dosya boyutu 5MB\'dan büyük olamaz' });
+      }
+      return res.status(400).json({ error: error.message || 'Görsel yüklenemedi' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Yüklenecek görsel bulunamadı' });
+    }
+
+    try {
+      const now = new Date();
+      const year = String(now.getFullYear());
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const extension = getExtensionFromFile(req.file);
+      const fileName = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${extension}`;
+
+      const relativeDirectory = path.join(year, month);
+      const absoluteDirectory = path.join(UPLOAD_DIR, relativeDirectory);
+      await fs.promises.mkdir(absoluteDirectory, { recursive: true });
+
+      const absolutePath = path.join(absoluteDirectory, fileName);
+      await fs.promises.writeFile(absolutePath, req.file.buffer);
+
+      const relativePath = path.join(relativeDirectory, fileName).replace(/\\/g, '/');
+      // Always use www.birebiro.com in production, relative in dev
+      let imageUrl = `/api/files/${relativePath}`;
+      if (process.env.NODE_ENV === 'production') {
+        imageUrl = `https://www.birebiro.com${imageUrl}`;
+      }
+      return res.json({
+        image_url: imageUrl,
+        thumb_url: imageUrl,
+      });
+    } catch (writeError) {
+      console.error('Image upload write error:', writeError);
+      return res.status(500).json({ error: 'Görsel kaydedilirken hata oluştu' });
+    }
+  });
 });
 
 // VERSION CHECK - Bu endpoint Railway'in hangi kodu çalıştırdığını gösterir

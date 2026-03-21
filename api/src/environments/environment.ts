@@ -11,5 +11,6 @@
 export const environment = {
   production: false,
   apiUrl: 'http://localhost:3000/api', // Your backend API URL
+  adminUploadKey: 'birebiro2024',
   databaseUrl: 'postgresql://postgres:ptrzmLFbwlrQYpPJfeAofGqMkXFdSIhu@crossover.proxy.rlwy.net:37534/railway',
 };
