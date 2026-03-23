@@ -146,14 +146,22 @@
           <div *ngIf="order.orderType === 'product' && order.generationId" class="product-box">
             <div class="box-title">
               Ürün Bilgisi
+              <!-- Üretim görseli varsa: İndir butonu -->
               <button *ngIf="hasProductionImage()" nbButton ghost size="tiny" status="primary"
                 (click)="downloadGeneratedImage()" class="download-btn" title="Üretim Görselini İndir">
                 <nb-icon icon="download-outline"></nb-icon>
               </button>
-              <span *ngIf="!hasProductionImage()" class="production-image-status">
+              <!-- Üretim görseli yoksa ve upscale edilmiyorsa: Oluştur butonu -->
+              <button *ngIf="!hasProductionImage() && !upscaling" nbButton size="tiny" status="warning" outline
+                (click)="generateProductionImage()" class="upscale-btn" title="Üretim Görseli Oluştur (Replicate x4 Upscale)">
+                <nb-icon icon="image-outline"></nb-icon>
+                Üretim Görseli Oluştur
+              </button>
+              <!-- Upscale devam ediyorsa: Sarı oluşturuluyor butonu -->
+              <button *ngIf="upscaling" nbButton size="tiny" status="warning" disabled class="upscale-btn generating">
                 <span class="inline-spinner" aria-hidden="true"></span>
-                Üretim Görseli Hazırlanıyor
-              </span>
+                Oluşturuluyor...
+              </button>
             </div>
             <div class="product-content">
               <div class="product-img-container">

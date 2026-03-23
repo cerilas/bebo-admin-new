@@ -1464,6 +1464,198 @@ app.get('/api/orders/:id', async (req, res) => {
   }
 });
 
+// ==================== REPLICATE UPSCALE (Üretim Görseli) ====================
+const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN || '';
+
+/**
+ * Helper: Replicate API'ye HTTPS isteği gönderir
+ */
+function replicateRequest(method, urlPath, body) {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'api.replicate.com',
+      path: urlPath,
+      method: method,
+      headers: {
+        'Authorization': `Bearer ${REPLICATE_API_TOKEN}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'wait',
+      },
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => { data += chunk; });
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          resolve({ status: res.statusCode, data: parsed });
+        } catch (e) {
+          reject(new Error(`Replicate API parse error: ${data}`));
+        }
+      });
+    });
+
+    req.on('error', reject);
+    req.setTimeout(120000, () => {
+      req.destroy();
+      reject(new Error('Replicate API timeout (120s)'));
+    });
+
+    if (body) {
+      req.write(JSON.stringify(body));
+    }
+    req.end();
+  });
+}
+
+/**
+ * POST /api/orders/:id/generate-production-image
+ * Replicate Google Image Upscaler ile üretim görseli oluşturur
+ * - Siparişin generatedImageUrl'ini alır
+ * - Replicate API'ye gönderir (x4 upscale)
+ * - Sonucu generated_image.production_image_url'e kaydeder
+ */
+app.post('/api/orders/:id/generate-production-image', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // 1. Sipariş ve görsel bilgisini al
+    const orderResult = await pool.query(`
+      SELECT o.id, o.generation_id as "generationId",
+             gi.id as "giId", gi.image_url as "generatedImageUrl", gi.production_image_url as "productionImageUrl"
+      FROM "order" o
+      LEFT JOIN generated_image gi ON o.generation_id = gi.generation_id
+      WHERE o.id = $1
+    `, [id]);
+
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Sipariş bulunamadı' });
+    }
+
+    const order = orderResult.rows[0];
+
+    // Zaten üretim görseli varsa tekrar oluşturma
+    if (order.productionImageUrl) {
+      return res.json({
+        success: true,
+        message: 'Üretim görseli zaten mevcut',
+        productionImageUrl: order.productionImageUrl,
+        alreadyExists: true,
+      });
+    }
+
+    if (!order.generatedImageUrl) {
+      return res.status(400).json({ error: 'Siparişe ait oluşturulmuş görsel bulunamadı' });
+    }
+
+    if (!order.giId) {
+      return res.status(400).json({ error: 'generated_image kaydı bulunamadı' });
+    }
+
+    console.log(`🎨 Üretim görseli oluşturuluyor - Sipariş #${id}, Kaynak: ${order.generatedImageUrl}`);
+
+    // 2. Replicate API'ye istek gönder (Google Image Upscaler - sync with Prefer: wait)
+    const replicateBody = {
+      version: 'dfad41707589d68ecdcfbff94b94b15f2ffd77b389059e7eca553c8e9b963b44',
+      input: {
+        image: order.generatedImageUrl,
+        upscale_factor: 'x4',
+        compression_quality: 80,
+      },
+    };
+
+    const response = await replicateRequest('POST', '/v1/predictions', replicateBody);
+
+    if (response.status !== 200 && response.status !== 201) {
+      console.error('Replicate API error:', response.data);
+      return res.status(502).json({
+        error: 'Replicate API hatası',
+        details: response.data?.detail || response.data?.error || 'Bilinmeyen hata',
+      });
+    }
+
+    const prediction = response.data;
+
+    // 3. Eğer sync ile tamamlandıysa (Prefer: wait)
+    if (prediction.status === 'succeeded' && prediction.output) {
+      const productionUrl = prediction.output;
+
+      // DB'ye kaydet
+      await pool.query(`
+        UPDATE generated_image SET production_image_url = $1 WHERE id = $2
+      `, [productionUrl, order.giId]);
+
+      console.log(`✅ Üretim görseli hazır - Sipariş #${id}: ${productionUrl}`);
+
+      return res.json({
+        success: true,
+        productionImageUrl: productionUrl,
+        predictionId: prediction.id,
+      });
+    }
+
+    // 4. Eğer hala işleniyorsa, polling yap (max 120 saniye)
+    if (prediction.status === 'starting' || prediction.status === 'processing') {
+      const predictionId = prediction.id;
+      let attempts = 0;
+      const maxAttempts = 60; // 60 * 2s = 120s
+
+      while (attempts < maxAttempts) {
+        await new Promise(r => setTimeout(r, 2000)); // 2 saniye bekle
+        attempts++;
+
+        const pollResponse = await replicateRequest('GET', `/v1/predictions/${predictionId}`, null);
+        const pollData = pollResponse.data;
+
+        if (pollData.status === 'succeeded' && pollData.output) {
+          const productionUrl = pollData.output;
+
+          // DB'ye kaydet
+          await pool.query(`
+            UPDATE generated_image SET production_image_url = $1 WHERE id = $2
+          `, [productionUrl, order.giId]);
+
+          console.log(`✅ Üretim görseli hazır (polling) - Sipariş #${id}: ${productionUrl}`);
+
+          return res.json({
+            success: true,
+            productionImageUrl: productionUrl,
+            predictionId: predictionId,
+          });
+        }
+
+        if (pollData.status === 'failed' || pollData.status === 'canceled') {
+          console.error(`❌ Replicate prediction failed: ${pollData.error}`);
+          return res.status(502).json({
+            error: 'Görsel upscale işlemi başarısız oldu',
+            details: pollData.error || 'Bilinmeyen hata',
+          });
+        }
+      }
+
+      return res.status(504).json({ error: 'Görsel upscale işlemi zaman aşımına uğradı (120s)' });
+    }
+
+    // Beklenmeyen durum
+    if (prediction.status === 'failed') {
+      return res.status(502).json({
+        error: 'Görsel upscale işlemi başarısız',
+        details: prediction.error || 'Bilinmeyen hata',
+      });
+    }
+
+    return res.status(502).json({
+      error: 'Beklenmeyen Replicate durumu',
+      status: prediction.status,
+    });
+
+  } catch (error) {
+    console.error(`❌ Production image generation error for order #${id}:`, error);
+    res.status(500).json({ error: 'Üretim görseli oluşturulurken sunucu hatası oluştu' });
+  }
+});
+
 // Update order shipping status and tracking number
 app.patch('/api/orders/:id/shipping', async (req, res) => {
   try {

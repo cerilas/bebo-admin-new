@@ -98,6 +98,14 @@ export class OrdersService extends BaseApiService {
   createInvoice(id: number): Observable<InvoiceResponse> {
     return this.http.post<InvoiceResponse>(`${this.apiUrl}${this.endpoint}/${id}/create-invoice`, {});
   }
+
+  /**
+   * Replicate Google Image Upscaler ile üretim görseli oluşturur
+   * @param id Sipariş ID
+   */
+  generateProductionImage(id: number): Observable<ProductionImageResponse> {
+    return this.http.post<ProductionImageResponse>(`${this.apiUrl}${this.endpoint}/${id}/generate-production-image`, {});
+  }
 }
 
 export interface InvoiceResponse {
@@ -106,4 +114,13 @@ export interface InvoiceResponse {
   invoiceId?: string;
   invoiceUrl?: string;
   error?: string;
+}
+
+export interface ProductionImageResponse {
+  success: boolean;
+  productionImageUrl?: string;
+  predictionId?: string;
+  alreadyExists?: boolean;
+  error?: string;
+  details?: string;
 }

@@ -18,6 +18,9 @@ export class OrderDetailComponent implements OnInit {
   hasChanges = false; // Güncelleme yapıldı mı?
   imageLoading = true; // Görsel yükleniyor mu?
 
+  // Upscale (Üretim Görseli)
+  upscaling = false;
+
   // Refund dialog
   showRefundConfirm = false;
   refundReason = '';
@@ -511,6 +514,41 @@ export class OrderDetailComponent implements OnInit {
       const url = `https://uygulama.parasut.com/773172/satislar/${this.order.parasutInvoiceId}`;
       window.open(url, '_blank');
     }
+  }
+
+  // ==================== ÜRETİM GÖRSELİ (REPLICATE UPSCALE) ====================
+  generateProductionImage(): void {
+    if (this.upscaling || this.hasProductionImage()) return;
+
+    this.upscaling = true;
+
+    this.ordersService.generateProductionImage(this.orderId).subscribe({
+      next: (response) => {
+        this.upscaling = false;
+        if (response.success) {
+          if (response.alreadyExists) {
+            this.toastrService.info('Üretim görseli zaten mevcut', 'Bilgi', { duration: 3000 });
+          } else {
+            this.toastrService.success('Üretim görseli başarıyla oluşturuldu!', 'Başarılı', { duration: 5000 });
+          }
+          this.hasChanges = true;
+          this.loadOrderDetail(); // Siparişi yeniden yükle
+        } else {
+          this.toastrService.danger(
+            response.error || 'Üretim görseli oluşturulamadı',
+            'Hata',
+            { duration: 5000 }
+          );
+        }
+      },
+      error: (err) => {
+        this.upscaling = false;
+        console.error('Production image generation error:', err);
+        const errorMsg = err.error?.error || 'Üretim görseli oluşturulurken hata oluştu';
+        const details = err.error?.details ? `\n${err.error.details}` : '';
+        this.toastrService.danger(`${errorMsg}${details}`, 'Hata', { duration: 8000 });
+      }
+    });
   }
 
   close() {
