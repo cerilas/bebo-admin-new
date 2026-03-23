@@ -1,12 +1,13 @@
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { catchError, map, tap } from 'rxjs/operators';
 import * as CryptoJS from 'crypto-js';
+import { environment } from '../../../environments/environment';
 
 interface AdminUser {
   username: string;
-  passwordHash: string;
-  accessKeyHash: string;
   displayName: string;
   role: string;
 }
@@ -27,6 +28,7 @@ export class AuthService {
   private readonly SESSION_KEY = 'birebiro_admin_session';
   private readonly SESSION_DURATION = 8 * 60 * 60 * 1000; // 8 saat
   private readonly SECRET_SALT = 'Birebiro_Admin_2024_SecureKey!@#$%';
+  private readonly AUTH_API_URL = `${environment.apiUrl}/admin-auth/login`;
   
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
@@ -34,43 +36,14 @@ export class AuthService {
   private currentUserSubject = new BehaviorSubject<AuthSession | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
-  // Admin kullanıcıları - önceden hesaplanmış hash'ler
-  private adminUsers: AdminUser[] = [];
-
-  constructor(private router: Router) {
-    // Admin kullanıcıları initialize et
-    this.initAdminUsers();
-    
+  constructor(
+    private router: Router,
+    private http: HttpClient,
+  ) {
     // Session kontrolü
     this.isAuthenticatedSubject.next(this.checkSession());
     this.currentUserSubject.next(this.getSession());
     this.startSessionCheck();
-  }
-
-  private initAdminUsers() {
-    this.adminUsers = [
-      {
-        username: 'admin',
-        passwordHash: this.hashValue('admin123'),
-        accessKeyHash: this.hashValue('birebiro2024'),
-        displayName: 'Admin',
-        role: 'super_admin'
-      },
-      {
-        username: 'deniz',
-        passwordHash: this.hashValue('deniz123'),
-        accessKeyHash: this.hashValue('birebiro2024'),
-        displayName: 'Deniz Can',
-        role: 'admin'
-      },
-      {
-        username: 'erdem',
-        passwordHash: this.hashValue('erdem123'),
-        accessKeyHash: this.hashValue('birebiro2024'),
-        displayName: 'Erdem',
-        role: 'admin'
-      }
-    ];
   }
 
   private hashValue(value: string): string {
@@ -91,10 +64,10 @@ export class AuthService {
     }, 60000);
   }
 
-  login(username: string, password: string, accessKey: string): { success: boolean; message: string } {
+  login(username: string, password: string, accessKey: string): Observable<{ success: boolean; message: string }> {
     // Input validation
     if (!username || !password || !accessKey) {
-      return { success: false, message: 'Tüm alanları doldurunuz.' };
+      return of({ success: false, message: 'Tüm alanları doldurunuz.' });
     }
 
     // Rate limiting için localStorage kontrolü
@@ -105,7 +78,7 @@ export class AuthService {
     // 5 başarısız denemeden sonra 5 dakika bekle
     if (attempts.count >= 5 && (now - attempts.lastAttempt) < 5 * 60 * 1000) {
       const remainingTime = Math.ceil((5 * 60 * 1000 - (now - attempts.lastAttempt)) / 1000 / 60);
-      return { success: false, message: `Çok fazla başarısız deneme. ${remainingTime} dakika sonra tekrar deneyin.` };
+      return of({ success: false, message: `Çok fazla başarısız deneme. ${remainingTime} dakika sonra tekrar deneyin.` });
     }
 
     // Reset attempts after cooldown
@@ -113,51 +86,57 @@ export class AuthService {
       attempts.count = 0;
     }
 
-    // Hash credentials
-    const passwordHash = this.hashValue(password);
-    const accessKeyHash = this.hashValue(accessKey);
+    return this.http.post<{ success: boolean; user?: AdminUser; message?: string }>(this.AUTH_API_URL, {
+      username,
+      password,
+      accessKey,
+    }).pipe(
+      tap((response) => {
+        if (!response?.success || !response.user) {
+          return;
+        }
 
-    // Find user
-    const user = this.adminUsers.find(u => 
-      u.username.toLowerCase() === username.toLowerCase() &&
-      u.passwordHash === passwordHash &&
-      u.accessKeyHash === accessKeyHash
+        localStorage.removeItem(attemptKey);
+
+        const session: AuthSession = {
+          username: response.user.username,
+          displayName: response.user.displayName,
+          role: response.user.role,
+          loginTime: now,
+          expiresAt: now + this.SESSION_DURATION,
+          token: this.generateToken()
+        };
+
+        const encryptedSession = CryptoJS.AES.encrypt(
+          JSON.stringify(session),
+          this.SECRET_SALT
+        ).toString();
+
+        localStorage.setItem(this.SESSION_KEY, encryptedSession);
+        this.isAuthenticatedSubject.next(true);
+        this.currentUserSubject.next(session);
+      }),
+      map((response) => {
+        if (response?.success) {
+          return { success: true, message: 'Giriş başarılı!' };
+        }
+
+        attempts.count++;
+        attempts.lastAttempt = Date.now();
+        localStorage.setItem(attemptKey, JSON.stringify(attempts));
+        return { success: false, message: response?.message || 'Giriş başarısız.' };
+      }),
+      catchError((error) => {
+        attempts.count++;
+        attempts.lastAttempt = Date.now();
+        localStorage.setItem(attemptKey, JSON.stringify(attempts));
+
+        return of({
+          success: false,
+          message: error?.error?.message || 'Giriş sırasında bir hata oluştu.'
+        });
+      })
     );
-
-    if (!user) {
-      // Increment failed attempts
-      attempts.count++;
-      attempts.lastAttempt = now;
-      localStorage.setItem(attemptKey, JSON.stringify(attempts));
-      
-      return { success: false, message: 'Geçersiz kullanıcı adı, şifre veya erişim anahtarı.' };
-    }
-
-    // Reset attempts on success
-    localStorage.removeItem(attemptKey);
-
-    // Create session
-    const session: AuthSession = {
-      username: user.username,
-      displayName: user.displayName,
-      role: user.role,
-      loginTime: now,
-      expiresAt: now + this.SESSION_DURATION,
-      token: this.generateToken()
-    };
-
-    // Encrypt and store session
-    const encryptedSession = CryptoJS.AES.encrypt(
-      JSON.stringify(session),
-      this.SECRET_SALT
-    ).toString();
-    
-    localStorage.setItem(this.SESSION_KEY, encryptedSession);
-    
-    this.isAuthenticatedSubject.next(true);
-    this.currentUserSubject.next(session);
-
-    return { success: true, message: 'Giriş başarılı!' };
   }
 
   logout() {

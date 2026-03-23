@@ -231,6 +231,28 @@ export class OrderDetailComponent implements OnInit {
     return 'Küçültülmüş';
   }
 
+  /**
+   * Transform verilerini CSS style objesine dönüştürür
+   * CSS transform: translate(X%, Y%) scale(scale)
+   */
+  getImageTransformStyle(): { [key: string]: string } | null {
+    const transform = this.getImageTransform();
+    if (!transform) return null;
+
+    // transform.x ve transform.y zaten yüzde olarak geliyorsa
+    // translate'e doğrudan yazabiliriz
+    const translateX = transform.x || 0;
+    const translateY = transform.y || 0;
+    const scale = transform.scale || 1;
+
+    // CSS transform: translate() ve scale() kombinasyonu
+    const transformValue = `translate(${translateX}%, ${translateY}%) scale(${scale})`;
+
+    return {
+      transform: transformValue
+    };
+  }
+
   calculateCreditsFromAmount(amountInTL: number): number {
     // Kredi fiyatlandırması - amountInTL zaten TL cinsinden (getOrderTotal'dan geliyor)
     // 1 kredi = 1.5 TL (150 kuruş) - Birebiro'nun gerçek fiyatlandırması

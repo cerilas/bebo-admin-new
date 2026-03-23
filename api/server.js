@@ -47,7 +47,67 @@ app.use((req, res, next) => {
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, 'files');
 const ADMIN_UPLOAD_KEY = process.env.ADMIN_UPLOAD_KEY || 'birebiro2024';
+const ADMIN_AUTH_ACCESS_KEY = process.env.ADMIN_AUTH_ACCESS_KEY || process.env.ADMIN_ACCESS_KEY || 'birebiro2026';
 const MAX_UPLOAD_SIZE = 5 * 1024 * 1024;
+
+const adminAuthAttempts = new Map();
+
+const getDefaultAdminUsers = () => ([
+  {
+    username: 'admin',
+    password: 'admin123',
+    displayName: 'Admin',
+    role: 'super_admin',
+  },
+  {
+    username: 'deniz',
+    password: 'deniz123',
+    displayName: 'Deniz Can',
+    role: 'admin',
+  },
+  {
+    username: 'erdem',
+    password: 'erdem123',
+    displayName: 'Erdem',
+    role: 'admin',
+  },
+]);
+
+const getAdminAuthUsers = () => {
+  const raw = process.env.ADMIN_AUTH_USERS_JSON;
+
+  if (!raw) {
+    return getDefaultAdminUsers();
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      throw new Error('ADMIN_AUTH_USERS_JSON must be an array');
+    }
+
+    return parsed
+      .filter(user => user && user.username && user.password)
+      .map(user => ({
+        username: String(user.username),
+        password: String(user.password),
+        displayName: String(user.displayName || user.username),
+        role: String(user.role || 'admin'),
+      }));
+  } catch (error) {
+    console.error('Failed to parse ADMIN_AUTH_USERS_JSON:', error.message);
+    return getDefaultAdminUsers();
+  }
+};
+
+const getRequestIp = (req) => {
+  const forwardedFor = req.headers['x-forwarded-for'];
+  if (typeof forwardedFor === 'string' && forwardedFor.trim()) {
+    return forwardedFor.split(',')[0].trim();
+  }
+
+  return req.ip || req.connection?.remoteAddress || 'unknown';
+};
 
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -95,6 +155,58 @@ const getExtensionFromFile = (file) => {
 
   return mimeExtensionMap[file.mimetype] || '.jpg';
 };
+
+app.post('/api/admin-auth/login', (req, res) => {
+  const { username, password, accessKey } = req.body || {};
+
+  if (!username || !password || !accessKey) {
+    return res.status(400).json({ success: false, message: 'Tüm alanları doldurunuz.' });
+  }
+
+  const now = Date.now();
+  const requestIp = getRequestIp(req);
+  const attemptKey = `${String(username).toLowerCase()}::${requestIp}`;
+  const attempts = adminAuthAttempts.get(attemptKey) || { count: 0, lastAttempt: 0 };
+
+  if (attempts.count >= 5 && (now - attempts.lastAttempt) < 5 * 60 * 1000) {
+    const remainingTime = Math.ceil((5 * 60 * 1000 - (now - attempts.lastAttempt)) / 1000 / 60);
+    return res.status(429).json({
+      success: false,
+      message: `Çok fazla başarısız deneme. ${remainingTime} dakika sonra tekrar deneyin.`
+    });
+  }
+
+  if ((now - attempts.lastAttempt) > 5 * 60 * 1000) {
+    attempts.count = 0;
+  }
+
+  const matchedUser = getAdminAuthUsers().find(user => (
+    user.username.toLowerCase() === String(username).toLowerCase() &&
+    user.password === password
+  ));
+
+  if (!matchedUser || accessKey !== ADMIN_AUTH_ACCESS_KEY) {
+    attempts.count += 1;
+    attempts.lastAttempt = now;
+    adminAuthAttempts.set(attemptKey, attempts);
+
+    return res.status(401).json({
+      success: false,
+      message: 'Geçersiz kullanıcı adı, şifre veya erişim anahtarı.'
+    });
+  }
+
+  adminAuthAttempts.delete(attemptKey);
+
+  return res.json({
+    success: true,
+    user: {
+      username: matchedUser.username,
+      displayName: matchedUser.displayName,
+      role: matchedUser.role,
+    },
+  });
+});
 
 app.use('/api/files', express.static(UPLOAD_DIR));
 
@@ -1540,7 +1652,8 @@ app.get('/api/orders/:id', async (req, res) => {
         gi.image_url as "generatedImageUrl",
         gi.production_image_url as "productionImageUrl",
         gi.text_prompt as "imagePrompt",
-        gi.credit_used as "creditsUsed"
+        gi.credit_used as "creditsUsed",
+        gi.image_transform as "imageTransform"
         
       FROM "order" o
       LEFT JOIN users u ON o.user_id = u.id

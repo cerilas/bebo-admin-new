@@ -53,14 +53,15 @@ export class LoginComponent implements OnInit {
 
     // Simulate loading for better UX
     setTimeout(() => {
-      const result = this.authService.login(username, password, accessKey);
-      
-      if (result.success) {
-        this.router.navigate([this.returnUrl]);
-      } else {
+      this.authService.login(username, password, accessKey).subscribe(result => {
+        if (result.success) {
+          this.router.navigate([this.returnUrl]);
+          return;
+        }
+
         this.error = result.message;
         this.loading = false;
-      }
+      });
     }, 800);
   }
 
