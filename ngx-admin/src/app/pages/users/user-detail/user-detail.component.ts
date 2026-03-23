@@ -2,6 +2,7 @@ import { Component, Input, OnInit } from '@angular/core';
 import { NbDialogRef } from '@nebular/theme';
 import { UsersService } from '../../../@core/services/users.service';
 import { UserDetail, UserGeneratedImage } from '../../../@core/models';
+import { getAbsoluteImageUrl } from '../../../@core/utils/image-url.util';
 
 @Component({
   selector: 'ngx-user-detail',
@@ -85,6 +86,10 @@ export class UserDetailComponent implements OnInit {
   closeLightbox() {
     this.showLightbox = false;
     this.selectedImage = null;
+  }
+
+  getGeneratedImageUrl(url: string | null | undefined): string | null {
+    return getAbsoluteImageUrl(url, 'www');
   }
 
   startEditCredits() {
