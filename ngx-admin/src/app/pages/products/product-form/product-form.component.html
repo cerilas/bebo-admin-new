@@ -65,6 +65,7 @@
                         <input type="text" nbInput fullWidth formControlName="imageSquareUrl" placeholder="https://...">
                         <ngx-admin-image-upload
                           [compact]="true"
+                          [source]="'product-form/imageSquareUrl'"
                           [currentUrl]="productForm.get('imageSquareUrl')?.value"
                           [buttonText]="'Yükle'"
                           (uploaded)="onProductImageUploaded('imageSquareUrl', $event, 'Kare görsel 1 yüklendi')"
@@ -89,6 +90,7 @@
                           placeholder="https://...">
                         <ngx-admin-image-upload
                           [compact]="true"
+                          [source]="'product-form/imageSquareUrl2'"
                           [currentUrl]="productForm.get('imageSquareUrl2')?.value"
                           [buttonText]="'Yükle'"
                           (uploaded)="onProductImageUploaded('imageSquareUrl2', $event, 'Kare görsel 2 yüklendi')"
@@ -113,6 +115,7 @@
                           placeholder="https://...">
                         <ngx-admin-image-upload
                           [compact]="true"
+                          [source]="'product-form/imageSquareUrl3'"
                           [currentUrl]="productForm.get('imageSquareUrl3')?.value"
                           [buttonText]="'Yükle'"
                           (uploaded)="onProductImageUploaded('imageSquareUrl3', $event, 'Kare görsel 3 yüklendi')"
@@ -138,6 +141,7 @@
                         <input type="text" nbInput fullWidth formControlName="imageWideUrl" placeholder="https://...">
                         <ngx-admin-image-upload
                           [compact]="true"
+                          [source]="'product-form/imageWideUrl'"
                           [currentUrl]="productForm.get('imageWideUrl')?.value"
                           [buttonText]="'Yükle'"
                           (uploaded)="onProductImageUploaded('imageWideUrl', $event, 'Geniş görsel yüklendi')"
@@ -465,6 +469,7 @@
                           <input type="text" nbInput fullWidth formControlName="frameImage" placeholder="https://...">
                           <ngx-admin-image-upload
                             [compact]="true"
+                            [source]="'product-form/frameImage'"
                             [currentUrl]="frameForm.get('frameImage')?.value"
                             [buttonText]="'Yükle'"
                             (uploaded)="onFrameImageUploaded('frameImage', $event, 'Çerçeve görseli yüklendi')"
@@ -488,6 +493,7 @@
                             placeholder="https://...">
                           <ngx-admin-image-upload
                             [compact]="true"
+                            [source]="'product-form/frameImageLarge'"
                             [currentUrl]="frameForm.get('frameImageLarge')?.value"
                             [buttonText]="'Yükle'"
                             (uploaded)="onFrameImageUploaded('frameImageLarge', $event, 'Büyük çerçeve görseli yüklendi')"
@@ -524,6 +530,7 @@
                                   placeholder="https://cdn.example.com/mockups/siyah-cerceve-landscape.png">
                                 <ngx-admin-image-upload
                                   [compact]="true"
+                                  [source]="'product-form/mockupTemplate'"
                                   [currentUrl]="frameForm.get('mockupTemplate')?.value"
                                   [buttonText]="'Yükle'"
                                   (uploaded)="onFrameImageUploaded('mockupTemplate', $event, 'Mockup template yüklendi')"
@@ -621,6 +628,7 @@
                                   placeholder="https://cdn.example.com/mockups/siyah-cerceve-portrait.png">
                                 <ngx-admin-image-upload
                                   [compact]="true"
+                                  [source]="'product-form/mockupTemplateVertical'"
                                   [currentUrl]="frameForm.get('mockupTemplateVertical')?.value"
                                   [buttonText]="'Yükle'"
                                   (uploaded)="onFrameImageUploaded('mockupTemplateVertical', $event, 'Dikey mockup template yüklendi')"

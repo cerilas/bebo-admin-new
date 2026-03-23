@@ -22,7 +22,7 @@
     <small class="upload-help">veya görseli sürükleyip bırakın (max 5MB)</small>
   </div>
 
-  <div *ngIf="currentUrl" class="upload-preview">
+  <div *ngIf="currentUrl && !compact" class="upload-preview">
     <img [src]="currentUrl" alt="Yüklenen görsel önizleme">
   </div>
 

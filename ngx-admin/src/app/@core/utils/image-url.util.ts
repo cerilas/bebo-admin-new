@@ -12,7 +12,7 @@ export function getAbsoluteImageUrl(url: string | null | undefined): string | nu
   // If starts with /api/files, prepend window.location.origin in production
   if (url.startsWith('/api/files')) {
     if (environment.production) {
-      return `https://www.birebiro.com${url}`;
+      return `https://admin.birebiro.com${url}`;
     }
     // In dev, backend is usually proxied, so relative is fine
     return url;

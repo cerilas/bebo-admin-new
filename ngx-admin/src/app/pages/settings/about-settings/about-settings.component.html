@@ -44,6 +44,7 @@
                 nbInput />
             </div>
             <ngx-admin-image-upload
+              [source]="'about-settings/image1'"
               [currentUrl]="imagePreview['image1']"
               [buttonText]="'Yükle'"
               (uploaded)="onImageUploaded('image1', $event)"
@@ -106,6 +107,7 @@
                 nbInput />
             </div>
             <ngx-admin-image-upload
+              [source]="'about-settings/image2'"
               [currentUrl]="imagePreview['image2']"
               [buttonText]="'Yükle'"
               (uploaded)="onImageUploaded('image2', $event)"
@@ -168,6 +170,7 @@
                 nbInput />
             </div>
             <ngx-admin-image-upload
+              [source]="'about-settings/image3'"
               [currentUrl]="imagePreview['image3']"
               [buttonText]="'Yükle'"
               (uploaded)="onImageUploaded('image3', $event)"

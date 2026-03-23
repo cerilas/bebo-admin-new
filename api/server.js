@@ -99,7 +99,7 @@ const getExtensionFromFile = (file) => {
 app.use('/api/files', express.static(UPLOAD_DIR));
 
 // PUBLIC USER IMAGE UPLOAD ENDPOINT
-// This endpoint is for user uploads (not admin panel). It always returns image URLs with www.birebiro.com in production.
+// This endpoint is for user uploads (not admin panel). It always returns image URLs with admin.birebiro.com.
 app.post('/api/upload-image', (req, res) => {
   upload.single('image')(req, res, async (error) => {
     if (error) {
@@ -128,11 +128,16 @@ app.post('/api/upload-image', (req, res) => {
       await fs.promises.writeFile(absolutePath, req.file.buffer);
 
       const relativePath = path.join(relativeDirectory, fileName).replace(/\\/g, '/');
-      // Always use www.birebiro.com in production, relative in dev
-      let imageUrl = `/api/files/${relativePath}`;
-      if (process.env.NODE_ENV === 'production') {
-        imageUrl = `https://www.birebiro.com${imageUrl}`;
-      }
+      const imageUrl = `https://admin.birebiro.com/api/files/${relativePath}`;
+
+      // Log to image_uploads table
+      const sourcePage = req.body?.source || req.headers['x-upload-source'] || 'unknown';
+      pool.query(
+        `INSERT INTO image_uploads (image_url, original_filename, file_size, mime_type, source_page, endpoint, ip_address, user_agent)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [imageUrl, req.file.originalname, req.file.size, req.file.mimetype, sourcePage, '/api/upload-image', req.ip, req.headers['user-agent']]
+      ).catch(err => console.error('image_uploads log error:', err));
+
       return res.json({
         image_url: imageUrl,
         thumb_url: imageUrl,
@@ -172,11 +177,16 @@ app.post('/api/admin/upload-image', requireAdminUploadAccess, (req, res) => {
       await fs.promises.writeFile(absolutePath, req.file.buffer);
 
       const relativePath = path.join(relativeDirectory, fileName).replace(/\\/g, '/');
-      // Always use www.birebiro.com in production, relative in dev
-      let imageUrl = `/api/files/${relativePath}`;
-      if (process.env.NODE_ENV === 'production') {
-        imageUrl = `https://www.birebiro.com${imageUrl}`;
-      }
+      const imageUrl = `https://admin.birebiro.com/api/files/${relativePath}`;
+
+      // Log to image_uploads table
+      const sourcePage = req.body?.source || req.headers['x-upload-source'] || 'admin-panel';
+      pool.query(
+        `INSERT INTO image_uploads (image_url, original_filename, file_size, mime_type, source_page, endpoint, ip_address, user_agent)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [imageUrl, req.file.originalname, req.file.size, req.file.mimetype, sourcePage, '/api/admin/upload-image', req.ip, req.headers['user-agent']]
+      ).catch(err => console.error('image_uploads log error:', err));
+
       return res.json({
         image_url: imageUrl,
         thumb_url: imageUrl,
@@ -3460,6 +3470,30 @@ const initSettingsTable = async () => {
 
 // Sunucu başlarken settings tablosunu kontrol et
 initSettingsTable();
+
+// Image uploads log tablosu
+const initImageUploadsTable = async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS image_uploads (
+        id SERIAL PRIMARY KEY,
+        image_url TEXT NOT NULL,
+        original_filename VARCHAR(500),
+        file_size INTEGER,
+        mime_type VARCHAR(100),
+        source_page VARCHAR(200),
+        endpoint VARCHAR(100),
+        ip_address VARCHAR(100),
+        user_agent TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    console.log('✅ image_uploads table initialized');
+  } catch (error) {
+    console.error('image_uploads table init error:', error);
+  }
+};
+initImageUploadsTable();
 
 // Get all settings
 app.get('/api/settings', async (req, res) => {

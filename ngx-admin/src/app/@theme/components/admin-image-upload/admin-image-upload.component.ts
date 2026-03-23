@@ -15,6 +15,7 @@ export class AdminImageUploadComponent {
   @Input() currentUrl = '';
   @Input() buttonText = 'Yükle';
   @Input() compact = false;
+  @Input() source = '';
 
   @Output() uploaded = new EventEmitter<string>();
   @Output() uploadError = new EventEmitter<string>();
@@ -75,7 +76,7 @@ export class AdminImageUploadComponent {
     this.uploading = true;
     this.uploadingChange.emit(true);
 
-    this.imageUploadService.uploadImage(file)
+    this.imageUploadService.uploadImage(file, this.source)
       .pipe(finalize(() => {
         this.uploading = false;
         this.uploadingChange.emit(false);

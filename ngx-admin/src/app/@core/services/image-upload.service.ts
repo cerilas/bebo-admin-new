@@ -22,9 +22,12 @@ export class ImageUploadService {
    * @param file - The image file to upload
    * @returns Observable with image_url and thumb_url
    */
-  uploadImage(file: File): Observable<ImageUploadResponse> {
+  uploadImage(file: File, source?: string): Observable<ImageUploadResponse> {
     const formData = new FormData();
     formData.append('image', file);
+    if (source) {
+      formData.append('source', source);
+    }
 
     return this.http.post<ImageUploadResponse>(this.uploadUrl, formData, {
       headers: {
