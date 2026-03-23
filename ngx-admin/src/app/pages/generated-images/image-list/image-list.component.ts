@@ -9,6 +9,8 @@ import { GeneratedImage } from '../../../@core/models';
   styleUrls: ['./image-list.component.scss'],
 })
 export class ImageListComponent implements OnInit {
+  getAbsoluteImageUrl = getAbsoluteImageUrl;
+
   images: GeneratedImage[] = [];
   stats: ImageStats = {
     totalImages: 0,

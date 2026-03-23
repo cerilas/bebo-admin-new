@@ -13,6 +13,8 @@ import { MockupConfig } from '../mockup-editor/mockup-editor.component';
   styleUrls: ['./product-form.component.scss'],
 })
 export class ProductFormComponent implements OnInit {
+  getAbsoluteImageUrl = getAbsoluteImageUrl;
+
   productForm: FormGroup;
   isEditMode = false;
   productId: number;
