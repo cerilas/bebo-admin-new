@@ -1468,44 +1468,58 @@ app.get('/api/orders/:id', async (req, res) => {
 const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN || '';
 
 /**
- * Helper: Replicate API'ye HTTPS isteği gönderir
+ * Helper: Replicate API'ye HTTPS isteği gönderir (rate limit retry ile)
  */
-function replicateRequest(method, urlPath, body) {
+function replicateRequest(method, urlPath, body, retries = 3) {
   return new Promise((resolve, reject) => {
-    const options = {
-      hostname: 'api.replicate.com',
-      path: urlPath,
-      method: method,
-      headers: {
-        'Authorization': `Bearer ${REPLICATE_API_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'wait',
-      },
+    const doRequest = (attempt) => {
+      const options = {
+        hostname: 'api.replicate.com',
+        path: urlPath,
+        method: method,
+        headers: {
+          'Authorization': `Bearer ${REPLICATE_API_TOKEN}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'wait',
+        },
+      };
+
+      const req = https.request(options, (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          try {
+            const parsed = JSON.parse(data);
+
+            // Rate limit (429) - retry with backoff
+            if (res.statusCode === 429 && attempt < retries) {
+              const retryAfter = parseInt(res.headers['retry-after'] || '10', 10);
+              const waitMs = Math.max(retryAfter, 10) * 1000;
+              console.log(`⏳ Replicate rate limited, ${retryAfter}s sonra tekrar denenecek (deneme ${attempt + 1}/${retries})`);
+              setTimeout(() => doRequest(attempt + 1), waitMs);
+              return;
+            }
+
+            resolve({ status: res.statusCode, data: parsed });
+          } catch (e) {
+            reject(new Error(`Replicate API parse error: ${data}`));
+          }
+        });
+      });
+
+      req.on('error', reject);
+      req.setTimeout(120000, () => {
+        req.destroy();
+        reject(new Error('Replicate API timeout (120s)'));
+      });
+
+      if (body) {
+        req.write(JSON.stringify(body));
+      }
+      req.end();
     };
 
-    const req = https.request(options, (res) => {
-      let data = '';
-      res.on('data', (chunk) => { data += chunk; });
-      res.on('end', () => {
-        try {
-          const parsed = JSON.parse(data);
-          resolve({ status: res.statusCode, data: parsed });
-        } catch (e) {
-          reject(new Error(`Replicate API parse error: ${data}`));
-        }
-      });
-    });
-
-    req.on('error', reject);
-    req.setTimeout(120000, () => {
-      req.destroy();
-      reject(new Error('Replicate API timeout (120s)'));
-    });
-
-    if (body) {
-      req.write(JSON.stringify(body));
-    }
-    req.end();
+    doRequest(0);
   });
 }
 
@@ -1569,6 +1583,14 @@ app.post('/api/orders/:id/generate-production-image', async (req, res) => {
 
     if (response.status !== 200 && response.status !== 201) {
       console.error('Replicate API error:', response.data);
+
+      if (response.status === 429) {
+        return res.status(429).json({
+          error: 'Replicate API rate limit aşıldı',
+          details: 'Çok fazla istek gönderildi. Lütfen 10-15 saniye bekleyip tekrar deneyin.',
+        });
+      }
+
       return res.status(502).json({
         error: 'Replicate API hatası',
         details: response.data?.detail || response.data?.error || 'Bilinmeyen hata',
