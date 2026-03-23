@@ -257,30 +257,32 @@ export class OrderDetailComponent implements OnInit {
     const generatedImageUrl = typeof order?.generatedImageUrl === 'string'
       ? order.generatedImageUrl.trim()
       : order?.generatedImageUrl;
-    // Use helper to ensure absolute URL
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // Production image takes priority
     const { getAbsoluteImageUrl } = require('../../../@core/utils/image-url.util');
-    return getAbsoluteImageUrl(productionImageUrl || generatedImageUrl || null);
+    if (productionImageUrl) {
+      return getAbsoluteImageUrl(productionImageUrl, 'admin');
+    }
+    return getAbsoluteImageUrl(generatedImageUrl || null, 'www');
   }
 
-  // Kullanıcının oluşturduğu orijinal AI görseli
+  // Kullanıcının oluşturduğu orijinal AI görseli (www.birebiro.com'dan çekilir)
   getGeneratedImageUrl(order: any = this.order): string | null {
     const generatedImageUrl = typeof order?.generatedImageUrl === 'string'
       ? order.generatedImageUrl.trim()
       : order?.generatedImageUrl;
     if (!generatedImageUrl) return null;
     const { getAbsoluteImageUrl } = require('../../../@core/utils/image-url.util');
-    return getAbsoluteImageUrl(generatedImageUrl);
+    return getAbsoluteImageUrl(generatedImageUrl, 'www');
   }
 
-  // Replicate upscale sonucu üretim görseli
+  // Replicate upscale sonucu üretim görseli (admin.birebiro.com'dan çekilir)
   getProductionImageUrl(order: any = this.order): string | null {
     const productionImageUrl = typeof order?.productionImageUrl === 'string'
       ? order.productionImageUrl.trim()
       : order?.productionImageUrl;
     if (!productionImageUrl) return null;
     const { getAbsoluteImageUrl } = require('../../../@core/utils/image-url.util');
-    return getAbsoluteImageUrl(productionImageUrl);
+    return getAbsoluteImageUrl(productionImageUrl, 'admin');
   }
 
   downloadGeneratedImage(): void {
