@@ -17,6 +17,7 @@ export class OrderDetailComponent implements OnInit {
   error: string = null;
   hasChanges = false; // Güncelleme yapıldı mı?
   imageLoading = true; // Görsel yükleniyor mu?
+  productionImageLoading = true; // Üretim görseli yükleniyor mu?
 
   // Upscale (Üretim Görseli)
   upscaling = false;
@@ -262,6 +263,26 @@ export class OrderDetailComponent implements OnInit {
     return getAbsoluteImageUrl(productionImageUrl || generatedImageUrl || null);
   }
 
+  // Kullanıcının oluşturduğu orijinal AI görseli
+  getGeneratedImageUrl(order: any = this.order): string | null {
+    const generatedImageUrl = typeof order?.generatedImageUrl === 'string'
+      ? order.generatedImageUrl.trim()
+      : order?.generatedImageUrl;
+    if (!generatedImageUrl) return null;
+    const { getAbsoluteImageUrl } = require('../../../@core/utils/image-url.util');
+    return getAbsoluteImageUrl(generatedImageUrl);
+  }
+
+  // Replicate upscale sonucu üretim görseli
+  getProductionImageUrl(order: any = this.order): string | null {
+    const productionImageUrl = typeof order?.productionImageUrl === 'string'
+      ? order.productionImageUrl.trim()
+      : order?.productionImageUrl;
+    if (!productionImageUrl) return null;
+    const { getAbsoluteImageUrl } = require('../../../@core/utils/image-url.util');
+    return getAbsoluteImageUrl(productionImageUrl);
+  }
+
   downloadGeneratedImage(): void {
     if (!this.hasProductionImage()) {
       return;
@@ -288,6 +309,12 @@ export class OrderDetailComponent implements OnInit {
         // CORS hatası durumunda yeni sekmede aç
         window.open(imageUrl, '_blank');
       });
+  }
+
+  openImageInNewTab(url: string): void {
+    if (url) {
+      window.open(url, '_blank');
+    }
   }
 
   copyToClipboard(text: string) {

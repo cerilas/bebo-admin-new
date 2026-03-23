@@ -98,6 +98,93 @@ const getExtensionFromFile = (file) => {
 
 app.use('/api/files', express.static(UPLOAD_DIR));
 
+/**
+ * Helper: Uzak bir URL'deki görseli indirir ve /api/files/ altına kaydeder.
+ * Returns: { localUrl, relativePath } veya null (hata durumunda)
+ */
+async function downloadRemoteImageToStorage(remoteUrl, prefix = 'img') {
+  return new Promise(async (resolve) => {
+    try {
+      if (!remoteUrl || !remoteUrl.startsWith('http')) {
+        // Zaten lokal URL ise dokunma
+        resolve(null);
+        return;
+      }
+
+      const now = new Date();
+      const year = String(now.getFullYear());
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const fileName = `${prefix}-${Date.now()}-${crypto.randomBytes(6).toString('hex')}.png`;
+      const relativeDirectory = path.join(year, month);
+      const absoluteDirectory = path.join(UPLOAD_DIR, relativeDirectory);
+      await fs.promises.mkdir(absoluteDirectory, { recursive: true });
+
+      const absolutePath = path.join(absoluteDirectory, fileName);
+      const relativePath = path.join(relativeDirectory, fileName).replace(/\\/g, '/');
+
+      // Use https or http depending on URL
+      const httpModule = remoteUrl.startsWith('https') ? https : require('http');
+      
+      const download = (url, redirectCount = 0) => {
+        if (redirectCount > 5) {
+          console.error('Too many redirects downloading image:', remoteUrl);
+          resolve(null);
+          return;
+        }
+
+        httpModule.get(url, (response) => {
+          // Handle redirects
+          if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+            download(response.headers.location, redirectCount + 1);
+            return;
+          }
+
+          if (response.statusCode !== 200) {
+            console.error(`Failed to download image: HTTP ${response.statusCode} from ${url}`);
+            resolve(null);
+            return;
+          }
+
+          const chunks = [];
+          response.on('data', chunk => chunks.push(chunk));
+          response.on('end', async () => {
+            try {
+              const buffer = Buffer.concat(chunks);
+              await fs.promises.writeFile(absolutePath, buffer);
+              const localUrl = `https://admin.birebiro.com/api/files/${relativePath}`;
+              console.log(`📥 Image downloaded: ${remoteUrl.substring(0, 80)}... → ${localUrl}`);
+
+              // Log to image_uploads table
+              pool.query(
+                `INSERT INTO image_uploads (image_url, original_filename, file_size, mime_type, source_page, endpoint, ip_address, user_agent)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+                [localUrl, path.basename(remoteUrl), buffer.length, 'image/png', 'auto-download', 'downloadRemoteImageToStorage', 'server', remoteUrl.substring(0, 200)]
+              ).catch(err => console.error('image_uploads log error:', err));
+
+              resolve({ localUrl, relativePath, absolutePath, fileSize: buffer.length });
+            } catch (writeErr) {
+              console.error('Error writing downloaded image:', writeErr);
+              resolve(null);
+            }
+          });
+          response.on('error', (err) => {
+            console.error('Error downloading image:', err);
+            resolve(null);
+          });
+        }).on('error', (err) => {
+          console.error('HTTP request error downloading image:', err);
+          resolve(null);
+        });
+      };
+
+      download(remoteUrl);
+    } catch (err) {
+      console.error('downloadRemoteImageToStorage error:', err);
+      resolve(null);
+    }
+  });
+}
+
 // PUBLIC USER IMAGE UPLOAD ENDPOINT
 // This endpoint is for user uploads (not admin panel). It always returns image URLs with admin.birebiro.com.
 app.post('/api/upload-image', (req, res) => {
@@ -1618,7 +1705,11 @@ app.post('/api/orders/:id/generate-production-image', async (req, res) => {
 
     // 3. Eğer sync ile tamamlandıysa (Prefer: wait)
     if (prediction.status === 'succeeded' && prediction.output) {
-      const productionUrl = prediction.output;
+      const replicateUrl = prediction.output;
+
+      // Replicate görselini kendi storage'ımıza indir
+      const downloaded = await downloadRemoteImageToStorage(replicateUrl, `upscale-${id}`);
+      const productionUrl = downloaded ? downloaded.localUrl : replicateUrl;
 
       // DB'ye kaydet
       await pool.query(`
@@ -1648,7 +1739,11 @@ app.post('/api/orders/:id/generate-production-image', async (req, res) => {
         const pollData = pollResponse.data;
 
         if (pollData.status === 'succeeded' && pollData.output) {
-          const productionUrl = pollData.output;
+          const replicateUrl = pollData.output;
+
+          // Replicate görselini kendi storage'ımıza indir
+          const downloaded = await downloadRemoteImageToStorage(replicateUrl, `upscale-${id}`);
+          const productionUrl = downloaded ? downloaded.localUrl : replicateUrl;
 
           // DB'ye kaydet
           await pool.query(`
