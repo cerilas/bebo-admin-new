@@ -1653,7 +1653,9 @@ app.get('/api/orders/:id', async (req, res) => {
         gi.production_image_url as "productionImageUrl",
         gi.text_prompt as "imagePrompt",
         gi.credit_used as "creditsUsed",
-        gi.image_transform as "imageTransform"
+        
+        -- Order image transform
+        o.image_transform as "imageTransform"
         
       FROM "order" o
       LEFT JOIN users u ON o.user_id = u.id
