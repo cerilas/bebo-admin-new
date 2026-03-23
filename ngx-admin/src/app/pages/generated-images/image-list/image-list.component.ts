@@ -23,22 +23,22 @@ export class ImageListComponent implements OnInit {
     inspirationMode: 0,
   };
   products: ProductOption[] = [];
-  
+
   loading = true;
   searchQuery = '';
   selectedProductId: number | null = null;
   selectedFilter: 'all' | 'selected' | 'not-selected' = 'all';
-  
+
   // Modal
   selectedImage: GeneratedImage | null = null;
   showModal = false;
-  
+
   // Pagination
   limit = 50;
   offset = 0;
   hasMore = true;
 
-  constructor(private imagesService: GeneratedImagesService) {}
+  constructor(private imagesService: GeneratedImagesService) { }
 
   ngOnInit(): void {
     this.loadStats();
@@ -78,10 +78,10 @@ export class ImageListComponent implements OnInit {
       this.loading = true;
       this.offset = 0;
     }
-    
-    const isSelected = this.selectedFilter === 'selected' ? true : 
-                       this.selectedFilter === 'not-selected' ? false : undefined;
-    
+
+    const isSelected = this.selectedFilter === 'selected' ? true :
+      this.selectedFilter === 'not-selected' ? false : undefined;
+
     this.imagesService.getAll({
       search: this.searchQuery || undefined,
       productId: this.selectedProductId || undefined,
@@ -139,8 +139,8 @@ export class ImageListComponent implements OnInit {
     // Ensure imageUrl is absolute for modal
     this.selectedImage = {
       ...image,
-      imageUrl: getAbsoluteImageUrl(image.imageUrl),
-      thumbnailUrl: getAbsoluteImageUrl(image.thumbnailUrl),
+      imageUrl: getAbsoluteImageUrl(image.imageUrl, 'www'),
+      thumbnailUrl: getAbsoluteImageUrl(image.thumbnailUrl, 'www'),
     };
     this.showModal = true;
   }
@@ -200,7 +200,7 @@ export class ImageListComponent implements OnInit {
   }
 
   downloadImage(url: string): void {
-    window.open(getAbsoluteImageUrl(url), '_blank');
+    window.open(getAbsoluteImageUrl(url, 'www'), '_blank');
   }
 
   copyToClipboard(text: string): void {
