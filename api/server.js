@@ -1569,17 +1569,24 @@ app.post('/api/orders/:id/generate-production-image', async (req, res) => {
 
     console.log(`🎨 Üretim görseli oluşturuluyor - Sipariş #${id}, Kaynak: ${order.generatedImageUrl}`);
 
-    // 2. Replicate API'ye istek gönder (Google Image Upscaler - sync with Prefer: wait)
+    // 2. Görsel URL'ini absolute hale getir (Replicate dışarıdan erişebilmeli)
+    let sourceImageUrl = order.generatedImageUrl;
+    if (sourceImageUrl && !sourceImageUrl.startsWith('http')) {
+      // Relative URL'i absolute yap
+      sourceImageUrl = `https://www.birebiro.com${sourceImageUrl.startsWith('/') ? '' : '/'}${sourceImageUrl}`;
+    }
+    console.log(`🔗 Replicate'e gönderilecek URL: ${sourceImageUrl}`);
+
+    // 3. Replicate API'ye istek gönder (nightmareai/real-esrgan - model-based endpoint, version hash gerekmez)
     const replicateBody = {
-      version: 'dfad41707589d68ecdcfbff94b94b15f2ffd77b389059e7eca553c8e9b963b44',
       input: {
-        image: order.generatedImageUrl,
-        upscale_factor: 'x4',
-        compression_quality: 80,
+        image: sourceImageUrl,
+        scale: 4,
+        face_enhance: false,
       },
     };
 
-    const response = await replicateRequest('POST', '/v1/predictions', replicateBody);
+    const response = await replicateRequest('POST', '/v1/models/nightmareai/real-esrgan/predictions', replicateBody);
 
     if (response.status !== 200 && response.status !== 201) {
       console.error('Replicate API error:', response.data);
