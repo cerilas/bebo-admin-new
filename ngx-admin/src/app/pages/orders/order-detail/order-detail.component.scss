@@ -401,6 +401,20 @@ $gap: 12px;
     flex-shrink: 0;
   }
 
+  .preview-image-standalone {
+    padding: 12px;
+    display: flex;
+    justify-content: center;
+
+    img {
+      max-width: 300px;
+      max-height: 300px;
+      border-radius: 8px;
+      object-fit: contain;
+      cursor: pointer;
+    }
+  }
+
   .dual-image-container {
     display: flex;
     gap: 10px;

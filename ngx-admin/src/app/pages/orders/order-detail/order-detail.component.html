@@ -247,7 +247,6 @@
                   </div>
                 </div>
               </div>
-
               <div class="product-details">
                 <div class="product-name">{{ order.productName }}</div>
                 <div class="prompt" *ngIf="order.imagePrompt">"{{ order.imagePrompt }}"</div>
@@ -322,6 +321,17 @@
                 <div class="credit-price">{{ getOrderTotal(order) }} TL</div>
                 <div class="credit-price-label">Ödenen Tutar</div>
               </div>
+            </div>
+          </div>
+
+          <!-- Ön İzleme Görseli (bağımsız, generationId'den bağımsız) -->
+          <div class="product-box" *ngIf="getOrderPreviewImageUrl()">
+            <div class="box-title">Ön İzleme Görseli</div>
+            <div class="preview-image-standalone">
+              <img [src]="getOrderPreviewImageUrl()" class="product-img clickable"
+                alt="Ön İzleme Görseli"
+                (click)="openImageInNewTab(getOrderPreviewImageUrl())"
+                (error)="$event.target.style.display='none'">
             </div>
           </div>
 
