@@ -36,6 +36,18 @@ export class AiSettingsComponent implements OnInit {
         this.loadModels();
     }
 
+    get totalModels(): number {
+        return this.models.length;
+    }
+
+    get activeModels(): number {
+        return this.models.filter(model => model.isActive).length;
+    }
+
+    get passiveModels(): number {
+        return this.totalModels - this.activeModels;
+    }
+
     loadModels(): void {
         this.loading = true;
         this.aiModelsService.getAIModels().subscribe({
@@ -141,4 +153,5 @@ export class AiSettingsComponent implements OnInit {
             },
         });
     }
+
 }

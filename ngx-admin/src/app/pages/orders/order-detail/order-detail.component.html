@@ -164,76 +164,90 @@
               </button>
             </div>
             <div class="product-content">
-              <!-- İki görsel yan yana: Kullanıcı Görseli + Üretim Görseli -->
-              <div class="dual-image-container">
-                <!-- 1) Kullanıcı Görseli (Orijinal AI Görseli) -->
-                <div class="image-box">
-                  <div class="image-box-label">Kullanıcı Görseli</div>
-                  <div class="product-img-container">
-                    <ng-container *ngIf="getGeneratedImageUrl() as genUrl">
-                      <div *ngIf="imageLoading" class="image-skeleton">
-                        <div class="skeleton-shimmer"></div>
-                        <div class="skeleton-icon">
-                          <nb-icon icon="image-outline"></nb-icon>
+              <div class="images-column">
+                <!-- İki görsel yan yana: Kullanıcı Görseli + Üretim Görseli -->
+                <div class="dual-image-container">
+                  <!-- 1) Kullanıcı Görseli (Orijinal AI Görseli) -->
+                  <div class="image-box">
+                    <div class="image-box-label">Kullanıcı Görseli</div>
+                    <div class="product-img-container">
+                      <ng-container *ngIf="getGeneratedImageUrl() as genUrl">
+                        <div *ngIf="imageLoading" class="image-skeleton">
+                          <div class="skeleton-shimmer"></div>
+                          <div class="skeleton-icon">
+                            <nb-icon icon="image-outline"></nb-icon>
+                          </div>
                         </div>
+                        <img [src]="genUrl" class="product-img"
+                          [class.image-loaded]="!imageLoading"
+                          class="product-img clickable"
+                          [ngStyle]="getImageTransformStyle()"
+                          alt="Kullanıcı Görseli"
+                          (click)="openImageInNewTab(genUrl)"
+                          (load)="imageLoading = false"
+                          (error)="imageLoading = false">
+                      </ng-container>
+                      <div *ngIf="!getGeneratedImageUrl()" class="production-image-placeholder">
+                        <nb-icon icon="image-outline"></nb-icon>
+                        <span>Görsel yok</span>
                       </div>
-                      <img [src]="genUrl" class="product-img"
-                        [class.image-loaded]="!imageLoading"
-                        class="product-img clickable"
-                        [ngStyle]="getImageTransformStyle()"
-                        alt="Kullanıcı Görseli"
-                        (click)="openImageInNewTab(genUrl)"
-                        (load)="imageLoading = false"
-                        (error)="imageLoading = false">
-                    </ng-container>
-                    <div *ngIf="!getGeneratedImageUrl()" class="production-image-placeholder">
-                      <nb-icon icon="image-outline"></nb-icon>
-                      <span>Görsel yok</span>
+                    </div>
+                  </div>
+
+                  <!-- 2) Üretim Görseli (Upscale) -->
+                  <div class="image-box">
+                    <div class="image-box-label">
+                      Üretim Görseli
+                      <button *ngIf="hasProductionImage()" nbButton ghost size="tiny" status="primary"
+                        (click)="downloadGeneratedImage()" class="download-btn" title="Üretim Görselini İndir">
+                        <nb-icon icon="download-outline"></nb-icon>
+                      </button>
+                    </div>
+                    <div class="product-img-container">
+                      <ng-container *ngIf="getProductionImageUrl() as prodUrl">
+                        <div *ngIf="productionImageLoading" class="image-skeleton">
+                          <div class="skeleton-shimmer"></div>
+                          <div class="skeleton-icon">
+                            <nb-icon icon="image-outline"></nb-icon>
+                          </div>
+                        </div>
+                        <img [src]="prodUrl" class="product-img"
+                          [class.image-loaded]="!productionImageLoading"
+                          class="product-img clickable"
+                          [ngStyle]="getImageTransformStyle()"
+                          alt="Üretim Görseli"
+                          (click)="downloadGeneratedImage()"
+                          (load)="productionImageLoading = false"
+                          (error)="productionImageLoading = false">
+                      </ng-container>
+
+                      <!-- Üretim görseli yoksa placeholder -->
+                      <ng-container *ngIf="!getProductionImageUrl()">
+                        <div *ngIf="upscaling" class="production-image-placeholder">
+                          <span class="placeholder-spinner" aria-hidden="true"></span>
+                          <span>Oluşturuluyor...</span>
+                        </div>
+                        <div *ngIf="!upscaling" class="production-image-placeholder">
+                          <nb-icon icon="expand-outline"></nb-icon>
+                          <span>Henüz oluşturulmadı</span>
+                        </div>
+                      </ng-container>
                     </div>
                   </div>
                 </div>
 
-                <!-- 2) Üretim Görseli (Upscale) -->
-                <div class="image-box">
-                  <div class="image-box-label">
-                    Üretim Görseli
-                    <button *ngIf="hasProductionImage()" nbButton ghost size="tiny" status="primary"
-                      (click)="downloadGeneratedImage()" class="download-btn" title="Üretim Görselini İndir">
-                      <nb-icon icon="download-outline"></nb-icon>
-                    </button>
-                  </div>
+                <!-- 3) Ön İzleme Görseli (iki kutunun altında) -->
+                <div class="image-box" *ngIf="getOrderPreviewImageUrl()">
+                  <div class="image-box-label">Ön İzleme Görseli</div>
                   <div class="product-img-container">
-                    <ng-container *ngIf="getProductionImageUrl() as prodUrl">
-                      <div *ngIf="productionImageLoading" class="image-skeleton">
-                        <div class="skeleton-shimmer"></div>
-                        <div class="skeleton-icon">
-                          <nb-icon icon="image-outline"></nb-icon>
-                        </div>
-                      </div>
-                      <img [src]="prodUrl" class="product-img"
-                        [class.image-loaded]="!productionImageLoading"
-                        class="product-img clickable"
-                        [ngStyle]="getImageTransformStyle()"
-                        alt="Üretim Görseli"
-                        (click)="downloadGeneratedImage()"
-                        (load)="productionImageLoading = false"
-                        (error)="productionImageLoading = false">
-                    </ng-container>
-
-                    <!-- Üretim görseli yoksa placeholder -->
-                    <ng-container *ngIf="!getProductionImageUrl()">
-                      <div *ngIf="upscaling" class="production-image-placeholder">
-                        <span class="placeholder-spinner" aria-hidden="true"></span>
-                        <span>Oluşturuluyor...</span>
-                      </div>
-                      <div *ngIf="!upscaling" class="production-image-placeholder">
-                        <nb-icon icon="expand-outline"></nb-icon>
-                        <span>Henüz oluşturulmadı</span>
-                      </div>
-                    </ng-container>
+                    <img [src]="getOrderPreviewImageUrl()" class="product-img clickable"
+                      alt="Ön İzleme Görseli"
+                      (click)="openImageInNewTab(getOrderPreviewImageUrl())"
+                      (error)="$event.target.style.display='none'">
                   </div>
                 </div>
               </div>
+
               <div class="product-details">
                 <div class="product-name">{{ order.productName }}</div>
                 <div class="prompt" *ngIf="order.imagePrompt">"{{ order.imagePrompt }}"</div>

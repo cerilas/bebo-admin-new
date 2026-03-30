@@ -12,6 +12,22 @@
             </nb-card-header>
             <nb-card-body [nbSpinner]="loading" nbSpinnerStatus="primary">
 
+                <div class="stats-grid" *ngIf="models.length > 0">
+                    <div class="stat-item">
+                        <span class="stat-label">Toplam Model</span>
+                        <strong>{{ totalModels }}</strong>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Aktif</span>
+                        <strong class="text-success">{{ activeModels }}</strong>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Pasif</span>
+                        <strong class="text-muted">{{ passiveModels }}</strong>
+                    </div>
+
+                </div>
+
                 <!-- Model Form -->
                 <div class="form-container" *ngIf="showForm">
                     <h6>{{ editingId ? 'Modeli Düzenle' : 'Yeni Model Ekle' }}</h6>
@@ -92,7 +108,7 @@
                         </div>
                         <div class="col-provider">
                             <span class="mobile-label">Sağlayıcı</span>
-                            {{ model.provider }}
+                            <span class="provider-pill">{{ model.provider }}</span>
                         </div>
                         <div class="col-identifier">
                             <span class="mobile-label">Identifier</span>

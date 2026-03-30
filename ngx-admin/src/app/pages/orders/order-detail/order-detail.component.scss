@@ -394,6 +394,13 @@ $gap: 12px;
     }
   }
 
+  .images-column {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
   .dual-image-container {
     display: flex;
     gap: 10px;

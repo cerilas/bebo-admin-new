@@ -1655,7 +1655,11 @@ app.get('/api/orders/:id', async (req, res) => {
         gi.credit_used as "creditsUsed",
         
         -- Order image transform
-        o.image_transform as "imageTransform"
+        o.image_transform as "imageTransform",
+        
+        -- Preview & final product images
+        o.preview_image_url as "previewImageUrl",
+        o.final_product_image_url as "finalProductImageUrl"
         
       FROM "order" o
       LEFT JOIN users u ON o.user_id = u.id

@@ -307,6 +307,16 @@ export class OrderDetailComponent implements OnInit {
     return getAbsoluteImageUrl(productionImageUrl, 'admin');
   }
 
+  // Ön izleme görseli (preview_image_url - www.birebiro.com'dan)
+  getOrderPreviewImageUrl(order: any = this.order): string | null {
+    const previewUrl = typeof order?.previewImageUrl === 'string'
+      ? order.previewImageUrl.trim()
+      : order?.previewImageUrl;
+    if (!previewUrl) return null;
+    const { getAbsoluteImageUrl } = require('../../../@core/utils/image-url.util');
+    return getAbsoluteImageUrl(previewUrl, 'www');
+  }
+
   downloadGeneratedImage(): void {
     if (!this.hasProductionImage()) {
       return;
