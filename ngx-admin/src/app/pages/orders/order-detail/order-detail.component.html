@@ -328,7 +328,7 @@
           <div class="product-box" *ngIf="getOrderPreviewImageUrl()">
             <div class="box-title">Ön İzleme Görseli</div>
             <div class="preview-image-standalone">
-              <img [src]="getOrderPreviewImageUrl()" class="product-img clickable"
+              <img [src]="getOrderPreviewImageUrl()"
                 alt="Ön İzleme Görseli"
                 (click)="openImageInNewTab(getOrderPreviewImageUrl())"
                 (error)="$event.target.style.display='none'">
