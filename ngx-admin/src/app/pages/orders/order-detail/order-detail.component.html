@@ -147,13 +147,15 @@
             <div class="box-title">
               Ürün Bilgisi
               <!-- Üretim görseli varsa: İndir + Yeniden Oluştur butonları -->
-              <button *ngIf="hasProductionImage() && !upscaling" nbButton ghost size="tiny" status="primary"
+              <button *ngIf="hasProductionImage() && !upscaling" nbButton size="tiny" status="primary" outline
                 (click)="downloadGeneratedImage()" class="download-btn" title="Üretim Görselini İndir (Baskıya Hazır)">
                 <nb-icon icon="download-outline"></nb-icon>
+                Üretim Görselini İndir
               </button>
-              <button *ngIf="hasProductionImage() && !upscaling" nbButton ghost size="tiny" status="warning"
+              <button *ngIf="hasProductionImage() && !upscaling" nbButton size="tiny" status="warning" outline
                 (click)="generateProductionImage(true)" class="regenerate-btn" title="Üretim Görselini Yeniden Oluştur (Kanvas Kompozisyonu)">
                 <nb-icon icon="refresh-outline"></nb-icon>
+                Yeniden Oluştur
               </button>
               <!-- Üretim görseli yoksa ve upscale edilmiyorsa: Oluştur butonu -->
               <button *ngIf="!hasProductionImage() && !upscaling" nbButton size="tiny" status="warning" outline
