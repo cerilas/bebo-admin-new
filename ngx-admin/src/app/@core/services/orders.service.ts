@@ -100,11 +100,12 @@ export class OrdersService extends BaseApiService {
   }
 
   /**
-   * Replicate Google Image Upscaler ile üretim görseli oluşturur
+   * Üretim görseli oluşturur (Replicate upscale + kanvas kompozisyonu)
    * @param id Sipariş ID
+   * @param force true ise mevcut üretim görselini yeniden oluşturur
    */
-  generateProductionImage(id: number): Observable<ProductionImageResponse> {
-    return this.http.post<ProductionImageResponse>(`${this.apiUrl}${this.endpoint}/${id}/generate-production-image`, {});
+  generateProductionImage(id: number, force: boolean = false): Observable<ProductionImageResponse> {
+    return this.http.post<ProductionImageResponse>(`${this.apiUrl}${this.endpoint}/${id}/generate-production-image`, { force });
   }
 }
 
@@ -121,6 +122,10 @@ export interface ProductionImageResponse {
   productionImageUrl?: string;
   predictionId?: string;
   alreadyExists?: boolean;
+  composed?: boolean;
+  canvasSize?: string;
+  transform?: { x: number; y: number; scale: number };
+  warning?: string;
   error?: string;
   details?: string;
 }

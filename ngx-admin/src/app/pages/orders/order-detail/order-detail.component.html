@@ -146,14 +146,18 @@
           <div *ngIf="order.orderType === 'product' && order.generationId" class="product-box">
             <div class="box-title">
               Ürün Bilgisi
-              <!-- Üretim görseli varsa: İndir butonu -->
-              <button *ngIf="hasProductionImage()" nbButton ghost size="tiny" status="primary"
-                (click)="downloadGeneratedImage()" class="download-btn" title="Üretim Görselini İndir">
+              <!-- Üretim görseli varsa: İndir + Yeniden Oluştur butonları -->
+              <button *ngIf="hasProductionImage() && !upscaling" nbButton ghost size="tiny" status="primary"
+                (click)="downloadGeneratedImage()" class="download-btn" title="Üretim Görselini İndir (Baskıya Hazır)">
                 <nb-icon icon="download-outline"></nb-icon>
+              </button>
+              <button *ngIf="hasProductionImage() && !upscaling" nbButton ghost size="tiny" status="warning"
+                (click)="generateProductionImage(true)" class="regenerate-btn" title="Üretim Görselini Yeniden Oluştur (Kanvas Kompozisyonu)">
+                <nb-icon icon="refresh-outline"></nb-icon>
               </button>
               <!-- Üretim görseli yoksa ve upscale edilmiyorsa: Oluştur butonu -->
               <button *ngIf="!hasProductionImage() && !upscaling" nbButton size="tiny" status="warning" outline
-                (click)="generateProductionImage()" class="upscale-btn" title="Üretim Görseli Oluştur (Replicate x4 Upscale)">
+                (click)="generateProductionImage()" class="upscale-btn" title="Üretim Görseli Oluştur (Upscale + Kanvas Kompozisyonu)">
                 <nb-icon icon="image-outline"></nb-icon>
                 Üretim Görseli Oluştur
               </button>
@@ -194,16 +198,16 @@
                     </div>
                   </div>
 
-                  <!-- 2) Üretim Görseli (Upscale) -->
+                  <!-- 2) Üretim Görseli (Upscale + Kanvas Kompozisyonu) -->
                   <div class="image-box">
                     <div class="image-box-label">
                       Üretim Görseli
-                      <button *ngIf="hasProductionImage()" nbButton ghost size="tiny" status="primary"
-                        (click)="downloadGeneratedImage()" class="download-btn" title="Üretim Görselini İndir">
+                      <button *ngIf="hasProductionImage() && !upscaling" nbButton ghost size="tiny" status="primary"
+                        (click)="downloadGeneratedImage()" class="download-btn" title="Üretim Görselini İndir (Baskıya Hazır)">
                         <nb-icon icon="download-outline"></nb-icon>
                       </button>
                     </div>
-                    <div class="product-img-container">
+                    <div class="product-img-container production-container">
                       <ng-container *ngIf="getProductionImageUrl() as prodUrl">
                         <div *ngIf="productionImageLoading" class="image-skeleton">
                           <div class="skeleton-shimmer"></div>
@@ -211,11 +215,10 @@
                             <nb-icon icon="image-outline"></nb-icon>
                           </div>
                         </div>
-                        <img [src]="prodUrl" class="product-img"
+                        <img [src]="prodUrl"
                           [class.image-loaded]="!productionImageLoading"
-                          class="product-img clickable"
-                          [ngStyle]="getImageTransformStyle()"
-                          alt="Üretim Görseli"
+                          class="product-img production-img clickable"
+                          alt="Üretim Görseli (Baskıya Hazır)"
                           (click)="downloadGeneratedImage()"
                           (load)="productionImageLoading = false"
                           (error)="productionImageLoading = false">

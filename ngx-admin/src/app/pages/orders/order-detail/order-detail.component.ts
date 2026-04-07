@@ -322,9 +322,11 @@ export class OrderDetailComponent implements OnInit {
       return;
     }
 
-    // Üretim görselini indir (watermarksız)
-    const imageUrl = this.order.productionImageUrl;
-    const fileName = `siparis-${this.orderId}-gorsel.png`;
+    // Üretim görselini indir (kanvas kompozisyonu uygulanmış, baskıya hazır)
+    const imageUrl = this.getProductionImageUrl();
+    if (!imageUrl) return;
+    const sizeDim = this.order?.sizeDimensions || '';
+    const fileName = `siparis-${this.orderId}-uretim-${sizeDim}.png`;
 
     fetch(imageUrl)
       .then(response => response.blob())
@@ -577,23 +579,30 @@ export class OrderDetailComponent implements OnInit {
     }
   }
 
-  // ==================== ÜRETİM GÖRSELİ (REPLICATE UPSCALE) ====================
-  generateProductionImage(): void {
-    if (this.upscaling || this.hasProductionImage()) return;
+  // ==================== ÜRETİM GÖRSELİ (REPLICATE UPSCALE + KANVAS KOMPOZİSYONU) ====================
+  generateProductionImage(force: boolean = false): void {
+    if (this.upscaling) return;
+    if (!force && this.hasProductionImage()) return;
 
     this.upscaling = true;
 
-    this.ordersService.generateProductionImage(this.orderId).subscribe({
+    this.ordersService.generateProductionImage(this.orderId, force).subscribe({
       next: (response) => {
         this.upscaling = false;
         if (response.success) {
           if (response.alreadyExists) {
             this.toastrService.info('Üretim görseli zaten mevcut', 'Bilgi', { duration: 3000 });
           } else {
-            this.toastrService.success('Üretim görseli başarıyla oluşturuldu!', 'Başarılı', { duration: 5000 });
+            const msg = response.composed
+              ? `Üretim görseli oluşturuldu! (${response.canvasSize || ''} kanvas)`
+              : 'Üretim görseli başarıyla oluşturuldu!';
+            this.toastrService.success(msg, 'Başarılı', { duration: 5000 });
+            if (response.warning) {
+              this.toastrService.warning(response.warning, 'Uyarı', { duration: 5000 });
+            }
           }
           this.hasChanges = true;
-          this.loadOrderDetail(); // Siparişi yeniden yükle
+          this.loadOrderDetail();
         } else {
           this.toastrService.danger(
             response.error || 'Üretim görseli oluşturulamadı',

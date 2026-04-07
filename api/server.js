@@ -9,6 +9,7 @@ const crypto = require('crypto');
 const https = require('https');
 const net = require('net');
 const multer = require('multer');
+const sharp = require('sharp');
 require('dotenv').config();
 
 const app = express();
@@ -295,6 +296,225 @@ async function downloadRemoteImageToStorage(remoteUrl, prefix = 'img') {
       resolve(null);
     }
   });
+}
+
+/**
+ * Helper: Uzak URL'deki görseli buffer olarak indirir (Sharp ile işlemek için)
+ */
+function downloadImageAsBuffer(remoteUrl) {
+  return new Promise((resolve) => {
+    try {
+      if (!remoteUrl || !remoteUrl.startsWith('http')) {
+        resolve(null);
+        return;
+      }
+      const httpModule = remoteUrl.startsWith('https') ? https : require('http');
+      const download = (url, redirectCount = 0) => {
+        if (redirectCount > 5) {
+          resolve(null);
+          return;
+        }
+        httpModule.get(url, (response) => {
+          if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+            download(response.headers.location, redirectCount + 1);
+            return;
+          }
+          if (response.statusCode !== 200) {
+            resolve(null);
+            return;
+          }
+          const chunks = [];
+          response.on('data', chunk => chunks.push(chunk));
+          response.on('end', () => resolve(Buffer.concat(chunks)));
+          response.on('error', () => resolve(null));
+        }).on('error', () => resolve(null));
+      };
+      download(remoteUrl);
+    } catch (err) {
+      resolve(null);
+    }
+  });
+}
+
+/**
+ * Helper: Üretim görseli oluşturur - Kullanıcının kanvas üzerindeki konumlandırmasını uygular.
+ * 
+ * Mantık:
+ * - sizeDimensions (örn "30x40") ile kanvas en-boy oranı belirlenir
+ * - imageTransform {x, y, scale} ile kullanıcının konumlandırması uygulanır
+ * - scale=1: görsel kanvası tamamen kaplar (object-fit: cover)
+ * - scale>1: yakınlaştırma (daha fazla crop)
+ * - scale<1: küçültme (beyaz kenarlık)
+ * - x,y: kanvas boyutunun yüzdesi kadar kaydırma
+ * 
+ * @param {Buffer} sourceImageBuffer - Kaynak görsel (upscale edilmiş)
+ * @param {string} sizeDimensions - Çerçeve boyutu, örn: "30x40"
+ * @param {string} orientation - "portrait" veya "landscape"
+ * @param {object} imageTransform - {x: number, y: number, scale: number}
+ * @returns {Buffer} - Baskıya hazır PNG buffer
+ */
+async function composeProductionImage(sourceImageBuffer, sizeDimensions, orientation, imageTransform) {
+  // Parse transform
+  const transform = imageTransform || { x: 0, y: 0, scale: 1 };
+  const tx = transform.x || 0;
+  const ty = transform.y || 0;
+  const userScale = transform.scale || 1;
+
+  // Parse sizeDimensions (format: "WIDTHxHEIGHT" in cm, e.g., "30x40")
+  let canvasRatioW = 1;
+  let canvasRatioH = 1;
+  if (sizeDimensions) {
+    const parts = sizeDimensions.toLowerCase().split('x');
+    if (parts.length === 2) {
+      canvasRatioW = parseFloat(parts[0]) || 1;
+      canvasRatioH = parseFloat(parts[1]) || 1;
+    }
+  }
+
+  // Orientation: portrait → genişlik < yükseklik, landscape → genişlik > yükseklik
+  if (orientation === 'landscape' && canvasRatioW < canvasRatioH) {
+    [canvasRatioW, canvasRatioH] = [canvasRatioH, canvasRatioW];
+  } else if (orientation === 'portrait' && canvasRatioW > canvasRatioH) {
+    [canvasRatioW, canvasRatioH] = [canvasRatioH, canvasRatioW];
+  }
+
+  // Kaynak görselin boyutları
+  const srcMeta = await sharp(sourceImageBuffer).metadata();
+  const srcW = srcMeta.width;
+  const srcH = srcMeta.height;
+
+  // Kanvas piksel boyutlarını hesapla - uzun kenar kaynak görselin uzun kenarına eşit olsun
+  const srcLong = Math.max(srcW, srcH);
+  const ratioLong = Math.max(canvasRatioW, canvasRatioH);
+  const ratioShort = Math.min(canvasRatioW, canvasRatioH);
+  
+  let canvasW, canvasH;
+  if (canvasRatioW >= canvasRatioH) {
+    // Yatay veya kare kanvas
+    canvasW = Math.round(srcLong);
+    canvasH = Math.round(srcLong * (canvasRatioH / canvasRatioW));
+  } else {
+    // Dikey kanvas
+    canvasH = Math.round(srcLong);
+    canvasW = Math.round(srcLong * (canvasRatioW / canvasRatioH));
+  }
+
+  console.log(`📐 Kanvas: ${canvasW}x${canvasH}px (${canvasRatioW}x${canvasRatioH}cm), Kaynak: ${srcW}x${srcH}px`);
+  console.log(`🔄 Transform: scale=${userScale}, x=${tx}%, y=${ty}%`);
+
+  // "object-fit: cover" mantığı: görsel kanvası tamamen kaplayacak şekilde ölçeklenir
+  const coverScale = Math.max(canvasW / srcW, canvasH / srcH);
+
+  // Kullanıcı ölçeği uygula
+  const finalScale = coverScale * userScale;
+  const imgW = Math.round(srcW * finalScale);
+  const imgH = Math.round(srcH * finalScale);
+
+  // Merkezi konumlandırma
+  const centerX = Math.round((canvasW - imgW) / 2);
+  const centerY = Math.round((canvasH - imgH) / 2);
+
+  // Translate: kanvas boyutunun yüzdesi kadar kaydırma
+  const translateX = Math.round((tx / 100) * canvasW);
+  const translateY = Math.round((ty / 100) * canvasH);
+
+  // Nihai pozisyon
+  const finalX = centerX + translateX;
+  const finalY = centerY + translateY;
+
+  console.log(`📍 Görsel boyutu: ${imgW}x${imgH}px, Pozisyon: (${finalX}, ${finalY})`);
+
+  // Kaynak görseli hedef boyuta ölçekle
+  const resizedImage = await sharp(sourceImageBuffer)
+    .resize(imgW, imgH, { fit: 'fill' })
+    .toBuffer();
+
+  // Beyaz kanvas oluştur ve görseli üzerine yerleştir
+  // Sharp composite: negatif left/top değerlerini desteklemez, o yüzden crop mantığı uyguluyoruz
+  
+  // Görselin kanvas içinde görünen kısmını hesapla
+  const visibleLeft = Math.max(0, -finalX); // Görseli ne kadar kırpacağız (sol)
+  const visibleTop = Math.max(0, -finalY);  // Görseli ne kadar kırpacağız (üst)
+  const visibleRight = Math.min(imgW, canvasW - finalX); // Görselin sağ sınırı
+  const visibleBottom = Math.min(imgH, canvasH - finalY); // Görselin alt sınırı
+
+  const visibleW = Math.max(0, visibleRight - visibleLeft);
+  const visibleH = Math.max(0, visibleBottom - visibleTop);
+
+  // Kanvas üzerindeki yerleştirme pozisyonu
+  const placeX = Math.max(0, finalX);
+  const placeY = Math.max(0, finalY);
+
+  if (visibleW <= 0 || visibleH <= 0) {
+    // Görsel tamamen kanvas dışında, sadece beyaz kanvas döndür
+    console.log('⚠️ Görsel kanvas dışında, boş kanvas döndürülüyor');
+    return sharp({
+      create: {
+        width: canvasW,
+        height: canvasH,
+        channels: 3,
+        background: { r: 255, g: 255, b: 255 }
+      }
+    }).png().toBuffer();
+  }
+
+  // Görselin görünen kısmını kırp
+  const croppedImage = await sharp(resizedImage)
+    .extract({
+      left: visibleLeft,
+      top: visibleTop,
+      width: visibleW,
+      height: visibleH
+    })
+    .toBuffer();
+
+  // Beyaz kanvas + kırpılmış görsel birleştir
+  const result = await sharp({
+    create: {
+      width: canvasW,
+      height: canvasH,
+      channels: 3,
+      background: { r: 255, g: 255, b: 255 }
+    }
+  })
+    .composite([{
+      input: croppedImage,
+      left: placeX,
+      top: placeY,
+    }])
+    .png({ quality: 100 })
+    .toBuffer();
+
+  console.log(`✅ Üretim görseli oluşturuldu: ${canvasW}x${canvasH}px`);
+  return result;
+}
+
+/**
+ * Helper: Buffer'ı dosyaya kaydeder ve URL döndürür
+ */
+async function saveBufferToStorage(buffer, prefix = 'production') {
+  const now = new Date();
+  const year = String(now.getFullYear());
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const fileName = `${prefix}-${Date.now()}-${crypto.randomBytes(6).toString('hex')}.png`;
+  const relativeDirectory = path.join(year, month);
+  const absoluteDirectory = path.join(UPLOAD_DIR, relativeDirectory);
+  await fs.promises.mkdir(absoluteDirectory, { recursive: true });
+
+  const absolutePath = path.join(absoluteDirectory, fileName);
+  await fs.promises.writeFile(absolutePath, buffer);
+
+  const localUrl = `https://admin.birebiro.com/api/files/${relativeDirectory.replace(/\\/g, '/')}/${fileName}`;
+  console.log(`💾 Dosya kaydedildi: ${localUrl} (${buffer.length} bytes)`);
+
+  // Log to image_uploads table
+  pool.query(
+    `INSERT INTO image_uploads (image_url, original_filename, file_size, mime_type, source_page, endpoint, ip_address, user_agent)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    [localUrl, fileName, buffer.length, 'image/png', 'production-compose', 'composeProductionImage', 'server', 'sharp-compose']
+  ).catch(err => console.error('image_uploads log error:', err));
+
+  return { localUrl, absolutePath, fileSize: buffer.length };
 }
 
 // PUBLIC USER IMAGE UPLOAD ENDPOINT
@@ -1741,21 +1961,29 @@ function replicateRequest(method, urlPath, body, retries = 3) {
 
 /**
  * POST /api/orders/:id/generate-production-image
- * Replicate Google Image Upscaler ile üretim görseli oluşturur
- * - Siparişin generatedImageUrl'ini alır
- * - Replicate API'ye gönderir (x4 upscale)
- * - Sonucu generated_image.production_image_url'e kaydeder
+ * Üretim görseli oluşturur:
+ * 1. Orijinal görseli Replicate ile 4x upscale eder
+ * 2. Kullanıcının kanvas üzerindeki konumlandırmasını (imageTransform) uygular
+ * 3. Çerçeve boyutlarına (sizeDimensions) uygun baskıya hazır görsel üretir
+ * 
+ * Body parametreleri:
+ * - force: true ise mevcut üretim görselini yeniden oluşturur
  */
 app.post('/api/orders/:id/generate-production-image', async (req, res) => {
   const { id } = req.params;
+  const { force } = req.body || {};
 
   try {
-    // 1. Sipariş ve görsel bilgisini al
+    // 1. Sipariş, görsel ve boyut/transform bilgisini al
     const orderResult = await pool.query(`
       SELECT o.id, o.generation_id as "generationId",
+             o.image_transform as "imageTransform",
+             o.orientation,
+             ps.dimensions as "sizeDimensions",
              gi.id as "giId", gi.image_url as "generatedImageUrl", gi.production_image_url as "productionImageUrl"
       FROM "order" o
       LEFT JOIN generated_image gi ON o.generation_id = gi.generation_id
+      LEFT JOIN product_size ps ON o.product_size_id = ps.id
       WHERE o.id = $1
     `, [id]);
 
@@ -1765,8 +1993,8 @@ app.post('/api/orders/:id/generate-production-image', async (req, res) => {
 
     const order = orderResult.rows[0];
 
-    // Zaten üretim görseli varsa tekrar oluşturma
-    if (order.productionImageUrl) {
+    // Zaten üretim görseli varsa ve force değilse tekrar oluşturma
+    if (order.productionImageUrl && !force) {
       return res.json({
         success: true,
         message: 'Üretim görseli zaten mevcut',
@@ -1783,17 +2011,32 @@ app.post('/api/orders/:id/generate-production-image', async (req, res) => {
       return res.status(400).json({ error: 'generated_image kaydı bulunamadı' });
     }
 
-    console.log(`🎨 Üretim görseli oluşturuluyor - Sipariş #${id}, Kaynak: ${order.generatedImageUrl}`);
+    // imageTransform parse et
+    let imageTransform = { x: 0, y: 0, scale: 1 };
+    if (order.imageTransform) {
+      try {
+        imageTransform = typeof order.imageTransform === 'string'
+          ? JSON.parse(order.imageTransform)
+          : order.imageTransform;
+      } catch (e) {
+        console.warn('imageTransform parse hatası, varsayılan kullanılıyor:', e.message);
+      }
+    }
+
+    console.log(`🎨 Üretim görseli oluşturuluyor - Sipariş #${id}`);
+    console.log(`   Kaynak: ${order.generatedImageUrl}`);
+    console.log(`   Boyut: ${order.sizeDimensions || 'bilinmiyor'}, Yön: ${order.orientation || 'bilinmiyor'}`);
+    console.log(`   Transform: ${JSON.stringify(imageTransform)}`);
+    if (force) console.log('   ⚡ Force mode: mevcut görsel yeniden oluşturulacak');
 
     // 2. Görsel URL'ini absolute hale getir (Replicate dışarıdan erişebilmeli)
     let sourceImageUrl = order.generatedImageUrl;
     if (sourceImageUrl && !sourceImageUrl.startsWith('http')) {
-      // Relative URL'i absolute yap
       sourceImageUrl = `https://www.birebiro.com${sourceImageUrl.startsWith('/') ? '' : '/'}${sourceImageUrl}`;
     }
     console.log(`🔗 Replicate'e gönderilecek URL: ${sourceImageUrl}`);
 
-    // 3. Replicate API'ye istek gönder (nightmareai/real-esrgan - model-based endpoint, version hash gerekmez)
+    // 3. Replicate API ile upscale
     const replicateBody = {
       input: {
         image: sourceImageUrl,
@@ -1822,60 +2065,26 @@ app.post('/api/orders/:id/generate-production-image', async (req, res) => {
 
     const prediction = response.data;
 
-    // 3. Eğer sync ile tamamlandıysa (Prefer: wait)
+    // 4. Upscale sonucunu al (sync veya polling)
+    let upscaledImageUrl = null;
+
     if (prediction.status === 'succeeded' && prediction.output) {
-      const replicateUrl = prediction.output;
-
-      // Replicate görselini kendi storage'ımıza indir
-      const downloaded = await downloadRemoteImageToStorage(replicateUrl, `upscale-${id}`);
-      const productionUrl = downloaded ? downloaded.localUrl : replicateUrl;
-
-      // DB'ye kaydet
-      await pool.query(`
-        UPDATE generated_image SET production_image_url = $1 WHERE id = $2
-      `, [productionUrl, order.giId]);
-
-      console.log(`✅ Üretim görseli hazır - Sipariş #${id}: ${productionUrl}`);
-
-      return res.json({
-        success: true,
-        productionImageUrl: productionUrl,
-        predictionId: prediction.id,
-      });
-    }
-
-    // 4. Eğer hala işleniyorsa, polling yap (max 120 saniye)
-    if (prediction.status === 'starting' || prediction.status === 'processing') {
+      upscaledImageUrl = prediction.output;
+    } else if (prediction.status === 'starting' || prediction.status === 'processing') {
       const predictionId = prediction.id;
       let attempts = 0;
-      const maxAttempts = 60; // 60 * 2s = 120s
+      const maxAttempts = 60;
 
       while (attempts < maxAttempts) {
-        await new Promise(r => setTimeout(r, 2000)); // 2 saniye bekle
+        await new Promise(r => setTimeout(r, 2000));
         attempts++;
 
         const pollResponse = await replicateRequest('GET', `/v1/predictions/${predictionId}`, null);
         const pollData = pollResponse.data;
 
         if (pollData.status === 'succeeded' && pollData.output) {
-          const replicateUrl = pollData.output;
-
-          // Replicate görselini kendi storage'ımıza indir
-          const downloaded = await downloadRemoteImageToStorage(replicateUrl, `upscale-${id}`);
-          const productionUrl = downloaded ? downloaded.localUrl : replicateUrl;
-
-          // DB'ye kaydet
-          await pool.query(`
-            UPDATE generated_image SET production_image_url = $1 WHERE id = $2
-          `, [productionUrl, order.giId]);
-
-          console.log(`✅ Üretim görseli hazır (polling) - Sipariş #${id}: ${productionUrl}`);
-
-          return res.json({
-            success: true,
-            productionImageUrl: productionUrl,
-            predictionId: predictionId,
-          });
+          upscaledImageUrl = pollData.output;
+          break;
         }
 
         if (pollData.status === 'failed' || pollData.status === 'canceled') {
@@ -1887,20 +2096,68 @@ app.post('/api/orders/:id/generate-production-image', async (req, res) => {
         }
       }
 
-      return res.status(504).json({ error: 'Görsel upscale işlemi zaman aşımına uğradı (120s)' });
-    }
-
-    // Beklenmeyen durum
-    if (prediction.status === 'failed') {
+      if (!upscaledImageUrl) {
+        return res.status(504).json({ error: 'Görsel upscale işlemi zaman aşımına uğradı (120s)' });
+      }
+    } else if (prediction.status === 'failed') {
       return res.status(502).json({
         error: 'Görsel upscale işlemi başarısız',
         details: prediction.error || 'Bilinmeyen hata',
       });
+    } else {
+      return res.status(502).json({
+        error: 'Beklenmeyen Replicate durumu',
+        status: prediction.status,
+      });
     }
 
-    return res.status(502).json({
-      error: 'Beklenmeyen Replicate durumu',
-      status: prediction.status,
+    console.log(`✅ Upscale tamamlandı: ${upscaledImageUrl}`);
+
+    // 5. Upscale edilmiş görseli buffer olarak indir
+    const upscaledBuffer = await downloadImageAsBuffer(upscaledImageUrl);
+    if (!upscaledBuffer) {
+      // Fallback: eski davranış - upscale görselini direkt kaydet
+      console.warn('⚠️ Upscale görseli indirilemedi, kanvas kompozisyonu atlanıyor');
+      const downloaded = await downloadRemoteImageToStorage(upscaledImageUrl, `upscale-${id}`);
+      const productionUrl = downloaded ? downloaded.localUrl : upscaledImageUrl;
+
+      await pool.query(`
+        UPDATE generated_image SET production_image_url = $1 WHERE id = $2
+      `, [productionUrl, order.giId]);
+
+      return res.json({
+        success: true,
+        productionImageUrl: productionUrl,
+        warning: 'Kanvas kompozisyonu uygulanamadı, sadece upscale yapıldı',
+      });
+    }
+
+    // 6. Kanvas kompozisyonu uygula (imageTransform + sizeDimensions)
+    console.log(`🎯 Kanvas kompozisyonu başlıyor...`);
+    const composedBuffer = await composeProductionImage(
+      upscaledBuffer,
+      order.sizeDimensions,
+      order.orientation,
+      imageTransform
+    );
+
+    // 7. Sonucu kaydet
+    const saved = await saveBufferToStorage(composedBuffer, `production-${id}`);
+    const productionUrl = saved.localUrl;
+
+    // 8. DB güncelle
+    await pool.query(`
+      UPDATE generated_image SET production_image_url = $1 WHERE id = $2
+    `, [productionUrl, order.giId]);
+
+    console.log(`✅ Üretim görseli hazır - Sipariş #${id}: ${productionUrl}`);
+
+    return res.json({
+      success: true,
+      productionImageUrl: productionUrl,
+      composed: true,
+      canvasSize: order.sizeDimensions,
+      transform: imageTransform,
     });
 
   } catch (error) {

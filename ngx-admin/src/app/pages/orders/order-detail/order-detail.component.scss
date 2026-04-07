@@ -599,11 +599,33 @@ $gap: 12px;
       }
     }
 
+    // Üretim görseli - kanvas kompozisyonu uygulanmış, tam görüntüle
+    &.production-img {
+      object-fit: contain;
+      background: #f7f7f7;
+    }
+
     @media (max-width: 600px) {
       width: 100%;
       max-width: 200px;
       height: auto;
       max-height: 200px;
+    }
+  }
+
+  // Üretim görseli container - kanvas oranını göster
+  .production-container {
+    background: #f7f7f7;
+    border: 1px solid #e8e8e8;
+  }
+
+  // Yeniden oluştur butonu
+  .regenerate-btn {
+    padding: 0 2px;
+    min-width: unset;
+    opacity: 0.6;
+    &:hover {
+      opacity: 1;
     }
   }
 
