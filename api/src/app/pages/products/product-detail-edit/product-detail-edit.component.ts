@@ -3,8 +3,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { NbToastrService } from '@nebular/theme';
 
-import '../../editors/ckeditor/ckeditor.loader';
-import 'ckeditor';
 import { ProductsService } from '../../../@core/services/products.service';
 import { ImageUploadService } from '../../../@core/services/image-upload.service';
 import { ProductDetail } from '../../../@core/models';
