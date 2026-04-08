@@ -91,12 +91,11 @@ export class ProductDetailEditComponent implements OnInit {
             longDescriptionHtml: detail.longDescriptionHtml || '',
             longDescriptionHtmlEn: detail.longDescriptionHtmlEn || '',
             longDescriptionHtmlFr: detail.longDescriptionHtmlFr || '',
+            videoUrl: detail.videoUrl || '',
           });
           this.longDescriptionHtml = detail.longDescriptionHtml || '';
           this.longDescriptionHtmlEn = detail.longDescriptionHtmlEn || '';
           this.longDescriptionHtmlFr = detail.longDescriptionHtmlFr || '';
-            videoUrl: detail.videoUrl || '',
-          });
           this.galleryImages = detail.galleryImages || [];
         }
         this.loading = false;
