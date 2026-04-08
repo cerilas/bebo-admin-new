@@ -25,6 +25,10 @@ export class ProductDetailEditComponent implements OnInit {
   galleryImages: string[] = [];
   activeTab = 'tr';
 
+  longDescriptionHtml = '';
+  longDescriptionHtmlEn = '';
+  longDescriptionHtmlFr = '';
+
   editorConfig = {
     extraPlugins: 'divarea',
     height: 300,
@@ -87,6 +91,10 @@ export class ProductDetailEditComponent implements OnInit {
             longDescriptionHtml: detail.longDescriptionHtml || '',
             longDescriptionHtmlEn: detail.longDescriptionHtmlEn || '',
             longDescriptionHtmlFr: detail.longDescriptionHtmlFr || '',
+          });
+          this.longDescriptionHtml = detail.longDescriptionHtml || '';
+          this.longDescriptionHtmlEn = detail.longDescriptionHtmlEn || '';
+          this.longDescriptionHtmlFr = detail.longDescriptionHtmlFr || '';
             videoUrl: detail.videoUrl || '',
           });
           this.galleryImages = detail.galleryImages || [];
@@ -104,6 +112,9 @@ export class ProductDetailEditComponent implements OnInit {
     this.saving = true;
     const data: Partial<ProductDetail> = {
       ...this.form.value,
+      longDescriptionHtml: this.longDescriptionHtml,
+      longDescriptionHtmlEn: this.longDescriptionHtmlEn,
+      longDescriptionHtmlFr: this.longDescriptionHtmlFr,
       galleryImages: this.galleryImages,
     };
 

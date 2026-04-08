@@ -68,19 +68,19 @@
           <nb-tab tabTitle="TR">
             <div class="form-group">
               <label class="label">Detaylı Açıklama (TR)</label>
-              <ckeditor [formControl]="form.get('longDescriptionHtml')" [config]="editorConfig"></ckeditor>
+              <ckeditor [(ngModel)]="longDescriptionHtml" [config]="editorConfig"></ckeditor>
             </div>
           </nb-tab>
           <nb-tab tabTitle="EN">
             <div class="form-group">
               <label class="label">Detailed Description (EN)</label>
-              <ckeditor [formControl]="form.get('longDescriptionHtmlEn')" [config]="editorConfig"></ckeditor>
+              <ckeditor [(ngModel)]="longDescriptionHtmlEn" [config]="editorConfig"></ckeditor>
             </div>
           </nb-tab>
           <nb-tab tabTitle="FR">
             <div class="form-group">
               <label class="label">Description détaillée (FR)</label>
-              <ckeditor [formControl]="form.get('longDescriptionHtmlFr')" [config]="editorConfig"></ckeditor>
+              <ckeditor [(ngModel)]="longDescriptionHtmlFr" [config]="editorConfig"></ckeditor>
             </div>
           </nb-tab>
         </nb-tabset>
