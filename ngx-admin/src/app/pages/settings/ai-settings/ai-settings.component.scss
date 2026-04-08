@@ -4,6 +4,36 @@
   align-items: center;
 }
 
+.stats-grid {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+
+  .stat-label {
+    color: #8f9bb3;
+  }
+
+  strong {
+    font-size: 1.1rem;
+  }
+}
+
+::ng-deep .nb-theme-dark {
+  .stats-grid {
+    background: #192038;
+  }
+}
+
 .form-container {
   margin-bottom: 2rem;
   padding: 1rem;
