@@ -2,6 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { NbToastrService } from '@nebular/theme';
+
+import '../../editors/ckeditor/ckeditor.loader';
+import 'ckeditor';
 import { ProductsService } from '../../../@core/services/products.service';
 import { ImageUploadService } from '../../../@core/services/image-upload.service';
 import { ProductDetail } from '../../../@core/models';
@@ -21,6 +24,23 @@ export class ProductDetailEditComponent implements OnInit {
   form: FormGroup;
   galleryImages: string[] = [];
   activeTab = 'tr';
+
+  editorConfig = {
+    extraPlugins: 'divarea',
+    height: 300,
+    language: 'tr',
+    toolbar: [
+      { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'Strike', 'RemoveFormat'] },
+      { name: 'paragraph', items: ['NumberedList', 'BulletedList', '-', 'JustifyLeft', 'JustifyCenter', 'JustifyRight'] },
+      { name: 'links', items: ['Link', 'Unlink'] },
+      { name: 'insert', items: ['Image', 'Table', 'HorizontalRule'] },
+      { name: 'styles', items: ['Format', 'FontSize'] },
+      { name: 'colors', items: ['TextColor', 'BGColor'] },
+      { name: 'tools', items: ['Maximize', 'Source'] },
+    ],
+    removePlugins: 'elementspath',
+    resize_enabled: false,
+  };
 
   constructor(
     private route: ActivatedRoute,

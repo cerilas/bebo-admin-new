@@ -16,6 +16,7 @@ import {
   NbAlertModule,
 } from '@nebular/theme';
 
+import { CKEditorModule } from 'ng2-ckeditor';
 import { ThemeModule } from '../../@theme/theme.module';
 import { ProductsRoutingModule } from './products-routing.module';
 import { ProductsComponent } from './products.component';
@@ -51,6 +52,7 @@ import { AdminImageUploadComponent } from '../../@theme/components/admin-image-u
     NbCheckboxModule,
     NbAccordionModule,
     NbAlertModule,
+    CKEditorModule,
     AdminImageUploadComponent,
   ],
 })

@@ -61,38 +61,26 @@
     <!-- Uzun Açıklama (HTML) -->
     <nb-card>
       <nb-card-header>
-        <h6><nb-icon icon="file-text-outline"></nb-icon> Detaylı Açıklama (HTML)</h6>
+        <h6><nb-icon icon="file-text-outline"></nb-icon> Detaylı Açıklama</h6>
       </nb-card-header>
       <nb-card-body>
         <nb-tabset>
           <nb-tab tabTitle="TR">
             <div class="form-group">
-              <label class="label">Detaylı Açıklama HTML (TR)</label>
-              <textarea nbInput fullWidth [formControl]="form.get('longDescriptionHtml')" rows="10" placeholder="<p>Ürün detaylı açıklaması...</p>" class="code-textarea"></textarea>
-            </div>
-            <div class="html-preview" *ngIf="form.get('longDescriptionHtml').value">
-              <label class="label">Önizleme</label>
-              <div class="preview-box" [innerHTML]="form.get('longDescriptionHtml').value"></div>
+              <label class="label">Detaylı Açıklama (TR)</label>
+              <ckeditor [formControl]="form.get('longDescriptionHtml')" [config]="editorConfig"></ckeditor>
             </div>
           </nb-tab>
           <nb-tab tabTitle="EN">
             <div class="form-group">
-              <label class="label">Detailed Description HTML (EN)</label>
-              <textarea nbInput fullWidth [formControl]="form.get('longDescriptionHtmlEn')" rows="10" placeholder="<p>Product detailed description...</p>" class="code-textarea"></textarea>
-            </div>
-            <div class="html-preview" *ngIf="form.get('longDescriptionHtmlEn').value">
-              <label class="label">Preview</label>
-              <div class="preview-box" [innerHTML]="form.get('longDescriptionHtmlEn').value"></div>
+              <label class="label">Detailed Description (EN)</label>
+              <ckeditor [formControl]="form.get('longDescriptionHtmlEn')" [config]="editorConfig"></ckeditor>
             </div>
           </nb-tab>
           <nb-tab tabTitle="FR">
             <div class="form-group">
-              <label class="label">Description détaillée HTML (FR)</label>
-              <textarea nbInput fullWidth [formControl]="form.get('longDescriptionHtmlFr')" rows="10" placeholder="<p>Description détaillée du produit...</p>" class="code-textarea"></textarea>
-            </div>
-            <div class="html-preview" *ngIf="form.get('longDescriptionHtmlFr').value">
-              <label class="label">Aperçu</label>
-              <div class="preview-box" [innerHTML]="form.get('longDescriptionHtmlFr').value"></div>
+              <label class="label">Description détaillée (FR)</label>
+              <ckeditor [formControl]="form.get('longDescriptionHtmlFr')" [config]="editorConfig"></ckeditor>
             </div>
           </nb-tab>
         </nb-tabset>

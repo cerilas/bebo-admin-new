@@ -16,6 +16,7 @@ import {
   NbAlertModule,
 } from '@nebular/theme';
 
+import { CKEditorModule } from 'ng2-ckeditor';
 import { ThemeModule } from '../../@theme/theme.module';
 import { ProductsRoutingModule } from './products-routing.module';
 import { ProductsComponent } from './products.component';
@@ -48,6 +49,7 @@ import { ProductDetailEditComponent } from './product-detail-edit/product-detail
     NbCheckboxModule,
     NbAccordionModule,
     NbAlertModule,
+    CKEditorModule,
   ],
 })
 export class ProductsModule { }
