@@ -1,0 +1,184 @@
+<div class="detail-edit-container">
+  <!-- Header -->
+  <nb-card>
+    <nb-card-header>
+      <div class="header-row">
+        <div class="header-left">
+          <button nbButton ghost status="basic" (click)="goBack()">
+            <nb-icon icon="arrow-back-outline"></nb-icon>
+          </button>
+          <h5>
+            <nb-icon icon="file-text-outline"></nb-icon>
+            Ürün Detay Düzenle
+            <span class="product-name" *ngIf="productName">— {{ productName }}</span>
+          </h5>
+        </div>
+        <button nbButton status="primary" (click)="save()" [disabled]="saving" [nbSpinner]="saving">
+          <nb-icon icon="save-outline"></nb-icon>
+          Kaydet
+        </button>
+      </div>
+    </nb-card-header>
+  </nb-card>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-container">
+    <nb-spinner size="large" status="primary"></nb-spinner>
+    <p>Yükleniyor...</p>
+  </div>
+
+  <div *ngIf="!loading" class="content-area">
+
+    <!-- Kısa Açıklama -->
+    <nb-card>
+      <nb-card-header>
+        <h6><nb-icon icon="text-outline"></nb-icon> Kısa Açıklama</h6>
+      </nb-card-header>
+      <nb-card-body>
+        <nb-tabset (changeTab)="activeTab = $event.tabTitle">
+          <nb-tab tabTitle="TR">
+            <div class="form-group">
+              <label class="label">Kısa Açıklama (TR)</label>
+              <textarea nbInput fullWidth [formControl]="form.get('shortDescription')" rows="3" placeholder="Ürün kısa açıklaması..."></textarea>
+            </div>
+          </nb-tab>
+          <nb-tab tabTitle="EN">
+            <div class="form-group">
+              <label class="label">Short Description (EN)</label>
+              <textarea nbInput fullWidth [formControl]="form.get('shortDescriptionEn')" rows="3" placeholder="Product short description..."></textarea>
+            </div>
+          </nb-tab>
+          <nb-tab tabTitle="FR">
+            <div class="form-group">
+              <label class="label">Description courte (FR)</label>
+              <textarea nbInput fullWidth [formControl]="form.get('shortDescriptionFr')" rows="3" placeholder="Brève description du produit..."></textarea>
+            </div>
+          </nb-tab>
+        </nb-tabset>
+      </nb-card-body>
+    </nb-card>
+
+    <!-- Uzun Açıklama (HTML) -->
+    <nb-card>
+      <nb-card-header>
+        <h6><nb-icon icon="file-text-outline"></nb-icon> Detaylı Açıklama (HTML)</h6>
+      </nb-card-header>
+      <nb-card-body>
+        <nb-tabset>
+          <nb-tab tabTitle="TR">
+            <div class="form-group">
+              <label class="label">Detaylı Açıklama HTML (TR)</label>
+              <textarea nbInput fullWidth [formControl]="form.get('longDescriptionHtml')" rows="10" placeholder="<p>Ürün detaylı açıklaması...</p>" class="code-textarea"></textarea>
+            </div>
+            <div class="html-preview" *ngIf="form.get('longDescriptionHtml').value">
+              <label class="label">Önizleme</label>
+              <div class="preview-box" [innerHTML]="form.get('longDescriptionHtml').value"></div>
+            </div>
+          </nb-tab>
+          <nb-tab tabTitle="EN">
+            <div class="form-group">
+              <label class="label">Detailed Description HTML (EN)</label>
+              <textarea nbInput fullWidth [formControl]="form.get('longDescriptionHtmlEn')" rows="10" placeholder="<p>Product detailed description...</p>" class="code-textarea"></textarea>
+            </div>
+            <div class="html-preview" *ngIf="form.get('longDescriptionHtmlEn').value">
+              <label class="label">Preview</label>
+              <div class="preview-box" [innerHTML]="form.get('longDescriptionHtmlEn').value"></div>
+            </div>
+          </nb-tab>
+          <nb-tab tabTitle="FR">
+            <div class="form-group">
+              <label class="label">Description détaillée HTML (FR)</label>
+              <textarea nbInput fullWidth [formControl]="form.get('longDescriptionHtmlFr')" rows="10" placeholder="<p>Description détaillée du produit...</p>" class="code-textarea"></textarea>
+            </div>
+            <div class="html-preview" *ngIf="form.get('longDescriptionHtmlFr').value">
+              <label class="label">Aperçu</label>
+              <div class="preview-box" [innerHTML]="form.get('longDescriptionHtmlFr').value"></div>
+            </div>
+          </nb-tab>
+        </nb-tabset>
+      </nb-card-body>
+    </nb-card>
+
+    <!-- Galeri Görselleri -->
+    <nb-card>
+      <nb-card-header>
+        <div class="header-row">
+          <h6><nb-icon icon="image-outline"></nb-icon> Galeri Görselleri ({{ galleryImages.length }})</h6>
+          <div class="upload-area">
+            <input type="file" accept="image/*" #galleryInput (change)="onGalleryFileSelected($event)" hidden>
+            <button nbButton size="small" status="primary" (click)="galleryInput.click()" [disabled]="uploading" [nbSpinner]="uploading">
+              <nb-icon icon="cloud-upload-outline"></nb-icon>
+              Görsel Ekle
+            </button>
+          </div>
+        </div>
+      </nb-card-header>
+      <nb-card-body>
+        <div class="gallery-grid" *ngIf="galleryImages.length > 0; else emptyGallery">
+          <div class="gallery-item" *ngFor="let img of galleryImages; let i = index">
+            <div class="gallery-image-wrapper">
+              <img [src]="img" [alt]="'Galeri ' + (i + 1)" (error)="$event.target.src='assets/images/placeholder.png'">
+              <div class="gallery-item-overlay">
+                <div class="gallery-item-actions">
+                  <button nbButton size="tiny" status="basic" ghost (click)="moveImageUp(i)" [disabled]="i === 0" nbTooltip="Yukarı Taşı">
+                    <nb-icon icon="arrow-upward-outline"></nb-icon>
+                  </button>
+                  <button nbButton size="tiny" status="basic" ghost (click)="moveImageDown(i)" [disabled]="i === galleryImages.length - 1" nbTooltip="Aşağı Taşı">
+                    <nb-icon icon="arrow-downward-outline"></nb-icon>
+                  </button>
+                  <button nbButton size="tiny" status="danger" ghost (click)="removeGalleryImage(i)" nbTooltip="Sil">
+                    <nb-icon icon="trash-2-outline"></nb-icon>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <span class="gallery-item-index">{{ i + 1 }}</span>
+          </div>
+        </div>
+
+        <ng-template #emptyGallery>
+          <div class="empty-gallery">
+            <nb-icon icon="image-outline"></nb-icon>
+            <p>Henüz galeri görseli eklenmemiş</p>
+            <button nbButton size="small" status="primary" outline (click)="galleryInput.click()">
+              <nb-icon icon="cloud-upload-outline"></nb-icon>
+              İlk Görseli Ekle
+            </button>
+          </div>
+        </ng-template>
+      </nb-card-body>
+    </nb-card>
+
+    <!-- Video URL -->
+    <nb-card>
+      <nb-card-header>
+        <h6><nb-icon icon="video-outline"></nb-icon> Video</h6>
+      </nb-card-header>
+      <nb-card-body>
+        <div class="form-group">
+          <label class="label">Video URL (YouTube, Vimeo vb.)</label>
+          <input nbInput fullWidth [formControl]="form.get('videoUrl')" placeholder="https://www.youtube.com/watch?v=...">
+        </div>
+        <div class="video-preview" *ngIf="form.get('videoUrl').value">
+          <label class="label">Video Linki</label>
+          <a [href]="form.get('videoUrl').value" target="_blank" rel="noopener noreferrer">
+            <nb-icon icon="external-link-outline"></nb-icon>
+            {{ form.get('videoUrl').value }}
+          </a>
+        </div>
+      </nb-card-body>
+    </nb-card>
+
+    <!-- Bottom Save -->
+    <div class="bottom-actions">
+      <button nbButton status="basic" (click)="goBack()">
+        <nb-icon icon="arrow-back-outline"></nb-icon>
+        Geri Dön
+      </button>
+      <button nbButton status="primary" (click)="save()" [disabled]="saving" [nbSpinner]="saving">
+        <nb-icon icon="save-outline"></nb-icon>
+        Kaydet
+      </button>
+    </div>
+  </div>
+</div>

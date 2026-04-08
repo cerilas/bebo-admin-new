@@ -129,6 +129,10 @@
             <nb-icon icon="edit-outline"></nb-icon>
             Düzenle
           </button>
+          <button nbButton status="info" size="small" (click)="editProductDetail(product)">
+            <nb-icon icon="file-text-outline"></nb-icon>
+            Detay Düzenle
+          </button>
         </div>
       </div>
       
@@ -164,6 +168,9 @@
           </button>
           <button nbButton status="primary" size="small" ghost (click)="editProduct(product)" nbTooltip="Düzenle">
             <nb-icon icon="edit-outline"></nb-icon>
+          </button>
+          <button nbButton status="info" size="small" ghost (click)="editProductDetail(product)" nbTooltip="Detay Düzenle">
+            <nb-icon icon="file-text-outline"></nb-icon>
           </button>
           <button nbButton status="danger" size="small" ghost (click)="confirmDelete(product)" nbTooltip="Sil">
             <nb-icon icon="trash-2-outline"></nb-icon>

@@ -7,3 +7,4 @@ export * from './about-content.model';
 export * from './contact-submission.model';
 export * from './newsletter-subscriber.model';
 export * from './art-credit-settings.model';
+export * from './product-detail.model';

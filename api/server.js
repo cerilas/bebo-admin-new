@@ -1181,6 +1181,84 @@ app.put('/api/products/:productId/size-frame-availability', async (req, res) => 
   }
 });
 
+// ==================== PRODUCT DETAIL API ====================
+
+// Get product detail by product ID
+app.get('/api/products/:productId/detail', async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const result = await pool.query(`
+      SELECT 
+        id,
+        product_id as "productId",
+        short_description as "shortDescription",
+        short_description_en as "shortDescriptionEn",
+        short_description_fr as "shortDescriptionFr",
+        long_description_html as "longDescriptionHtml",
+        long_description_html_en as "longDescriptionHtmlEn",
+        long_description_html_fr as "longDescriptionHtmlFr",
+        gallery_images as "galleryImages",
+        video_url as "videoUrl",
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      FROM product_detail
+      WHERE product_id = $1
+    `, [productId]);
+
+    if (result.rows.length === 0) {
+      return res.json(null);
+    }
+
+    const row = result.rows[0];
+    // Parse galleryImages from JSON string
+    try {
+      row.galleryImages = JSON.parse(row.galleryImages || '[]');
+    } catch (e) {
+      row.galleryImages = [];
+    }
+
+    res.json(row);
+  } catch (error) {
+    console.error('Product detail fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch product detail' });
+  }
+});
+
+// Create or update product detail (upsert)
+app.put('/api/products/:productId/detail', async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const {
+      shortDescription, shortDescriptionEn, shortDescriptionFr,
+      longDescriptionHtml, longDescriptionHtmlEn, longDescriptionHtmlFr,
+      galleryImages, videoUrl,
+    } = req.body;
+
+    const galleryJson = JSON.stringify(galleryImages || []);
+
+    const result = await pool.query(`
+      INSERT INTO product_detail (product_id, short_description, short_description_en, short_description_fr, long_description_html, long_description_html_en, long_description_html_fr, gallery_images, video_url, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+      ON CONFLICT (product_id) DO UPDATE SET
+        short_description = EXCLUDED.short_description,
+        short_description_en = EXCLUDED.short_description_en,
+        short_description_fr = EXCLUDED.short_description_fr,
+        long_description_html = EXCLUDED.long_description_html,
+        long_description_html_en = EXCLUDED.long_description_html_en,
+        long_description_html_fr = EXCLUDED.long_description_html_fr,
+        gallery_images = EXCLUDED.gallery_images,
+        video_url = EXCLUDED.video_url,
+        updated_at = NOW()
+      RETURNING id, product_id as "productId"
+    `, [productId, shortDescription, shortDescriptionEn, shortDescriptionFr, longDescriptionHtml, longDescriptionHtmlEn, longDescriptionHtmlFr, galleryJson, videoUrl]);
+
+    res.json({ success: true, data: result.rows[0], message: 'Product detail saved successfully' });
+  } catch (error) {
+    console.error('Product detail upsert error:', error);
+    res.status(500).json({ error: 'Failed to save product detail' });
+  }
+});
+
 // ==================== AI MODELS API ====================
 
 // Get all AI models

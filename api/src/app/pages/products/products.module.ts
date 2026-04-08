@@ -21,12 +21,14 @@ import { ProductsRoutingModule } from './products-routing.module';
 import { ProductsComponent } from './products.component';
 import { ProductListComponent } from './product-list/product-list.component';
 import { ProductFormComponent } from './product-form/product-form.component';
+import { ProductDetailEditComponent } from './product-detail-edit/product-detail-edit.component';
 
 @NgModule({
   declarations: [
     ProductsComponent,
     ProductListComponent,
     ProductFormComponent,
+    ProductDetailEditComponent,
   ],
   imports: [
     CommonModule,

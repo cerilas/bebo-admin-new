@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { BaseApiService } from './base-api.service';
-import { Product, ProductSize, ProductFrame } from '../models';
+import { Product, ProductSize, ProductFrame, ProductDetail } from '../models';
 
 export interface ProductStats {
   totalProducts: number;
@@ -88,5 +88,14 @@ export class ProductsService extends BaseApiService {
 
   deleteProductFrame(productId: number, frameId: number): Observable<void> {
     return this.delete<void>(`${this.endpoint}/${productId}/frames/${frameId}`);
+  }
+
+  // Product Detail
+  getProductDetail(productId: number): Observable<ProductDetail | null> {
+    return this.get<ProductDetail | null>(`${this.endpoint}/${productId}/detail`);
+  }
+
+  saveProductDetail(productId: number, detail: Partial<ProductDetail>): Observable<{ success: boolean; data: any; message: string }> {
+    return this.put<{ success: boolean; data: any; message: string }>(`${this.endpoint}/${productId}/detail`, detail);
   }
 }

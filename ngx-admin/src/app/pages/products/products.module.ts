@@ -22,6 +22,7 @@ import { ProductsComponent } from './products.component';
 import { ProductListComponent } from './product-list/product-list.component';
 import { ProductFormComponent } from './product-form/product-form.component';
 import { MockupEditorComponent } from './mockup-editor/mockup-editor.component';
+import { ProductDetailEditComponent } from './product-detail-edit/product-detail-edit.component';
 import { AdminImageUploadComponent } from '../../@theme/components/admin-image-upload/admin-image-upload.component';
 
 @NgModule({
@@ -30,6 +31,7 @@ import { AdminImageUploadComponent } from '../../@theme/components/admin-image-u
     ProductListComponent,
     ProductFormComponent,
     MockupEditorComponent,
+    ProductDetailEditComponent,
   ],
   imports: [
     CommonModule,
