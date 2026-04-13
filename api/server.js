@@ -49,7 +49,7 @@ app.use((req, res, next) => {
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, 'files');
 const ADMIN_UPLOAD_KEY = process.env.ADMIN_UPLOAD_KEY || 'birebiro2024';
 const ADMIN_AUTH_ACCESS_KEY = process.env.ADMIN_AUTH_ACCESS_KEY || process.env.ADMIN_ACCESS_KEY || 'birebiro2026';
-const MAX_UPLOAD_SIZE = 5 * 1024 * 1024;
+const MAX_UPLOAD_SIZE = 20 * 1024 * 1024;
 
 const adminAuthAttempts = new Map();
 
@@ -299,6 +299,70 @@ async function downloadRemoteImageToStorage(remoteUrl, prefix = 'img') {
 }
 
 /**
+ * Helper: Replicate Real-ESRGAN ile görseli upscale eder
+ * @param {string} imageUrlOrBuffer - Görsel URL'i veya 'buffer' modu için kullanılacak URL
+ * @param {number} scaleFactor - Büyütme faktörü (2 veya 4)
+ * @returns {Promise<string|null>} - Upscale edilmiş görselin URL'i
+ */
+async function replicateUpscale(imageUrl, scaleFactor = 4) {
+  const replicateBody = {
+    input: {
+      image: imageUrl,
+      scale: scaleFactor,
+      face_enhance: false,
+    },
+  };
+
+  const response = await replicateRequest('POST', '/v1/models/nightmareai/real-esrgan/predictions', replicateBody);
+
+  if (response.status !== 200 && response.status !== 201) {
+    console.error('Replicate API error:', response.data);
+    if (response.status === 429) {
+      throw new Error('RATE_LIMIT');
+    }
+    throw new Error(`Replicate API hatası: ${response.data?.detail || response.data?.error || 'Bilinmeyen hata'}`);
+  }
+
+  const prediction = response.data;
+  let upscaledImageUrl = null;
+
+  if (prediction.status === 'succeeded' && prediction.output) {
+    upscaledImageUrl = prediction.output;
+  } else if (prediction.status === 'starting' || prediction.status === 'processing') {
+    const predictionId = prediction.id;
+    let attempts = 0;
+    const maxAttempts = 60;
+
+    while (attempts < maxAttempts) {
+      await new Promise(r => setTimeout(r, 2000));
+      attempts++;
+
+      const pollResponse = await replicateRequest('GET', `/v1/predictions/${predictionId}`, null);
+      const pollData = pollResponse.data;
+
+      if (pollData.status === 'succeeded' && pollData.output) {
+        upscaledImageUrl = pollData.output;
+        break;
+      }
+
+      if (pollData.status === 'failed' || pollData.status === 'canceled') {
+        throw new Error(`Replicate prediction failed: ${pollData.error}`);
+      }
+    }
+
+    if (!upscaledImageUrl) {
+      throw new Error('Replicate upscale zaman aşımı (120s)');
+    }
+  } else if (prediction.status === 'failed') {
+    throw new Error(`Replicate upscale başarısız: ${prediction.error}`);
+  } else {
+    throw new Error(`Beklenmeyen Replicate durumu: ${prediction.status}`);
+  }
+
+  return upscaledImageUrl;
+}
+
+/**
  * Helper: Uzak URL'deki görseli buffer olarak indirir (Sharp ile işlemek için)
  */
 function downloadImageAsBuffer(remoteUrl) {
@@ -360,22 +424,26 @@ async function composeProductionImage(sourceImageBuffer, sizeDimensions, orienta
   const ty = transform.y || 0;
   const userScale = transform.scale || 1;
 
+  // 300 DPI: 1 cm = 300/2.54 ≈ 118.11 piksel
+  const DPI = 300;
+  const CM_TO_PX = DPI / 2.54;
+
   // Parse sizeDimensions (format: "WIDTHxHEIGHT" in cm, e.g., "30x40")
-  let canvasRatioW = 1;
-  let canvasRatioH = 1;
+  let canvasCmW = 1;
+  let canvasCmH = 1;
   if (sizeDimensions) {
     const parts = sizeDimensions.toLowerCase().split('x');
     if (parts.length === 2) {
-      canvasRatioW = parseFloat(parts[0]) || 1;
-      canvasRatioH = parseFloat(parts[1]) || 1;
+      canvasCmW = parseFloat(parts[0]) || 1;
+      canvasCmH = parseFloat(parts[1]) || 1;
     }
   }
 
   // Orientation: portrait → genişlik < yükseklik, landscape → genişlik > yükseklik
-  if (orientation === 'landscape' && canvasRatioW < canvasRatioH) {
-    [canvasRatioW, canvasRatioH] = [canvasRatioH, canvasRatioW];
-  } else if (orientation === 'portrait' && canvasRatioW > canvasRatioH) {
-    [canvasRatioW, canvasRatioH] = [canvasRatioH, canvasRatioW];
+  if (orientation === 'landscape' && canvasCmW < canvasCmH) {
+    [canvasCmW, canvasCmH] = [canvasCmH, canvasCmW];
+  } else if (orientation === 'portrait' && canvasCmW > canvasCmH) {
+    [canvasCmW, canvasCmH] = [canvasCmH, canvasCmW];
   }
 
   // Kaynak görselin boyutları
@@ -383,23 +451,11 @@ async function composeProductionImage(sourceImageBuffer, sizeDimensions, orienta
   const srcW = srcMeta.width;
   const srcH = srcMeta.height;
 
-  // Kanvas piksel boyutlarını hesapla - uzun kenar kaynak görselin uzun kenarına eşit olsun
-  const srcLong = Math.max(srcW, srcH);
-  const ratioLong = Math.max(canvasRatioW, canvasRatioH);
-  const ratioShort = Math.min(canvasRatioW, canvasRatioH);
-  
-  let canvasW, canvasH;
-  if (canvasRatioW >= canvasRatioH) {
-    // Yatay veya kare kanvas
-    canvasW = Math.round(srcLong);
-    canvasH = Math.round(srcLong * (canvasRatioH / canvasRatioW));
-  } else {
-    // Dikey kanvas
-    canvasH = Math.round(srcLong);
-    canvasW = Math.round(srcLong * (canvasRatioW / canvasRatioH));
-  }
+  // Kanvas piksel boyutlarını DPI bazlı hesapla (300 DPI'da birebir cm karşılığı)
+  const canvasW = Math.round(canvasCmW * CM_TO_PX);
+  const canvasH = Math.round(canvasCmH * CM_TO_PX);
 
-  console.log(`📐 Kanvas: ${canvasW}x${canvasH}px (${canvasRatioW}x${canvasRatioH}cm), Kaynak: ${srcW}x${srcH}px`);
+  console.log(`📐 Kanvas: ${canvasW}x${canvasH}px (${canvasCmW}x${canvasCmH}cm @ ${DPI}DPI), Kaynak: ${srcW}x${srcH}px`);
   console.log(`🔄 Transform: scale=${userScale}, x=${tx}%, y=${ty}%`);
 
   // "object-fit: cover" mantığı: görsel kanvası tamamen kaplayacak şekilde ölçeklenir
@@ -455,7 +511,7 @@ async function composeProductionImage(sourceImageBuffer, sizeDimensions, orienta
         channels: 3,
         background: { r: 255, g: 255, b: 255 }
       }
-    }).png().toBuffer();
+    }).withMetadata({ density: DPI }).png().toBuffer();
   }
 
   // Görselin görünen kısmını kırp
@@ -468,7 +524,7 @@ async function composeProductionImage(sourceImageBuffer, sizeDimensions, orienta
     })
     .toBuffer();
 
-  // Beyaz kanvas + kırpılmış görsel birleştir
+  // Beyaz kanvas + kırpılmış görsel birleştir (300 DPI metadata ile)
   const result = await sharp({
     create: {
       width: canvasW,
@@ -482,10 +538,11 @@ async function composeProductionImage(sourceImageBuffer, sizeDimensions, orienta
       left: placeX,
       top: placeY,
     }])
+    .withMetadata({ density: DPI })
     .png({ quality: 100 })
     .toBuffer();
 
-  console.log(`✅ Üretim görseli oluşturuldu: ${canvasW}x${canvasH}px`);
+  console.log(`✅ Üretim görseli oluşturuldu: ${canvasW}x${canvasH}px @ ${DPI}DPI (${canvasCmW}x${canvasCmH}cm)`);
   return result;
 }
 
@@ -2114,100 +2171,87 @@ app.post('/api/orders/:id/generate-production-image', async (req, res) => {
     }
     console.log(`🔗 Replicate'e gönderilecek URL: ${sourceImageUrl}`);
 
-    // 3. Replicate API ile upscale
-    const replicateBody = {
-      input: {
-        image: sourceImageUrl,
-        scale: 4,
-        face_enhance: false,
-      },
-    };
+    // 3. Hedef kanvas boyutlarını hesapla (DPI bazlı)
+    const DPI = 300;
+    const CM_TO_PX = DPI / 2.54;
+    let targetCmW = 1, targetCmH = 1;
+    if (order.sizeDimensions) {
+      const parts = order.sizeDimensions.toLowerCase().split('x');
+      if (parts.length === 2) {
+        targetCmW = parseFloat(parts[0]) || 1;
+        targetCmH = parseFloat(parts[1]) || 1;
+      }
+    }
+    if (order.orientation === 'landscape' && targetCmW < targetCmH) {
+      [targetCmW, targetCmH] = [targetCmH, targetCmW];
+    } else if (order.orientation === 'portrait' && targetCmW > targetCmH) {
+      [targetCmW, targetCmH] = [targetCmH, targetCmW];
+    }
+    const targetLongPx = Math.round(Math.max(targetCmW, targetCmH) * CM_TO_PX);
+    console.log(`📐 Hedef: ${targetCmW}x${targetCmH}cm @ ${DPI}DPI → uzun kenar ${targetLongPx}px gerekli`);
 
-    const response = await replicateRequest('POST', '/v1/models/nightmareai/real-esrgan/predictions', replicateBody);
-
-    if (response.status !== 200 && response.status !== 201) {
-      console.error('Replicate API error:', response.data);
-
-      if (response.status === 429) {
+    // 4. İlk upscale: 4x
+    console.log(`🚀 1. Upscale başlıyor (4x)...`);
+    let upscaledImageUrl;
+    try {
+      upscaledImageUrl = await replicateUpscale(sourceImageUrl, 4);
+    } catch (err) {
+      if (err.message === 'RATE_LIMIT') {
         return res.status(429).json({
           error: 'Replicate API rate limit aşıldı',
           details: 'Çok fazla istek gönderildi. Lütfen 10-15 saniye bekleyip tekrar deneyin.',
         });
       }
-
-      return res.status(502).json({
-        error: 'Replicate API hatası',
-        details: response.data?.detail || response.data?.error || 'Bilinmeyen hata',
-      });
+      return res.status(502).json({ error: 'Görsel upscale işlemi başarısız', details: err.message });
     }
 
-    const prediction = response.data;
+    console.log(`✅ 1. Upscale tamamlandı: ${upscaledImageUrl}`);
 
-    // 4. Upscale sonucunu al (sync veya polling)
-    let upscaledImageUrl = null;
-
-    if (prediction.status === 'succeeded' && prediction.output) {
-      upscaledImageUrl = prediction.output;
-    } else if (prediction.status === 'starting' || prediction.status === 'processing') {
-      const predictionId = prediction.id;
-      let attempts = 0;
-      const maxAttempts = 60;
-
-      while (attempts < maxAttempts) {
-        await new Promise(r => setTimeout(r, 2000));
-        attempts++;
-
-        const pollResponse = await replicateRequest('GET', `/v1/predictions/${predictionId}`, null);
-        const pollData = pollResponse.data;
-
-        if (pollData.status === 'succeeded' && pollData.output) {
-          upscaledImageUrl = pollData.output;
-          break;
-        }
-
-        if (pollData.status === 'failed' || pollData.status === 'canceled') {
-          console.error(`❌ Replicate prediction failed: ${pollData.error}`);
-          return res.status(502).json({
-            error: 'Görsel upscale işlemi başarısız oldu',
-            details: pollData.error || 'Bilinmeyen hata',
-          });
-        }
-      }
-
-      if (!upscaledImageUrl) {
-        return res.status(504).json({ error: 'Görsel upscale işlemi zaman aşımına uğradı (120s)' });
-      }
-    } else if (prediction.status === 'failed') {
-      return res.status(502).json({
-        error: 'Görsel upscale işlemi başarısız',
-        details: prediction.error || 'Bilinmeyen hata',
-      });
-    } else {
-      return res.status(502).json({
-        error: 'Beklenmeyen Replicate durumu',
-        status: prediction.status,
-      });
-    }
-
-    console.log(`✅ Upscale tamamlandı: ${upscaledImageUrl}`);
-
-    // 5. Upscale edilmiş görseli buffer olarak indir
-    const upscaledBuffer = await downloadImageAsBuffer(upscaledImageUrl);
+    // 5. Upscale edilen görseli indir ve boyutunu kontrol et
+    let upscaledBuffer = await downloadImageAsBuffer(upscaledImageUrl);
     if (!upscaledBuffer) {
-      // Fallback: eski davranış - upscale görselini direkt kaydet
-      console.warn('⚠️ Upscale görseli indirilemedi, kanvas kompozisyonu atlanıyor');
+      console.warn('⚠️ 1. Upscale görseli indirilemedi, kanvas kompozisyonu atlanıyor');
       const downloaded = await downloadRemoteImageToStorage(upscaledImageUrl, `upscale-${id}`);
       const productionUrl = downloaded ? downloaded.localUrl : upscaledImageUrl;
-
-      await pool.query(`
-        UPDATE generated_image SET production_image_url = $1 WHERE id = $2
-      `, [productionUrl, order.giId]);
-
+      await pool.query(`UPDATE generated_image SET production_image_url = $1 WHERE id = $2`, [productionUrl, order.giId]);
       return res.json({
         success: true,
         productionImageUrl: productionUrl,
         warning: 'Kanvas kompozisyonu uygulanamadı, sadece upscale yapıldı',
       });
+    }
+
+    // Upscale sonrası boyut kontrolü: uzun kenar hedef pikselden küçükse 2. upscale yap
+    let upMeta = await sharp(upscaledBuffer).metadata();
+    const upscaledLong = Math.max(upMeta.width, upMeta.height);
+    console.log(`📏 1. Upscale sonucu: ${upMeta.width}x${upMeta.height}px (uzun kenar: ${upscaledLong}px, hedef: ${targetLongPx}px)`);
+
+    if (upscaledLong < targetLongPx) {
+      console.log(`⚡ Uzun kenar yetersiz (${upscaledLong} < ${targetLongPx}), 2. upscale (2x) başlıyor...`);
+
+      // 2. upscale için önce geçici olarak görseli kaydet (Replicate URL'e ihtiyaç duyuyor)
+      const tempSaved = await saveBufferToStorage(upscaledBuffer, `temp-upscale-${id}`);
+
+      try {
+        const secondUpscaleUrl = await replicateUpscale(tempSaved.localUrl, 2);
+        console.log(`✅ 2. Upscale tamamlandı: ${secondUpscaleUrl}`);
+
+        const secondBuffer = await downloadImageAsBuffer(secondUpscaleUrl);
+        if (secondBuffer) {
+          upscaledBuffer = secondBuffer;
+          upMeta = await sharp(upscaledBuffer).metadata();
+          console.log(`📏 2. Upscale sonucu: ${upMeta.width}x${upMeta.height}px`);
+        } else {
+          console.warn('⚠️ 2. Upscale görseli indirilemedi, 1. upscale ile devam ediliyor');
+        }
+      } catch (err) {
+        console.warn(`⚠️ 2. Upscale başarısız (${err.message}), 1. upscale ile devam ediliyor`);
+      }
+
+      // Geçici dosyayı sil (best effort)
+      try { await fs.promises.unlink(tempSaved.absolutePath); } catch (e) { /* ignore */ }
+    } else {
+      console.log(`✅ 1. Upscale yeterli, 2. upscale gerekmedi`);
     }
 
     // 6. Kanvas kompozisyonu uygula (imageTransform + sizeDimensions)
@@ -2235,6 +2279,9 @@ app.post('/api/orders/:id/generate-production-image', async (req, res) => {
       productionImageUrl: productionUrl,
       composed: true,
       canvasSize: order.sizeDimensions,
+      dpi: 300,
+      canvasPixels: `${Math.round(Math.max(targetCmW, targetCmH) * CM_TO_PX)}px (uzun kenar)`,
+      upscaleSteps: upscaledLong < targetLongPx ? '4x + 2x' : '4x',
       transform: imageTransform,
     });
 
