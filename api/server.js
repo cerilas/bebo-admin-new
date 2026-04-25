@@ -1251,6 +1251,9 @@ app.get('/api/products/:productId/detail', async (req, res) => {
         short_description as "shortDescription",
         short_description_en as "shortDescriptionEn",
         short_description_fr as "shortDescriptionFr",
+        detail_title as "detailTitle",
+        detail_title_en as "detailTitleEn",
+        detail_title_fr as "detailTitleFr",
         long_description_html as "longDescriptionHtml",
         long_description_html_en as "longDescriptionHtmlEn",
         long_description_html_fr as "longDescriptionHtmlFr",
@@ -1287,6 +1290,7 @@ app.put('/api/products/:productId/detail', async (req, res) => {
     const { productId } = req.params;
     const {
       shortDescription, shortDescriptionEn, shortDescriptionFr,
+      detailTitle, detailTitleEn, detailTitleFr,
       longDescriptionHtml, longDescriptionHtmlEn, longDescriptionHtmlFr,
       galleryImages, videoUrl,
     } = req.body;
@@ -1294,12 +1298,15 @@ app.put('/api/products/:productId/detail', async (req, res) => {
     const galleryJson = JSON.stringify(galleryImages || []);
 
     const result = await pool.query(`
-      INSERT INTO product_detail (product_id, short_description, short_description_en, short_description_fr, long_description_html, long_description_html_en, long_description_html_fr, gallery_images, video_url, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+      INSERT INTO product_detail (product_id, short_description, short_description_en, short_description_fr, detail_title, detail_title_en, detail_title_fr, long_description_html, long_description_html_en, long_description_html_fr, gallery_images, video_url, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
       ON CONFLICT (product_id) DO UPDATE SET
         short_description = EXCLUDED.short_description,
         short_description_en = EXCLUDED.short_description_en,
         short_description_fr = EXCLUDED.short_description_fr,
+        detail_title = EXCLUDED.detail_title,
+        detail_title_en = EXCLUDED.detail_title_en,
+        detail_title_fr = EXCLUDED.detail_title_fr,
         long_description_html = EXCLUDED.long_description_html,
         long_description_html_en = EXCLUDED.long_description_html_en,
         long_description_html_fr = EXCLUDED.long_description_html_fr,
@@ -1307,7 +1314,7 @@ app.put('/api/products/:productId/detail', async (req, res) => {
         video_url = EXCLUDED.video_url,
         updated_at = NOW()
       RETURNING id, product_id as "productId"
-    `, [productId, shortDescription, shortDescriptionEn, shortDescriptionFr, longDescriptionHtml, longDescriptionHtmlEn, longDescriptionHtmlFr, galleryJson, videoUrl]);
+    `, [productId, shortDescription, shortDescriptionEn, shortDescriptionFr, detailTitle, detailTitleEn, detailTitleFr, longDescriptionHtml, longDescriptionHtmlEn, longDescriptionHtmlFr, galleryJson, videoUrl]);
 
     res.json({ success: true, data: result.rows[0], message: 'Product detail saved successfully' });
   } catch (error) {

@@ -4,6 +4,9 @@ export interface ProductDetail {
   shortDescription?: string;
   shortDescriptionEn?: string;
   shortDescriptionFr?: string;
+  detailTitle?: string;
+  detailTitleEn?: string;
+  detailTitleFr?: string;
   longDescriptionHtml?: string;
   longDescriptionHtmlEn?: string;
   longDescriptionHtmlFr?: string;

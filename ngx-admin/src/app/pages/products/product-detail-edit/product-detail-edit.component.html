@@ -58,6 +58,35 @@
       </nb-card-body>
     </nb-card>
 
+    <!-- Detay Başlığı -->
+    <nb-card>
+      <nb-card-header>
+        <h6><nb-icon icon="text-outline"></nb-icon> Detay Başlığı</h6>
+      </nb-card-header>
+      <nb-card-body>
+        <nb-tabset>
+          <nb-tab tabTitle="TR">
+            <div class="form-group">
+              <label class="label">Detay Başlığı (TR)</label>
+              <input nbInput fullWidth [formControl]="form.get('detailTitle')" placeholder="Ürün detay başlığı...">
+            </div>
+          </nb-tab>
+          <nb-tab tabTitle="EN">
+            <div class="form-group">
+              <label class="label">Detail Title (EN)</label>
+              <input nbInput fullWidth [formControl]="form.get('detailTitleEn')" placeholder="Product detail title...">
+            </div>
+          </nb-tab>
+          <nb-tab tabTitle="FR">
+            <div class="form-group">
+              <label class="label">Titre détaillé (FR)</label>
+              <input nbInput fullWidth [formControl]="form.get('detailTitleFr')" placeholder="Titre détaillé du produit...">
+            </div>
+          </nb-tab>
+        </nb-tabset>
+      </nb-card-body>
+    </nb-card>
+
     <!-- Uzun Açıklama (HTML) -->
     <nb-card>
       <nb-card-header>
@@ -91,7 +120,7 @@
     <nb-card>
       <nb-card-header>
         <div class="header-row">
-          <h6><nb-icon icon="image-outline"></nb-icon> Galeri Görselleri ({{ galleryImages.length }})</h6>
+          <h6><nb-icon icon="image-outline"></nb-icon> Galeri Görselleri (1920x1920 px) ({{ galleryImages.length }})</h6>
           <div class="upload-area">
             <input type="file" accept="image/*" #galleryInput (change)="onGalleryFileSelected($event)" hidden>
             <button nbButton size="small" status="primary" (click)="galleryInput.click()" [disabled]="uploading" [nbSpinner]="uploading">
